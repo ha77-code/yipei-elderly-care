@@ -33,7 +33,6 @@ build/
 .vscode/
 
 ### Project-specific ###
-docs/AGENT_HANDOFF.md
 uploads/
 *.log
 logs/

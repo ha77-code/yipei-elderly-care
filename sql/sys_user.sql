@@ -1,5 +1,5 @@
 USE yipei;
-
+#系统用户表，用于保存老人、家属、陪诊师、管理员的账号信息、密码、角色和状态等
 CREATE TABLE sys_user (
                           id BIGINT PRIMARY KEY AUTO_INCREMENT,
                           username VARCHAR(50) NOT NULL UNIQUE,

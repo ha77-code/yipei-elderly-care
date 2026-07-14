@@ -1,5 +1,5 @@
 USE yipei;
-
+#服务记录表，用于保存陪诊服务过程、重要事项和服务完成记录
 CREATE TABLE service_record (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     order_id BIGINT NOT NULL UNIQUE,

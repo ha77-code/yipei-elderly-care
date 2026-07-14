@@ -1,5 +1,5 @@
 USE yipei;
-
+#审核记录表，保存管理员对陪诊师业务的审核结果、审核人和备注
 CREATE TABLE audit_record (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     business_type VARCHAR(50) NOT NULL COMMENT 'COMPANION_PROFILE等业务类型',

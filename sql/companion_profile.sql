@@ -1,5 +1,5 @@
 USE yipei;
-
+#陪诊师资料表，用于保存陪诊师姓名、头像、介绍、服务区域、服务类型、经验、评分和审核状态
 CREATE TABLE companion_profile (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     user_id BIGINT NOT NULL UNIQUE,

@@ -1,5 +1,5 @@
 USE yipei;
-
+#订单状态记录表，用于保存订单状态变化、操作人、操作时间和变更备注
 CREATE TABLE order_status_log (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     order_id BIGINT NOT NULL,

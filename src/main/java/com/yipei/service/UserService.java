@@ -8,9 +8,11 @@ import java.util.List;
 @Service
 public class UserService {
     private final SysUserMapper sysUserMapper;
+
     public UserService(SysUserMapper sysUserMapper) {
         this.sysUserMapper = sysUserMapper;
     }
+
     public List<SysUser> getUserList(){
         return sysUserMapper.selectAll();
     }
