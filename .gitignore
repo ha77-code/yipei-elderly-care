@@ -38,3 +38,6 @@ uploads/
 *.log
 logs/
 .DS_Store
+
+# 本地配置文件（复制 application-example.yaml 为 application.yaml 后修改）
+src/main/resources/application.yaml

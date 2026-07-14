@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: yipei
+
+  # MySQL 数据源配置（复制此文件为 application.yaml 后修改为你的本地配置）
+  datasource:
+    url: jdbc:mysql://localhost:3306/yipei?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: your_password
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # Redis 配置
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password:                # Redis 密码，无密码则留空或删除此行
+      database: 0
+
+  # 文件上传限制
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+server:
+  port: 8080
+
+# MyBatis 配置
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.yipei.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# 文件上传本地存储路径（相对于项目根目录）
+app:
+  upload-path: uploads
