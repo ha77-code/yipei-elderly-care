@@ -1,5 +1,5 @@
 USE yipei;
-#评价表，用于保存客户和陪诊师对服务参与方的评分及评价内容
+-- 评价表，用于保存客户和陪诊师对服务参与方的评分及评价内容
 CREATE TABLE evaluation (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     order_id BIGINT NOT NULL,
