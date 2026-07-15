@@ -3,7 +3,7 @@
  * 提供快速登录功能，方便切换不同角色体验
  */
 import { login } from '@/api/user'
-import { setUser, setToken } from '@/utils/auth'
+import { setUser } from '@/utils/auth'
 
 const TEST_ACCOUNTS = [
   { role: 'CUSTOMER', label: '张三', roleName: '客户（家属）' },
@@ -32,10 +32,8 @@ export async function quickLogin(role) {
       username: usernameMap[role] || 'customer1',
       password: '123456'
     })
-    setToken(res.data?.token || '')
-    setUser(res.data?.user || res.data)
+    setUser(res.data)
 
-    // 获取当前 Vue 实例并跳转
     const app = document.getElementById('app').__vue__
     if (app) {
       app.$message && app.$message.success('登录成功（测试账号）')

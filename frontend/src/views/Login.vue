@@ -105,7 +105,7 @@
 
 <script>
 import { login } from '@/api/user'
-import { setUser, setToken } from '@/utils/auth'
+import { setUser } from '@/utils/auth'
 import { quickLogin, getTestAccounts } from '@/utils/testAccounts'
 
 export default {
@@ -145,8 +145,7 @@ export default {
           password: this.form.password
         })
         // 保存登录状态
-        setToken(res.data?.token || '')
-        setUser(res.data?.user || res.data)
+        setUser(res.data)
 
         this.$message.success('登录成功')
 

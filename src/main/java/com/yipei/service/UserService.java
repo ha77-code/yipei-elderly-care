@@ -1,47 +1,54 @@
 package com.yipei.service;
 
-import com.yipei.entity.LoginRequest;
-import com.yipei.entity.RegisterRequest;
+import com.yipei.entity.LoginVO;
 import com.yipei.entity.SysUser;
+import com.yipei.entity.UserLoginRequest;
+import com.yipei.entity.UserRegisterRequest;
 import com.yipei.entity.UserVO;
 import com.yipei.exception.ForbiddenException;
 import com.yipei.exception.NotFoundException;
 import com.yipei.mapper.SysUserMapper;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 public class UserService {
     private final SysUserMapper sysUserMapper;
 
-    /** 简易内存 token 存储，生产环境应使用 Redis */
-    private static final Map<String, Long> TOKEN_STORE = new ConcurrentHashMap<>();
+    private static final Set<String> VALID_ROLES = new HashSet<>(
+            Arrays.asList("CUSTOMER", "COMPANION", "ADMIN"));
 
     public UserService(SysUserMapper sysUserMapper) {
         this.sysUserMapper = sysUserMapper;
     }
 
-    /* ===== 登录注册 ===== */
+    /* ===== 登录 ===== */
 
-    public Map<String, Object> login(LoginRequest request) {
+    public LoginVO login(UserLoginRequest request) {
         SysUser user = sysUserMapper.selectByUsername(request.getUsername());
-        if (user == null || !user.getPassword().equals(request.getPassword())) {
+        if (user == null) {
+            throw new ForbiddenException("用户名或密码错误");
+        }
+        if (!user.getPassword().equals(request.getPassword())) {
             throw new ForbiddenException("用户名或密码错误");
         }
         if (user.getStatus() != null && user.getStatus() != 1) {
             throw new ForbiddenException("账号已被禁用");
         }
-        String token = UUID.randomUUID().toString().replace("-", "");
-        TOKEN_STORE.put(token, user.getId());
-        return Map.of("token", token, "user", toUserVO(user));
+        return toLoginVO(user);
     }
 
-    public void register(RegisterRequest request) {
+    /* ===== 注册 ===== */
+
+    public UserVO register(UserRegisterRequest request) {
+        if (!VALID_ROLES.contains(request.getRole())) {
+            throw new ForbiddenException("角色只能是 CUSTOMER、COMPANION 或 ADMIN");
+        }
         SysUser exist = sysUserMapper.selectByUsername(request.getUsername());
         if (exist != null) {
             throw new ForbiddenException("用户名已存在");
@@ -54,6 +61,8 @@ public class UserService {
         user.setRole(request.getRole());
         user.setStatus(1);
         sysUserMapper.insert(user);
+        // insert 后 id 已回填
+        return toUserVO(user);
     }
 
     /* ===== 用户查询 ===== */
@@ -64,15 +73,6 @@ public class UserService {
             throw new NotFoundException("用户不存在，ID: " + userId);
         }
         return toUserVO(user);
-    }
-
-    /** 从 Authorization header 解析 token 获取当前用户 ID */
-    public Long resolveUserId(String authHeader) {
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
-            return TOKEN_STORE.get(token);
-        }
-        return null;
     }
 
     public List<UserVO> getUserList() {
@@ -115,7 +115,20 @@ public class UserService {
         return toUserVO(updated);
     }
 
-    /* ===== 工具方法 ===== */
+    /* ===== VO 转换 ===== */
+
+    private LoginVO toLoginVO(SysUser user) {
+        LoginVO vo = new LoginVO();
+        vo.setId(user.getId());
+        vo.setUsername(user.getUsername());
+        vo.setNickname(user.getNickname());
+        vo.setPhone(user.getPhone());
+        vo.setRole(user.getRole());
+        vo.setStatus(user.getStatus());
+        vo.setCreateAt(user.getCreateAt());
+        vo.setUpdateAt(user.getUpdateAt());
+        return vo;
+    }
 
     private UserVO toUserVO(SysUser user) {
         UserVO vo = new UserVO();

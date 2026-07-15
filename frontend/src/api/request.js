@@ -4,7 +4,7 @@
  */
 import axios from 'axios'
 import { Message } from 'element-ui'
-import { getToken, clearUser } from '@/utils/auth'
+import { getToken, getUser, clearUser } from '@/utils/auth'
 import router from '@/router'
 
 const request = axios.create({
@@ -15,9 +15,13 @@ const request = axios.create({
   }
 })
 
-/* ===== 请求拦截器：自动注入 token ===== */
+/* ===== 请求拦截器：自动注入用户身份 ===== */
 request.interceptors.request.use(
   config => {
+    const user = getUser()
+    if (user && user.id) {
+      config.headers['X-User-Id'] = user.id
+    }
     const token = getToken()
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`
