@@ -5,12 +5,17 @@ import { getUser, ROLES } from '@/utils/auth'
 
 Vue.use(VueRouter)
 
-/* ===== 懒加载：核心页面 ===== */
+/* ===== 懒加载：公开页面 ===== */
 const Login = () => import('@/views/Login.vue')
 const Register = () => import('@/views/Register.vue')
+const NotFound = () => import('@/views/NotFound.vue')
+
+/* ===== 懒加载：主布局 ===== */
+const MainLayout = () => import('@/layout/MainLayout.vue')
+
+/* ===== 懒加载：已登录通用页面 ===== */
 const Home = () => import('@/views/Home.vue')
 const Profile = () => import('@/views/Profile.vue')
-const NotFound = () => import('@/views/NotFound.vue')
 
 /* ===== 懒加载：客户端 ===== */
 const Companions = () => import('@/views/customer/Companions.vue')
@@ -33,7 +38,7 @@ const AdminReports = () => import('@/views/admin/AdminReports.vue')
 const AdminStatistics = () => import('@/views/admin/AdminStatistics.vue')
 
 const routes = [
-  /* ==================== 公开路由 ==================== */
+  /* ==================== 公开路由（无 MainLayout） ==================== */
   {
     path: '/login',
     name: 'Login',
@@ -47,108 +52,115 @@ const routes = [
     meta: { title: '注册', public: true }
   },
 
-  /* ==================== 通用（已登录即可访问） ==================== */
+  /* ==================== 已登录路由（包裹在 MainLayout 内） ==================== */
   {
     path: '/',
-    name: 'Home',
-    component: Home,
-    meta: { title: '首页' }
-  },
-  {
-    path: '/profile',
-    name: 'Profile',
-    component: Profile,
-    meta: { title: '个人信息' }
-  },
+    component: MainLayout,
+    children: [
+      /* ---------- 通用 ---------- */
+      {
+        path: '',
+        name: 'Home',
+        component: Home,
+        meta: { title: '首页' }
+      },
+      {
+        path: 'profile',
+        name: 'Profile',
+        component: Profile,
+        meta: { title: '个人信息' }
+      },
 
-  /* ==================== 客户端 CUSTOMER ==================== */
-  {
-    path: '/customer/companions',
-    name: 'Companions',
-    component: Companions,
-    meta: { title: '陪诊师列表', role: ROLES.CUSTOMER }
-  },
-  {
-    path: '/customer/request/create',
-    name: 'RequestCreate',
-    component: RequestCreate,
-    meta: { title: '发布需求', role: ROLES.CUSTOMER }
-  },
-  {
-    path: '/customer/requests',
-    name: 'MyRequests',
-    component: MyRequests,
-    meta: { title: '我的需求', role: ROLES.CUSTOMER }
-  },
-  {
-    path: '/customer/orders',
-    name: 'CustomerOrders',
-    component: CustomerOrders,
-    meta: { title: '我的订单', role: ROLES.CUSTOMER }
-  },
+      /* ---------- 客户端 CUSTOMER ---------- */
+      {
+        path: 'customer/companions',
+        name: 'Companions',
+        component: Companions,
+        meta: { title: '陪诊师列表', role: ROLES.CUSTOMER }
+      },
+      {
+        path: 'customer/request/create',
+        name: 'RequestCreate',
+        component: RequestCreate,
+        meta: { title: '发布需求', role: ROLES.CUSTOMER }
+      },
+      {
+        path: 'customer/requests',
+        name: 'MyRequests',
+        component: MyRequests,
+        meta: { title: '我的需求', role: ROLES.CUSTOMER }
+      },
+      {
+        path: 'customer/orders',
+        name: 'CustomerOrders',
+        component: CustomerOrders,
+        meta: { title: '我的订单', role: ROLES.CUSTOMER }
+      },
 
-  /* ==================== 陪诊师端 COMPANION ==================== */
-  {
-    path: '/companion/profile',
-    name: 'CompanionProfile',
-    component: CompanionProfile,
-    meta: { title: '入驻资料', role: ROLES.COMPANION }
-  },
-  {
-    path: '/companion/available-orders',
-    name: 'AvailableOrders',
-    component: AvailableOrders,
-    meta: { title: '可接订单', role: ROLES.COMPANION }
-  },
-  {
-    path: '/companion/orders',
-    name: 'CompanionOrders',
-    component: CompanionOrders,
-    meta: { title: '我的订单', role: ROLES.COMPANION }
-  },
-  {
-    path: '/companion/service-records',
-    name: 'ServiceRecords',
-    component: ServiceRecords,
-    meta: { title: '服务记录', role: ROLES.COMPANION }
-  },
+      /* ---------- 陪诊师端 COMPANION ---------- */
+      {
+        path: 'companion/profile',
+        name: 'CompanionProfile',
+        component: CompanionProfile,
+        meta: { title: '入驻资料', role: ROLES.COMPANION }
+      },
+      {
+        path: 'companion/available-orders',
+        name: 'AvailableOrders',
+        component: AvailableOrders,
+        meta: { title: '可接订单', role: ROLES.COMPANION }
+      },
+      {
+        path: 'companion/orders',
+        name: 'CompanionOrders',
+        component: CompanionOrders,
+        meta: { title: '我的订单', role: ROLES.COMPANION }
+      },
+      {
+        path: 'companion/service-records',
+        name: 'ServiceRecords',
+        component: ServiceRecords,
+        meta: { title: '服务记录', role: ROLES.COMPANION }
+      },
 
-  /* ==================== 管理员端 ADMIN ==================== */
-  {
-    path: '/admin/users',
-    name: 'AdminUsers',
-    component: AdminUsers,
-    meta: { title: '用户管理', role: ROLES.ADMIN }
-  },
-  {
-    path: '/admin/companion-review',
-    name: 'CompanionReview',
-    component: CompanionReview,
-    meta: { title: '陪诊师审核', role: ROLES.ADMIN }
-  },
-  {
-    path: '/admin/requests',
-    name: 'AdminRequests',
-    component: AdminRequests,
-    meta: { title: '需求管理', role: ROLES.ADMIN }
-  },
-  {
-    path: '/admin/orders',
-    name: 'AdminOrders',
-    component: AdminOrders,
-    meta: { title: '订单管理', role: ROLES.ADMIN }
-  },
-  {
-    path: '/admin/reports',
-    name: 'AdminReports',
-    component: AdminReports,
-    meta: { title: '投诉处理', role: ROLES.ADMIN }
-  },
-  {
-    path: '/admin/statistics',
-    name: 'AdminStatistics',
-    component: AdminStatistics,
-    meta: { title: '平台统计', role: ROLES.ADMIN }
+      /* ---------- 管理员端 ADMIN ---------- */
+      {
+        path: 'admin/users',
+        name: 'AdminUsers',
+        component: AdminUsers,
+        meta: { title: '用户管理', role: ROLES.ADMIN }
+      },
+      {
+        path: 'admin/companion-review',
+        name: 'CompanionReview',
+        component: CompanionReview,
+        meta: { title: '陪诊师审核', role: ROLES.ADMIN }
+      },
+      {
+        path: 'admin/requests',
+        name: 'AdminRequests',
+        component: AdminRequests,
+        meta: { title: '需求管理', role: ROLES.ADMIN }
+      },
+      {
+        path: 'admin/orders',
+        name: 'AdminOrders',
+        component: AdminOrders,
+        meta: { title: '订单管理', role: ROLES.ADMIN }
+      },
+      {
+        path: 'admin/reports',
+        name: 'AdminReports',
+        component: AdminReports,
+        meta: { title: '投诉处理', role: ROLES.ADMIN }
+      },
+      {
+        path: 'admin/statistics',
+        name: 'AdminStatistics',
+        component: AdminStatistics,
+        meta: { title: '平台统计', role: ROLES.ADMIN }
+      }
+    ]
   },
 
   /* ==================== 404 ==================== */
@@ -170,7 +182,12 @@ const router = new VueRouter({
 router.beforeEach((to, from, next) => {
   const user = getUser()
   const loggedIn = !!user
-  const isPublic = to.meta.public === true
+
+  // 取嵌套路由最深层级的 meta
+  const deepMeta = to.matched.length > 0
+    ? to.matched[to.matched.length - 1].meta
+    : to.meta
+  const isPublic = deepMeta.public === true
 
   // ① 公开路由：已登录访问 /login /register → 重定向首页
   if (isPublic) {
@@ -186,7 +203,7 @@ router.beforeEach((to, from, next) => {
   }
 
   // ③ 角色权限检查
-  const requiredRole = to.meta.role
+  const requiredRole = deepMeta.role
   if (requiredRole) {
     const userRole = user.role
 
@@ -207,7 +224,10 @@ router.beforeEach((to, from, next) => {
 
 /* ===== 全局后置守卫：设置页面标题 ===== */
 router.afterEach((to) => {
-  const title = to.meta.title
+  const deepMeta = to.matched.length > 0
+    ? to.matched[to.matched.length - 1].meta
+    : to.meta
+  const title = deepMeta.title
   document.title = title ? `${title} — 益陪养老` : '益陪养老 — 专业养老陪护服务平台'
 })
 
