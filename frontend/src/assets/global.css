@@ -1,0 +1,126 @@
+/* ===== 全局样式 ===== */
+
+/* 页面通用容器 */
+.page-container {
+  padding: 24px;
+  min-height: 100%;
+}
+
+/* 卡片通用样式 */
+.card-warm {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+/* 暖绿渐变背景 */
+.bg-warm-gradient {
+  background: radial-gradient(ellipse at 50% 0%, #D4E0D5 0%, #F5F0E8 60%, #FDFBF7 100%);
+}
+
+/* 标题层级 */
+.title-hero {
+  font-family: var(--font-family);
+  font-size: 48px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+
+.title-section {
+  font-family: var(--font-family);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--color-text-primary);
+}
+
+.title-card {
+  font-family: var(--font-family);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--color-text-regular);
+}
+
+/* 正文（适配中老年阅读：加大字号、加宽行高） */
+.text-body {
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--color-text-secondary);
+}
+
+/* 按钮样式 */
+.btn-primary-dark {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 32px;
+  background: #1A1A1A;
+  color: #FFFFFF;
+  font-family: var(--font-family);
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-primary-dark:hover {
+  background: #333333;
+  transform: translateY(-1px);
+}
+
+.btn-outline-warm {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 28px;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-family: var(--font-family);
+  font-size: 15px;
+  font-weight: 500;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-outline-warm:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* 细线条图标风格（使用 ElementUI 的图标即可） */
+
+/* 角色标签 */
+.tag-customer {
+  background: rgba(122, 154, 126, 0.1);
+  color: #5C7A60;
+  border: 1px solid rgba(122, 154, 126, 0.2);
+  border-radius: 20px;
+  padding: 2px 12px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.tag-companion {
+  background: rgba(196, 168, 130, 0.1);
+  color: #8B7355;
+  border: 1px solid rgba(196, 168, 130, 0.2);
+  border-radius: 20px;
+  padding: 2px 12px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.tag-admin {
+  background: rgba(26, 26, 26, 0.06);
+  color: #333333;
+  border: 1px solid rgba(26, 26, 26, 0.1);
+  border-radius: 20px;
+  padding: 2px 12px;
+  font-size: 13px;
+  font-weight: 500;
+}
