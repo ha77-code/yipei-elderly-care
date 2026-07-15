@@ -76,6 +76,28 @@
             <i class="el-icon-arrow-right"></i>
           </router-link>
         </div>
+
+        <!-- 开发环境：快速测试入口 -->
+        <div class="dev-quick-login">
+          <div class="dev-divider"><span>快速体验（开发测试）</span></div>
+          <div class="dev-accounts">
+            <div
+              v-for="acc in testAccounts"
+              :key="acc.role"
+              class="dev-account-card"
+              @click="quickLogin(acc.role)"
+            >
+              <div class="dev-acc-avatar">
+                <i class="el-icon-user"></i>
+              </div>
+              <div class="dev-acc-info">
+                <span class="dev-acc-name">{{ acc.label }}</span>
+                <span class="dev-acc-role">{{ acc.roleName }}</span>
+              </div>
+              <span class="dev-acc-hint">点击登录</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -84,11 +106,13 @@
 <script>
 import { login } from '@/api/user'
 import { setUser, setToken } from '@/utils/auth'
+import { quickLogin, getTestAccounts } from '@/utils/testAccounts'
 
 export default {
   name: 'Login',
   data() {
     return {
+      testAccounts: getTestAccounts(),
       form: {
         username: '',
         password: ''
@@ -106,6 +130,7 @@ export default {
     }
   },
   methods: {
+    quickLogin,
     async handleLogin() {
       try {
         await this.$refs.loginForm.validate()
@@ -299,6 +324,86 @@ export default {
 .link-register i {
   font-size: 12px;
   margin-left: 2px;
+}
+
+/* ===== 开发环境快速测试 ===== */
+.dev-quick-login {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px dashed var(--color-border);
+}
+
+.dev-divider {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.dev-divider span {
+  font-size: 12px;
+  color: var(--color-text-placeholder);
+  background: #FFFFFF;
+  padding: 0 12px;
+}
+
+.dev-accounts {
+  display: flex;
+  gap: 10px;
+}
+
+.dev-account-card {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--color-bg-page);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dev-account-card:hover {
+  border-color: var(--color-primary);
+  background: rgba(122, 154, 126, 0.04);
+}
+
+.dev-acc-avatar {
+  width: 32px;
+  height: 32px;
+  background: var(--color-primary-light);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.dev-acc-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+}
+
+.dev-acc-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.dev-acc-role {
+  font-size: 11px;
+  color: var(--color-text-placeholder);
+}
+
+.dev-acc-hint {
+  font-size: 11px;
+  color: var(--color-primary);
+  font-weight: 500;
+  flex-shrink: 0;
 }
 
 /* ===== 响应式 ===== */

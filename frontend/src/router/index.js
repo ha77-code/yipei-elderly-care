@@ -40,6 +40,9 @@ const AdminStatistics = () => import('@/views/admin/AdminStatistics.vue')
 /* ===== 懒加载：服务记录 ===== */
 const ServiceRecord = () => import('@/views/ServiceRecord.vue')
 
+/* ===== 懒加载：陪诊师详情 ===== */
+const CompanionDetail = () => import('@/views/CompanionDetail.vue')
+
 const routes = [
   /* ==================== 公开路由（无 MainLayout） ==================== */
   {
@@ -78,6 +81,14 @@ const routes = [
         name: 'ServiceRecord',
         component: ServiceRecord,
         meta: { title: '服务记录' }
+      },
+
+      /* ---------- 陪诊师详情（所有角色可查看） ---------- */
+      {
+        path: 'companion/:id',
+        name: 'CompanionDetail',
+        component: CompanionDetail,
+        meta: { title: '陪诊师详情' }
       },
 
       /* ---------- 客户端 CUSTOMER ---------- */
