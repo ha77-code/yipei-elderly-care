@@ -21,6 +21,38 @@ public class UserService {
         return users.stream().map(this::toUserVO).collect(Collectors.toList());
     }
 
+    public UserVO getUserById(Long id) {
+        SysUser user = sysUserMapper.selectById(id);
+        if (user == null) {
+            throw new com.yipei.exception.NotFoundException("用户不存在，ID: " + id);
+        }
+        return toUserVO(user);
+    }
+
+    public UserVO updateUserStatus(Long id, int status, String operatorRole) {
+        if (!"ADMIN".equals(operatorRole)) {
+            throw new com.yipei.exception.ForbiddenException("仅管理员可操作");
+        }
+        SysUser user = sysUserMapper.selectById(id);
+        if (user == null) {
+            throw new com.yipei.exception.NotFoundException("用户不存在，ID: " + id);
+        }
+        sysUserMapper.updateStatus(id, status);
+        user.setStatus(status);
+        return toUserVO(user);
+    }
+
+    public UserVO updateUserInfo(Long id, String nickname, String phone) {
+        SysUser user = sysUserMapper.selectById(id);
+        if (user == null) {
+            throw new com.yipei.exception.NotFoundException("用户不存在，ID: " + id);
+        }
+        sysUserMapper.updateUserInfo(id, nickname, phone);
+        // 重新查询以获取最新数据（包含 updated_at）
+        SysUser updated = sysUserMapper.selectById(id);
+        return toUserVO(updated);
+    }
+
     private UserVO toUserVO(SysUser user) {
         UserVO vo = new UserVO();
         vo.setId(user.getId());
