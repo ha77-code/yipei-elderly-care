@@ -52,6 +52,11 @@ public class ServiceRequestService {
         return serviceRequestMapper.selectByCustomerId(customerId);
     }
 
+    /** 管理员查看全部需求，支持按状态和服务类型筛选 */
+    public List<ServiceRequest> listAll(String status, String serviceType) {
+        return serviceRequestMapper.selectAll(status, serviceType);
+    }
+
     /** 查看需求详情 */
     public ServiceRequest getById(Long id) {
         ServiceRequest request = serviceRequestMapper.selectById(id);

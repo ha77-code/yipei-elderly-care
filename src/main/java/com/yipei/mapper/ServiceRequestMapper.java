@@ -35,6 +35,17 @@ public interface ServiceRequestMapper {
     @Update("UPDATE service_request SET status = #{status} WHERE id = #{id}")
     int updateStatus(@Param("id") Long id, @Param("status") String status);
 
+    @Select("<script>" +
+            "SELECT id, customer_id, service_type, service_date, hospital_name, department, " +
+            "requirement, special_notes, contact_name, contact_phone, budget, status, " +
+            "created_at, updated_at FROM service_request WHERE 1=1" +
+            "<if test='status != null and status != \"\"'> AND status = #{status}</if>" +
+            "<if test='serviceType != null and serviceType != \"\"'> AND service_type = #{serviceType}</if>" +
+            " ORDER BY created_at DESC" +
+            "</script>")
+    List<ServiceRequest> selectAll(@Param("status") String status,
+                                   @Param("serviceType") String serviceType);
+
     @Select("SELECT COUNT(*) FROM service_order WHERE request_id = #{requestId}")
     int countOrdersByRequestId(@Param("requestId") Long requestId);
 }

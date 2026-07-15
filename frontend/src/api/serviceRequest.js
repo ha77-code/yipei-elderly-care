@@ -41,7 +41,7 @@ export function cancelRequest(id) {
 /** 获取所有需求列表（管理员） */
 export function getAllRequests(params) {
   return request({
-    url: '/api/service-request/list',
+    url: '/api/admin/service-request/list',
     method: 'get',
     params
   })
