@@ -7,7 +7,7 @@ import request from './request'
 /** 发布服务需求 */
 export function createRequest(data) {
   return request({
-    url: '/service-request/create',
+    url: '/api/service-request/create',
     method: 'post',
     data
   })
@@ -16,7 +16,7 @@ export function createRequest(data) {
 /** 获取我的需求列表 */
 export function getMyRequests(params) {
   return request({
-    url: '/service-request/my',
+    url: '/api/service-request/list',
     method: 'get',
     params
   })
@@ -25,7 +25,7 @@ export function getMyRequests(params) {
 /** 获取需求详情 */
 export function getRequestDetail(id) {
   return request({
-    url: `/service-request/${id}`,
+    url: `/api/service-request/${id}`,
     method: 'get'
   })
 }
@@ -33,7 +33,7 @@ export function getRequestDetail(id) {
 /** 取消需求 */
 export function cancelRequest(id) {
   return request({
-    url: `/service-request/${id}/cancel`,
+    url: `/api/service-request/${id}/cancel`,
     method: 'put'
   })
 }
@@ -41,7 +41,7 @@ export function cancelRequest(id) {
 /** 获取所有需求列表（管理员） */
 export function getAllRequests(params) {
   return request({
-    url: '/service-request/list',
+    url: '/api/service-request/list',
     method: 'get',
     params
   })
