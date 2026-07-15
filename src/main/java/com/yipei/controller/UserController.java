@@ -1,6 +1,6 @@
 package com.yipei.controller;
 
-import com.yipei.entity.SysUser;
+import com.yipei.entity.UserVO;
 import com.yipei.service.UserService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,7 +18,7 @@ public class UserController {
     }
 
     @GetMapping("/list")
-    public List<SysUser> list(){
+    public List<UserVO> list(){
         return userService.getUserList();
     }
 }
