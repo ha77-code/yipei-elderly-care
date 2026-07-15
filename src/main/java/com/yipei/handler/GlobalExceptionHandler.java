@@ -1,0 +1,40 @@
+package com.yipei.handler;
+
+import com.yipei.entity.ApiResponse;
+import com.yipei.exception.BusinessException;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    /** 统一处理所有业务异常 */
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ApiResponse<Void>> handleBusiness(BusinessException e) {
+        return ResponseEntity
+                .status(e.getCode())
+                .body(ApiResponse.error(e.getCode(), e.getMessage()));
+    }
+
+    /** 处理 @Valid 参数校验失败 */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiResponse<Void>> handleValidation(MethodArgumentNotValidException e) {
+        String message = e.getBindingResult().getFieldErrors().stream()
+                .map(f -> f.getField() + ": " + f.getDefaultMessage())
+                .reduce((a, b) -> a + "; " + b)
+                .orElse("请求参数校验失败");
+        return ResponseEntity
+                .status(400)
+                .body(ApiResponse.error(400, message));
+    }
+
+    /** 兜底处理未知异常 */
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiResponse<Void>> handleGeneral(Exception e) {
+        return ResponseEntity
+                .status(500)
+                .body(ApiResponse.error(500, "服务器内部错误"));
+    }
+}
