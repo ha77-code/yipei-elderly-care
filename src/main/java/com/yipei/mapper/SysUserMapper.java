@@ -18,4 +18,16 @@ public interface SysUserMapper {
 
     @Update("UPDATE sys_user SET status = #{status} WHERE id = #{id}")
     int updateStatus(@Param("id") Long id, @Param("status") int status);
+
+    @Update("<script>" +
+            "UPDATE sys_user" +
+            "<set>" +
+            "<if test='nickname != null'>nickname = #{nickname},</if>" +
+            "<if test='phone != null'>phone = #{phone},</if>" +
+            "</set>" +
+            "WHERE id = #{id}" +
+            "</script>")
+    int updateUserInfo(@Param("id") Long id,
+                       @Param("nickname") String nickname,
+                       @Param("phone") String phone);
 }

@@ -42,6 +42,17 @@ public class UserService {
         return toUserVO(user);
     }
 
+    public UserVO updateUserInfo(Long id, String nickname, String phone) {
+        SysUser user = sysUserMapper.selectById(id);
+        if (user == null) {
+            throw new com.yipei.exception.NotFoundException("用户不存在，ID: " + id);
+        }
+        sysUserMapper.updateUserInfo(id, nickname, phone);
+        // 重新查询以获取最新数据（包含 updated_at）
+        SysUser updated = sysUserMapper.selectById(id);
+        return toUserVO(updated);
+    }
+
     private UserVO toUserVO(SysUser user) {
         UserVO vo = new UserVO();
         vo.setId(user.getId());
