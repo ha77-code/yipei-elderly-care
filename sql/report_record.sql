@@ -1,5 +1,5 @@
 USE yipei;
-#投诉记录表，用于保存订单投诉原因、投诉内容、处理状态和处理结果
+-- 投诉记录表，用于保存订单投诉原因、投诉内容、处理状态和处理结果
 CREATE TABLE report_record (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     order_id BIGINT NOT NULL,
