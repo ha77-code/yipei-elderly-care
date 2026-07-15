@@ -37,6 +37,9 @@ const AdminOrders = () => import('@/views/admin/AdminOrders.vue')
 const AdminReports = () => import('@/views/admin/AdminReports.vue')
 const AdminStatistics = () => import('@/views/admin/AdminStatistics.vue')
 
+/* ===== 懒加载：服务记录 ===== */
+const ServiceRecord = () => import('@/views/ServiceRecord.vue')
+
 const routes = [
   /* ==================== 公开路由（无 MainLayout） ==================== */
   {
@@ -69,6 +72,12 @@ const routes = [
         name: 'Profile',
         component: Profile,
         meta: { title: '个人信息' }
+      },
+      {
+        path: 'order/:orderId/service-record',
+        name: 'ServiceRecord',
+        component: ServiceRecord,
+        meta: { title: '服务记录' }
       },
 
       /* ---------- 客户端 CUSTOMER ---------- */
