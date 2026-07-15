@@ -2,6 +2,7 @@ package com.yipei.mapper;
 
 import com.yipei.entity.SysUser;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
@@ -10,4 +11,7 @@ import java.util.List;
 public interface SysUserMapper {
     @Select("SELECT id, username, nickname, phone, role, status, created_at AS createAt, updated_at AS updateAt FROM sys_user ORDER BY id DESC")
     List<SysUser> selectAll();
+
+    @Select("SELECT id, username, nickname, phone, role, status, created_at AS createAt, updated_at AS updateAt FROM sys_user WHERE id = #{id}")
+    SysUser selectById(@Param("id") Long id);
 }

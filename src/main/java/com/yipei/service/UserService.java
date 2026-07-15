@@ -21,6 +21,14 @@ public class UserService {
         return users.stream().map(this::toUserVO).collect(Collectors.toList());
     }
 
+    public UserVO getUserById(Long id) {
+        SysUser user = sysUserMapper.selectById(id);
+        if (user == null) {
+            throw new com.yipei.exception.NotFoundException("用户不存在，ID: " + id);
+        }
+        return toUserVO(user);
+    }
+
     private UserVO toUserVO(SysUser user) {
         UserVO vo = new UserVO();
         vo.setId(user.getId());

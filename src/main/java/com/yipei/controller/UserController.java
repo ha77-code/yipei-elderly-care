@@ -1,8 +1,10 @@
 package com.yipei.controller;
 
+import com.yipei.entity.ApiResponse;
 import com.yipei.entity.UserVO;
 import com.yipei.service.UserService;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -20,5 +22,11 @@ public class UserController {
     @GetMapping("/list")
     public List<UserVO> list(){
         return userService.getUserList();
+    }
+
+    @GetMapping("/{id}")
+    public ApiResponse<UserVO> detail(@PathVariable Long id) {
+        UserVO userVO = userService.getUserById(id);
+        return ApiResponse.success(userVO);
     }
 }
