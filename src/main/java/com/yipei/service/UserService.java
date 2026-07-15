@@ -29,6 +29,19 @@ public class UserService {
         return toUserVO(user);
     }
 
+    public UserVO updateUserStatus(Long id, int status, String operatorRole) {
+        if (!"ADMIN".equals(operatorRole)) {
+            throw new com.yipei.exception.ForbiddenException("仅管理员可操作");
+        }
+        SysUser user = sysUserMapper.selectById(id);
+        if (user == null) {
+            throw new com.yipei.exception.NotFoundException("用户不存在，ID: " + id);
+        }
+        sysUserMapper.updateStatus(id, status);
+        user.setStatus(status);
+        return toUserVO(user);
+    }
+
     private UserVO toUserVO(SysUser user) {
         UserVO vo = new UserVO();
         vo.setId(user.getId());
