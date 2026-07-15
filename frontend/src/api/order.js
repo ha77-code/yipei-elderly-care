@@ -7,7 +7,7 @@ import request from './request'
 /** 创建订单（客户确认陪诊师后） */
 export function createOrder(data) {
   return request({
-    url: '/order/create',
+    url: '/api/order/create',
     method: 'post',
     data
   })
@@ -16,7 +16,7 @@ export function createOrder(data) {
 /** 获取我的订单列表（客户/陪诊师通用） */
 export function getMyOrders(params) {
   return request({
-    url: '/order/my',
+    url: '/api/order/my',
     method: 'get',
     params
   })
@@ -25,7 +25,7 @@ export function getMyOrders(params) {
 /** 获取可接订单列表（陪诊师） */
 export function getAvailableOrders(params) {
   return request({
-    url: '/order/available',
+    url: '/api/order/available',
     method: 'get',
     params
   })
@@ -34,7 +34,7 @@ export function getAvailableOrders(params) {
 /** 获取订单详情 */
 export function getOrderDetail(id) {
   return request({
-    url: `/order/${id}`,
+    url: `/api/order/${id}`,
     method: 'get'
   })
 }
@@ -42,7 +42,7 @@ export function getOrderDetail(id) {
 /** 接单（陪诊师） */
 export function acceptOrder(id) {
   return request({
-    url: `/order/${id}/accept`,
+    url: `/api/order/${id}/accept`,
     method: 'put'
   })
 }
@@ -50,7 +50,7 @@ export function acceptOrder(id) {
 /** 开始服务 */
 export function startService(id) {
   return request({
-    url: `/order/${id}/start`,
+    url: `/api/order/${id}/start`,
     method: 'put'
   })
 }
@@ -58,7 +58,7 @@ export function startService(id) {
 /** 完成服务 */
 export function completeService(id) {
   return request({
-    url: `/order/${id}/complete`,
+    url: `/api/order/${id}/complete`,
     method: 'put'
   })
 }
@@ -66,7 +66,7 @@ export function completeService(id) {
 /** 确认完成（客户） */
 export function confirmOrder(id) {
   return request({
-    url: `/order/${id}/confirm`,
+    url: `/api/order/${id}/confirm`,
     method: 'put'
   })
 }
@@ -74,7 +74,7 @@ export function confirmOrder(id) {
 /** 取消订单 */
 export function cancelOrder(id, data) {
   return request({
-    url: `/order/${id}/cancel`,
+    url: `/api/order/${id}/cancel`,
     method: 'put',
     data
   })
@@ -83,7 +83,7 @@ export function cancelOrder(id, data) {
 /** 获取所有订单（管理员） */
 export function getAllOrders(params) {
   return request({
-    url: '/order/list',
+    url: '/api/order/list',
     method: 'get',
     params
   })
