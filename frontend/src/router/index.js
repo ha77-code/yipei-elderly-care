@@ -16,24 +16,23 @@ const MainLayout = () => import('@/layout/MainLayout.vue')
 /* ===== 懒加载：已登录通用页面 ===== */
 const Home = () => import('@/views/Home.vue')
 const Profile = () => import('@/views/Profile.vue')
+const OrderList = () => import('@/views/OrderList.vue')
+const OrderDetail = () => import('@/views/OrderDetail.vue')
 
 /* ===== 懒加载：客户端 ===== */
 const Companions = () => import('@/views/customer/Companions.vue')
 const RequestCreate = () => import('@/views/customer/RequestCreate.vue')
 const MyRequests = () => import('@/views/customer/MyRequests.vue')
-const CustomerOrders = () => import('@/views/customer/CustomerOrders.vue')
 
 /* ===== 懒加载：陪诊师端 ===== */
 const CompanionProfile = () => import('@/views/companion/CompanionProfile.vue')
 const AvailableOrders = () => import('@/views/companion/AvailableOrders.vue')
-const CompanionOrders = () => import('@/views/companion/CompanionOrders.vue')
 const ServiceRecords = () => import('@/views/companion/ServiceRecords.vue')
 
 /* ===== 懒加载：管理员端 ===== */
 const AdminUsers = () => import('@/views/admin/AdminUsers.vue')
 const CompanionReview = () => import('@/views/admin/CompanionReview.vue')
 const AdminRequests = () => import('@/views/admin/AdminRequests.vue')
-const AdminOrders = () => import('@/views/admin/AdminOrders.vue')
 const AdminReports = () => import('@/views/admin/AdminReports.vue')
 const AdminStatistics = () => import('@/views/admin/AdminStatistics.vue')
 
@@ -77,6 +76,12 @@ const routes = [
         meta: { title: '个人信息' }
       },
       {
+        path: 'order/:orderId',
+        name: 'OrderDetail',
+        component: OrderDetail,
+        meta: { title: '订单详情' }
+      },
+      {
         path: 'order/:orderId/service-record',
         name: 'ServiceRecord',
         component: ServiceRecord,
@@ -113,7 +118,7 @@ const routes = [
       {
         path: 'customer/orders',
         name: 'CustomerOrders',
-        component: CustomerOrders,
+        component: OrderList,
         meta: { title: '我的订单', role: ROLES.CUSTOMER }
       },
 
@@ -133,7 +138,7 @@ const routes = [
       {
         path: 'companion/orders',
         name: 'CompanionOrders',
-        component: CompanionOrders,
+        component: OrderList,
         meta: { title: '我的订单', role: ROLES.COMPANION }
       },
       {
@@ -165,7 +170,7 @@ const routes = [
       {
         path: 'admin/orders',
         name: 'AdminOrders',
-        component: AdminOrders,
+        component: OrderList,
         meta: { title: '订单管理', role: ROLES.ADMIN }
       },
       {
