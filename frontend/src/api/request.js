@@ -8,7 +8,7 @@ import { getToken, getUser, clearUser } from '@/utils/auth'
 import router from '@/router'
 
 const request = axios.create({
-  baseURL: '/api',
+  baseURL: 'http://localhost:8080',
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json'

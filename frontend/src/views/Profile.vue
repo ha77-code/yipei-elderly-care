@@ -136,7 +136,7 @@ export default {
   methods: {
     async fetchUserInfo() {
       try {
-        const res = await getUserInfo()
+        const res = await getUserInfo(this.user.id)
         const userData = res.data || res
         this.user = { ...userData }
         setUser(userData)

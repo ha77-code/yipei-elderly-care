@@ -6,7 +6,6 @@ import com.yipei.entity.UpdateUserInfoRequest;
 import com.yipei.entity.UserLoginRequest;
 import com.yipei.entity.UserRegisterRequest;
 import com.yipei.entity.UserVO;
-import com.yipei.exception.ForbiddenException;
 import com.yipei.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +15,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -43,8 +43,7 @@ public class UserController {
 
     /** 获取当前登录用户信息 */
     @GetMapping("/info")
-    public ApiResponse<UserVO> getCurrentUser(
-            @RequestHeader("X-User-Id") Long userId) {
+    public ApiResponse<UserVO> getCurrentUser(@RequestParam("id") Long userId) {
         return ApiResponse.success(userService.getCurrentUser(userId));
     }
 
