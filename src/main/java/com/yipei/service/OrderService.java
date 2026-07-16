@@ -93,6 +93,7 @@ public class OrderService {
         order.setCompanionIncome(companionIncome);
         order.setStatus("PENDING_ACCEPT");
         serviceOrderMapper.insert(order);
+        serviceRequestMapper.updateStatus(sr.getId(), "MATCHED");
 
         OrderStatusLog log = new OrderStatusLog();
         log.setOrderId(order.getId());
@@ -145,6 +146,7 @@ public class OrderService {
             throw new ForbiddenException("当前状态不允许拒绝");
         }
         serviceOrderMapper.updateStatus(orderId, "REJECTED", reason);
+        serviceRequestMapper.updateStatus(order.getRequestId(), "CANCELLED");
 
         OrderStatusLog log = new OrderStatusLog();
         log.setOrderId(orderId);
@@ -218,6 +220,7 @@ public class OrderService {
             throw new ForbiddenException("当前状态不允许确认完成");
         }
         serviceOrderMapper.confirm(orderId);
+        serviceRequestMapper.updateStatus(order.getRequestId(), "CLOSED");
 
         OrderStatusLog log = new OrderStatusLog();
         log.setOrderId(orderId);
@@ -243,6 +246,7 @@ public class OrderService {
         }
         String fromStatus = order.getStatus();
         serviceOrderMapper.cancel(orderId, reason);
+        serviceRequestMapper.updateStatus(order.getRequestId(), "CANCELLED");
 
         OrderStatusLog log = new OrderStatusLog();
         log.setOrderId(orderId);

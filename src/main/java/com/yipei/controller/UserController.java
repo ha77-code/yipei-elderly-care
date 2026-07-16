@@ -51,7 +51,9 @@ public class UserController {
 
     /** 获取用户列表 */
     @GetMapping("/list")
-    public ApiResponse<List<UserVO>> list() {
+    public ApiResponse<List<UserVO>> list(
+            @RequestHeader("X-User-Id") Long operatorId) {
+        userService.requireAdmin(operatorId);
         return ApiResponse.success(userService.getUserList());
     }
 
