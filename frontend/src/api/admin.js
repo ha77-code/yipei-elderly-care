@@ -15,12 +15,12 @@ export function updateUserStatus(id, data) {
 
 /** 获取待审核的陪诊师列表 */
 export function getPendingCompanions(params) {
-  return request({ url: '/api/admin/companions/pending', method: 'get', params })
+  return request({ url: '/api/admin/companion/pending', method: 'get', params })
 }
 
 /** 审核陪诊师 */
-export function auditCompanion(data) {
-  return request({ url: '/api/admin/companion/audit', method: 'put', data })
+export function auditCompanion(id, data) {
+  return request({ url: `/api/admin/companion/${id}/audit`, method: 'put', data })
 }
 
 /** 获取平台统计数据 */

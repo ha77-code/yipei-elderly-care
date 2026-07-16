@@ -2,10 +2,12 @@ package com.yipei.controller;
 
 import com.yipei.entity.AdminStatisticsVO;
 import com.yipei.entity.ApiResponse;
+import com.yipei.entity.CompanionProfile;
 import com.yipei.entity.OrderDetailVO;
 import com.yipei.entity.ReportRecord;
 import com.yipei.entity.ServiceRequest;
 import com.yipei.mapper.AdminStatisticsMapper;
+import com.yipei.service.CompanionService;
 import com.yipei.service.OrderService;
 import com.yipei.service.ReportService;
 import com.yipei.service.ServiceRequestService;
@@ -28,18 +30,21 @@ public class AdminController {
     private final AdminStatisticsMapper adminStatisticsMapper;
     private final OrderService orderService;
     private final ReportService reportService;
+    private final CompanionService companionService;
 
     public AdminController(ServiceRequestService serviceRequestService,
                            AdminStatisticsMapper adminStatisticsMapper,
                            OrderService orderService,
-                           ReportService reportService) {
+                           ReportService reportService,
+                           CompanionService companionService) {
         this.serviceRequestService = serviceRequestService;
         this.adminStatisticsMapper = adminStatisticsMapper;
         this.orderService = orderService;
         this.reportService = reportService;
+        this.companionService = companionService;
     }
 
-    /** 管理员查看全部服务需求 */
+    /** 服务需求 */
     @GetMapping("/service-request/list")
     public ApiResponse<List<ServiceRequest>> listServiceRequests(
             @RequestParam(required = false) String status,
@@ -47,7 +52,7 @@ public class AdminController {
         return ApiResponse.success(serviceRequestService.listAll(status, serviceType));
     }
 
-    /** 管理员查看全部订单 */
+    /** 订单 */
     @GetMapping("/orders")
     public ApiResponse<List<OrderDetailVO>> listOrders(
             @RequestParam(required = false) String status,
@@ -70,6 +75,24 @@ public class AdminController {
             @RequestHeader("X-User-Id") Long handlerId,
             @RequestBody Map<String, String> body) {
         reportService.handle(id, handlerId, body.get("status"), body.get("remark"));
+        return ApiResponse.success();
+    }
+
+    /** 待审核陪诊师列表 */
+    @GetMapping("/companion/pending")
+    public ApiResponse<List<CompanionProfile>> listPendingCompanions() {
+        return ApiResponse.success(companionService.listPending());
+    }
+
+    /** 审核陪诊师 */
+    @PutMapping("/companion/{id}/audit")
+    public ApiResponse<Void> auditCompanion(
+            @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long auditorId,
+            @RequestBody Map<String, Object> body) {
+        Integer auditStatus = (Integer) body.get("auditStatus");
+        String remark = (String) body.get("remark");
+        companionService.audit(id, auditorId, auditStatus, remark);
         return ApiResponse.success();
     }
 

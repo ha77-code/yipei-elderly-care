@@ -4,24 +4,19 @@ import com.yipei.entity.LoginVO;
 import com.yipei.entity.SysUser;
 import com.yipei.entity.UserLoginRequest;
 import com.yipei.entity.UserRegisterRequest;
+import com.yipei.constant.RoleConstants;
 import com.yipei.entity.UserVO;
 import com.yipei.exception.ForbiddenException;
 import com.yipei.exception.NotFoundException;
 import com.yipei.mapper.SysUserMapper;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 public class UserService {
     private final SysUserMapper sysUserMapper;
-
-    private static final Set<String> VALID_ROLES = new HashSet<>(
-            Arrays.asList("CUSTOMER", "COMPANION", "ADMIN"));
 
     public UserService(SysUserMapper sysUserMapper) {
         this.sysUserMapper = sysUserMapper;
@@ -46,7 +41,7 @@ public class UserService {
     /* ===== 注册 ===== */
 
     public UserVO register(UserRegisterRequest request) {
-        if (!VALID_ROLES.contains(request.getRole())) {
+        if (!RoleConstants.isValid(request.getRole())) {
             throw new ForbiddenException("角色只能是 CUSTOMER、COMPANION 或 ADMIN");
         }
         SysUser exist = sysUserMapper.selectByUsername(request.getUsername());
@@ -91,7 +86,7 @@ public class UserService {
     /* ===== 管理员操作 ===== */
 
     public UserVO updateUserStatus(Long id, int status, String operatorRole) {
-        if (!"ADMIN".equals(operatorRole)) {
+        if (!RoleConstants.ADMIN.equals(operatorRole)) {
             throw new ForbiddenException("仅管理员可操作");
         }
         SysUser user = sysUserMapper.selectById(id);

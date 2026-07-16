@@ -1,8 +1,9 @@
 package com.yipei.controller;
 
+import com.yipei.constant.RoleConstants;
 import com.yipei.entity.ApiResponse;
+import com.yipei.entity.ChangePasswordRequest;
 import com.yipei.entity.LoginVO;
-import com.yipei.entity.UpdatePasswordRequest;
 import com.yipei.entity.UpdateUserInfoRequest;
 import com.yipei.entity.UserLoginRequest;
 import com.yipei.entity.UserRegisterRequest;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/user")
@@ -68,12 +70,22 @@ public class UserController {
         return ApiResponse.success(userService.updateUserInfo(userId, request.getNickname(), request.getPhone()));
     }
 
+    /** 管理员修改用户状态 */
+    @PutMapping("/{id}/status")
+    public ApiResponse<UserVO> updateStatus(
+            @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long operatorId,
+            @RequestBody Map<String, Object> body) {
+        Integer status = (Integer) body.get("status");
+        return ApiResponse.success(userService.updateUserStatus(id, status, RoleConstants.ADMIN));
+    }
+
     /** 修改密码 */
     @PutMapping("/password")
-    public ApiResponse<?> updatePassword(
+    public ApiResponse<Void> updatePassword(
             @RequestHeader("X-User-Id") Long userId,
-            @Valid @RequestBody UpdatePasswordRequest request) {
+            @Valid @RequestBody ChangePasswordRequest request) {
         userService.updatePassword(userId, request.getOldPassword(), request.getNewPassword());
-        return ApiResponse.success("密码修改成功");
+        return ApiResponse.success();
     }
 }

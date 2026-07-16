@@ -1,6 +1,7 @@
 package com.yipei.service;
 
 import com.yipei.entity.CompanionProfile;
+import com.yipei.constant.RoleConstants;
 import com.yipei.entity.OrderCreateRequest;
 import com.yipei.entity.OrderDetailVO;
 import com.yipei.entity.OrderStatusLog;
@@ -61,7 +62,7 @@ public class OrderService {
             throw new NotFoundException("陪诊师不存在或未通过审核，ID: " + request.getCompanionId());
         }
         SysUser companion = sysUserMapper.selectById(profile.getUserId());
-        if (companion == null || !"COMPANION".equals(companion.getRole())) {
+        if (companion == null || !RoleConstants.COMPANION.equals(companion.getRole())) {
             throw new NotFoundException("陪诊师用户异常，ID: " + profile.getUserId());
         }
         BigDecimal platformFee = request.getServicePrice()

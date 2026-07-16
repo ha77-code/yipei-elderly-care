@@ -1,6 +1,7 @@
 package com.yipei.service;
 
 import com.yipei.entity.ServiceRequest;
+import com.yipei.constant.RoleConstants;
 import com.yipei.entity.ServiceRequestCreateRequest;
 import com.yipei.entity.SysUser;
 import com.yipei.exception.ForbiddenException;
@@ -28,7 +29,7 @@ public class ServiceRequestService {
         if (user == null) {
             throw new NotFoundException("用户不存在，ID: " + customerId);
         }
-        if (!"CUSTOMER".equals(user.getRole())) {
+        if (!RoleConstants.CUSTOMER.equals(user.getRole())) {
             throw new ForbiddenException("仅客户角色可发布服务需求");
         }
         ServiceRequest sr = new ServiceRequest();

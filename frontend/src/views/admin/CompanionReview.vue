@@ -94,8 +94,7 @@
 </template>
 
 <script>
-import { getPendingCompanions } from '@/api/admin'
-import { auditCompanion } from '@/api/companion'
+import { getPendingCompanions, auditCompanion } from '@/api/admin'
 
 export default {
   name: 'CompanionReview',
@@ -146,8 +145,7 @@ export default {
     async confirmAudit() {
       this.auditing = true
       try {
-        await auditCompanion({
-          businessId: this.currentRow.id,
+        await auditCompanion(this.currentRow.id, {
           auditStatus: this.auditAction,
           remark: this.auditRemark
         })
