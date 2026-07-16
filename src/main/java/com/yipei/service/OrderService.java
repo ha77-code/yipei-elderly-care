@@ -1,5 +1,6 @@
 package com.yipei.service;
 
+import com.yipei.entity.CompanionProfile;
 import com.yipei.entity.OrderCreateRequest;
 import com.yipei.entity.OrderDetailVO;
 import com.yipei.entity.OrderStatusLog;
@@ -8,6 +9,7 @@ import com.yipei.entity.ServiceRequest;
 import com.yipei.entity.SysUser;
 import com.yipei.exception.ForbiddenException;
 import com.yipei.exception.NotFoundException;
+import com.yipei.mapper.CompanionProfileMapper;
 import com.yipei.mapper.OrderStatusLogMapper;
 import com.yipei.mapper.ServiceOrderMapper;
 import com.yipei.mapper.ServiceRequestMapper;
@@ -24,17 +26,20 @@ public class OrderService {
     private final ServiceRequestMapper serviceRequestMapper;
     private final SysUserMapper sysUserMapper;
     private final OrderStatusLogMapper orderStatusLogMapper;
+    private final CompanionProfileMapper companionProfileMapper;
 
     private static final BigDecimal PLATFORM_RATE = new BigDecimal("0.1");
 
     public OrderService(ServiceOrderMapper serviceOrderMapper,
                         ServiceRequestMapper serviceRequestMapper,
                         SysUserMapper sysUserMapper,
-                        OrderStatusLogMapper orderStatusLogMapper) {
+                        OrderStatusLogMapper orderStatusLogMapper,
+                        CompanionProfileMapper companionProfileMapper) {
         this.serviceOrderMapper = serviceOrderMapper;
         this.serviceRequestMapper = serviceRequestMapper;
         this.sysUserMapper = sysUserMapper;
         this.orderStatusLogMapper = orderStatusLogMapper;
+        this.companionProfileMapper = companionProfileMapper;
     }
 
     /** 创建订单 */
@@ -50,9 +55,14 @@ public class OrderService {
         if (existCount > 0) {
             throw new ForbiddenException("该需求已生成订单，不能重复创建");
         }
-        SysUser companion = sysUserMapper.selectById(request.getCompanionId());
+        // companionId 是 companion_profile.id
+        CompanionProfile profile = companionProfileMapper.selectById(request.getCompanionId());
+        if (profile == null || profile.getAuditStatus() == null || profile.getAuditStatus() != 1) {
+            throw new NotFoundException("陪诊师不存在或未通过审核，ID: " + request.getCompanionId());
+        }
+        SysUser companion = sysUserMapper.selectById(profile.getUserId());
         if (companion == null || !"COMPANION".equals(companion.getRole())) {
-            throw new NotFoundException("陪诊师不存在，ID: " + request.getCompanionId());
+            throw new NotFoundException("陪诊师用户异常，ID: " + profile.getUserId());
         }
         BigDecimal platformFee = request.getServicePrice()
                 .multiply(PLATFORM_RATE).setScale(2, RoundingMode.HALF_UP);
@@ -61,7 +71,7 @@ public class OrderService {
         ServiceOrder order = new ServiceOrder();
         order.setRequestId(request.getRequestId());
         order.setCustomerId(customerId);
-        order.setCompanionId(request.getCompanionId());
+        order.setCompanionId(profile.getId());
         order.setServicePrice(request.getServicePrice());
         order.setPlatformFee(platformFee);
         order.setCompanionIncome(companionIncome);
@@ -86,14 +96,15 @@ public class OrderService {
         if (order == null) {
             throw new NotFoundException("订单不存在，ID: " + orderId);
         }
-        // 校验陪诊师身份
-        if (!order.getCompanionId().equals(userId)) {
+        // 通过 companion_profile 校验当前用户是否是订单指定的陪诊师
+        CompanionProfile profile = companionProfileMapper.selectById(order.getCompanionId());
+        if (profile == null || !profile.getUserId().equals(userId)) {
             throw new ForbiddenException("只能接自己被指定的订单");
         }
         if (!"PENDING_ACCEPT".equals(order.getStatus())) {
             throw new ForbiddenException("当前状态不允许接单");
         }
-        serviceOrderMapper.accept(orderId, userId);
+        serviceOrderMapper.accept(orderId, order.getCompanionId());
 
         OrderStatusLog log = new OrderStatusLog();
         log.setOrderId(orderId);
@@ -110,7 +121,8 @@ public class OrderService {
         if (order == null) {
             throw new NotFoundException("订单不存在，ID: " + orderId);
         }
-        if (!order.getCompanionId().equals(userId)) {
+        CompanionProfile profile = companionProfileMapper.selectById(order.getCompanionId());
+        if (profile == null || !profile.getUserId().equals(userId)) {
             throw new ForbiddenException("只能拒绝自己被指定的订单");
         }
         if (!"PENDING_ACCEPT".equals(order.getStatus())) {
@@ -133,7 +145,8 @@ public class OrderService {
         if (order == null) {
             throw new NotFoundException("订单不存在，ID: " + orderId);
         }
-        if (!order.getCompanionId().equals(userId)) {
+        CompanionProfile profile = companionProfileMapper.selectById(order.getCompanionId());
+        if (profile == null || !profile.getUserId().equals(userId)) {
             throw new ForbiddenException("只能操作自己的订单");
         }
         if (!"ACCEPTED".equals(order.getStatus())) {
@@ -156,7 +169,8 @@ public class OrderService {
         if (order == null) {
             throw new NotFoundException("订单不存在，ID: " + orderId);
         }
-        if (!order.getCompanionId().equals(userId)) {
+        CompanionProfile profile = companionProfileMapper.selectById(order.getCompanionId());
+        if (profile == null || !profile.getUserId().equals(userId)) {
             throw new ForbiddenException("只能操作自己的订单");
         }
         if (!"IN_SERVICE".equals(order.getStatus())) {
@@ -171,6 +185,18 @@ public class OrderService {
         log.setOperatorId(userId);
         log.setRemark("陪诊师提交服务完成，等待客户确认");
         orderStatusLogMapper.insert(log);
+    }
+
+    /* ===== 管理员操作 ===== */
+
+    public List<OrderDetailVO> listForAdmin(String status, Long customerId, Long companionId) {
+        return serviceOrderMapper.selectForAdmin(status, customerId, companionId);
+    }
+
+    /* ===== 状态记录 ===== */
+
+    public List<OrderStatusLog> getStatusLogs(Long orderId) {
+        return orderStatusLogMapper.selectByOrderId(orderId);
     }
 
     /* ===== 客户操作 ===== */
