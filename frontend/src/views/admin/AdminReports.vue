@@ -81,14 +81,13 @@ export default {
 </script>
 
 <style scoped>
-.page-wrap { padding: 24px 32px; }
-.page-title { font-family: var(--font-family); font-size: 20px; font-weight: 700; color: var(--color-text-primary); margin: 0 0 20px; }
-.filter-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding: 16px 20px; background: #FFF; border: 1px solid var(--color-border-light); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
+.page-wrap { padding: 28px 36px; }
+.page-title { font-size: 20px; font-weight: 700; color: var(--color-text-primary); margin: 0 0 20px; }
+.filter-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding: 16px 20px; background: #fff; border: 1px solid rgba(0,0,0,0.04); border-radius: var(--radius-md); box-shadow: var(--shadow-xs); }
 .filter-left { display: flex; gap: 12px; }
-.content-card { background: #FFF; border: 1px solid var(--color-border-light); border-radius: var(--radius-md); padding: 8px; box-shadow: var(--shadow-sm); }
+.content-card { background: #fff; border: 1px solid rgba(0,0,0,0.04); border-radius: var(--radius-md); padding: 4px; box-shadow: var(--shadow-xs); }
 .warm-table { width: 100%; }
-.warm-table::v-deep th { background: var(--color-bg-page); color: var(--color-text-regular); font-weight: 600; font-size: 13px; }
-.warm-table::v-deep td { font-size: 14px; }
+.warm-table ::v-deep tr { transition: background 0.15s ease; }
 .table-footer { display: flex; justify-content: flex-end; padding: 16px 0 8px; }
 .status-tag { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
 .s--pending { background: rgba(230,162,60,.1); color: #B88230; }

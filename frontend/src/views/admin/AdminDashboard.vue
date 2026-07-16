@@ -108,19 +108,22 @@ export default {
 </script>
 
 <style scoped>
-.dashboard-page { padding: 24px 32px; max-width: 1100px; }
-.page-head { margin-bottom: 24px; }
-.page-title { font-family: var(--font-family); font-size: 22px; font-weight: 700; color: var(--color-text-primary); margin: 0; }
+.dashboard-page { padding: 32px 36px; max-width: 1100px; }
+.page-head { margin-bottom: 28px; }
+.page-title { font-size: 22px; font-weight: 700; color: var(--color-text-primary); margin: 0; }
 .page-subtitle { margin: 4px 0 0; font-size: 13px; color: var(--color-text-secondary); }
 
-/* 概览 */
-.stat-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 32px; min-height: 60px; }
-.mini-stat { background: #FFF; border: 1px solid var(--color-border-light); border-radius: var(--radius-md); padding: 16px 18px; text-align: center; box-shadow: var(--shadow-sm); }
-.mini-value { display: block; font-family: var(--font-family); font-size: 22px; font-weight: 700; color: var(--color-text-primary); }
-.mini-label { display: block; font-size: 12px; color: var(--color-text-placeholder); margin-top: 4px; }
+.stat-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 12px; margin-bottom: 36px; min-height: 60px; }
+.mini-stat {
+  background: #fff; border: 1px solid rgba(0,0,0,0.04); border-radius: var(--radius-md);
+  padding: 20px 18px; text-align: center; box-shadow: var(--shadow-xs);
+  transition: all 0.25s cubic-bezier(0.4,0,0.2,1); cursor: default;
+}
+.mini-stat:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: rgba(122,154,126,0.12); }
+.mini-value { display: block; font-size: 24px; font-weight: 700; color: var(--color-text-primary); letter-spacing: -0.02em; }
+.mini-label { display: block; font-size: 12px; color: var(--color-text-placeholder); margin-top: 6px; font-weight: 500; }
 
-/* 管理入口 */
-.section-title { font-family: var(--font-family); font-size: 16px; font-weight: 600; color: var(--color-text-primary); margin: 0 0 14px; }
+.section-title { font-size: 17px; font-weight: 650; color: var(--color-text-primary); margin: 0 0 14px; }
 .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
 .menu-card { display: flex; align-items: center; gap: 16px; background: #FFF; border: 1px solid var(--color-border-light); border-radius: var(--radius-md); padding: 20px 24px; cursor: pointer; transition: all .2s; box-shadow: var(--shadow-sm); }
 .menu-card:hover { border-color: var(--color-primary-light); transform: translateY(-2px); box-shadow: var(--shadow-md); }

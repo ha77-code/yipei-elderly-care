@@ -214,180 +214,77 @@ export default {
 </script>
 
 <style scoped>
-.home-page {
-  padding: 32px;
-  max-width: 1200px;
-}
+.home-page { padding: 36px 40px; max-width: 1200px; }
 
-/* ===== 欢迎区域 ===== */
+/* ===== Welcome ===== */
 .welcome-section {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #FFFFFF;
-  border: 1px solid var(--color-border-light);
+  display: flex; justify-content: space-between; align-items: center;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.04);
   border-radius: var(--radius-lg);
-  padding: 36px 40px;
-  margin-bottom: 32px;
+  padding: 40px 48px;
+  margin-bottom: 36px;
   box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+.welcome-section::after {
+  content: '';
+  position: absolute; right: -60px; top: -60px;
+  width: 240px; height: 240px;
+  background: radial-gradient(circle, rgba(122,154,126,0.06) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
 }
 
-.welcome-greeting {
-  font-size: 14px;
-  color: var(--color-primary);
-  font-weight: 500;
-  margin-bottom: 4px;
-}
+.welcome-greeting { font-size: 13px; color: var(--color-primary); font-weight: 550; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.08em; }
+.welcome-name { font-size: 30px; font-weight: 700; color: var(--color-text-primary); margin: 0 0 6px; }
+.welcome-desc { font-size: 15px; color: var(--color-text-secondary); margin: 0; }
 
-.welcome-name {
-  font-family: var(--font-family);
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  margin: 0 0 8px;
-}
+.welcome-stats { display: flex; gap: 40px; }
+.stat-card { text-align: center; padding: 0 24px; border-right: 1px solid rgba(0,0,0,0.05); }
+.stat-card:last-child { border-right: none; }
+.stat-value { display: block; font-size: 28px; font-weight: 700; color: var(--color-primary-dark); letter-spacing: -0.02em; }
+.stat-label { display: block; font-size: 13px; color: var(--color-text-placeholder); margin-top: 4px; }
 
-.welcome-desc {
-  font-size: 15px;
-  color: var(--color-text-secondary);
-  margin: 0;
-}
+/* ===== Quick Entry ===== */
+.section-title { font-size: 18px; font-weight: 650; color: var(--color-text-primary); margin: 0 0 18px; }
 
-/* 右侧统计 */
-.welcome-stats {
-  display: flex;
-  gap: 32px;
-}
-
-.stat-card {
-  text-align: center;
-  padding: 0 20px;
-  border-right: 1px solid var(--color-border-light);
-}
-.stat-card:last-child {
-  border-right: none;
-}
-
-.stat-value {
-  display: block;
-  font-family: var(--font-family);
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--color-primary-dark);
-}
-
-.stat-label {
-  display: block;
-  font-size: 13px;
-  color: var(--color-text-placeholder);
-  margin-top: 4px;
-}
-
-/* ===== 快捷入口 ===== */
-.section-title {
-  font-family: var(--font-family);
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  margin: 0 0 20px;
-}
-
-.quick-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
-}
+.quick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 14px; }
 
 .quick-card {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  background: #FFFFFF;
-  border: 1px solid var(--color-border-light);
+  display: flex; align-items: center; gap: 16px;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.04);
   border-radius: var(--radius-md);
-  padding: 20px 24px;
+  padding: 22px 24px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: var(--shadow-sm);
+  transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+  box-shadow: var(--shadow-xs);
 }
-
 .quick-card:hover {
-  border-color: var(--color-primary-light);
-  transform: translateY(-2px);
+  border-color: rgba(122,154,126,0.18);
+  transform: translateY(-3px);
   box-shadow: var(--shadow-md);
 }
-
 .quick-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
-  flex-shrink: 0;
+  width: 46px; height: 46px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0;
 }
+.quick-icon--green { background: rgba(122,154,126,0.1); color: var(--color-primary-dark); }
+.quick-icon--coffee { background: rgba(196,168,130,0.1); color: var(--color-warm-dark); }
+.quick-info { flex: 1; min-width: 0; }
+.quick-info h3 { font-size: 15px; font-weight: 650; color: var(--color-text-primary); margin: 0 0 3px; }
+.quick-info p { font-size: 13px; color: var(--color-text-placeholder); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.quick-arrow { font-size: 16px; color: #D0D0D0; flex-shrink: 0; transition: all 0.2s ease; }
+.quick-card:hover .quick-arrow { color: var(--color-primary); transform: translateX(3px); }
 
-.quick-icon--green {
-  background: rgba(122, 154, 126, 0.12);
-  color: var(--color-primary-dark);
-}
-
-.quick-icon--coffee {
-  background: rgba(196, 168, 130, 0.12);
-  color: var(--color-deep-coffee);
-}
-
-.quick-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.quick-info h3 {
-  font-family: var(--font-family);
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  margin: 0 0 4px;
-}
-
-.quick-info p {
-  font-size: 13px;
-  color: var(--color-text-placeholder);
-  margin: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.quick-arrow {
-  font-size: 14px;
-  color: var(--color-border);
-  flex-shrink: 0;
-  transition: color 0.2s;
-}
-.quick-card:hover .quick-arrow {
-  color: var(--color-primary);
-}
-
-/* ===== 响应式 ===== */
 @media (max-width: 768px) {
-  .home-page {
-    padding: 16px;
-  }
-  .welcome-section {
-    flex-direction: column;
-    text-align: center;
-    gap: 24px;
-  }
-  .welcome-stats {
-    gap: 16px;
-  }
-  .stat-card {
-    padding: 0 12px;
-  }
-  .quick-grid {
-    grid-template-columns: 1fr;
-  }
+  .home-page { padding: 20px; }
+  .welcome-section { flex-direction: column; text-align: center; gap: 28px; padding: 32px 24px; }
+  .welcome-stats { gap: 20px; }
+  .stat-card { padding: 0 14px; }
+  .quick-grid { grid-template-columns: 1fr; }
 }
 </style>

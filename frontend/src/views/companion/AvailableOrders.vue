@@ -50,20 +50,32 @@ export default {
 </script>
 
 <style scoped>
-.page-wrap { padding: 24px 32px; }
-.page-title { font-family: var(--font-family); font-size: 20px; font-weight: 700; color: var(--color-text-primary); margin: 0 0 20px; }
-.content-card { background: #FFF; border: 1px solid var(--color-border-light); border-radius: var(--radius-md); padding: 20px; box-shadow: var(--shadow-sm); }
-.order-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; min-height: 150px; }
-.order-card { border: 1px solid var(--color-border-light); border-radius: var(--radius-md); padding: 20px; transition: all .2s; cursor: default; }
-.order-card:hover { border-color: var(--color-primary-light); box-shadow: var(--shadow-md); }
-.oc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
-.oc-id { font-size: 13px; color: var(--color-text-placeholder); font-weight: 500; }
-.oc-price { font-family: var(--font-family); font-size: 22px; font-weight: 700; color: var(--color-primary-dark); }
-.oc-body { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
-.oc-row { font-size: 14px; color: var(--color-text-secondary); display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.oc-row i { color: var(--color-primary); font-size: 14px; flex-shrink: 0; }
-.oc-footer { display: flex; justify-content: space-between; align-items: center; }
+.page-wrap { padding: 28px 36px; }
+.page-title { font-size: 20px; font-weight: 700; color: var(--color-text-primary); margin: 0 0 20px; }
+.order-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 16px; min-height: 150px; }
+
+.order-card {
+  background: #fff; border: 1px solid rgba(0,0,0,0.04); border-radius: var(--radius-md);
+  padding: 24px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); cursor: default;
+  position: relative; overflow: hidden;
+}
+.order-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-primary-light));
+  transform: scaleX(0); transform-origin: left;
+  transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+}
+.order-card:hover { border-color: rgba(122,154,126,0.18); box-shadow: var(--shadow-md); transform: translateY(-4px); }
+.order-card:hover::before { transform: scaleX(1); }
+
+.oc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.oc-id { font-size: 12px; color: var(--color-text-placeholder); font-weight: 550; letter-spacing: 0.03em; text-transform: uppercase; }
+.oc-price { font-size: 24px; font-weight: 700; color: var(--color-primary-dark); letter-spacing: -0.02em; }
+.oc-body { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+.oc-row { font-size: 14px; color: var(--color-text-secondary); display: flex; align-items: center; gap: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.oc-row i { color: var(--color-primary); font-size: 15px; flex-shrink: 0; opacity: 0.7; }
+.oc-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 14px; border-top: 1px solid rgba(0,0,0,0.03); }
+
 .empty-state { grid-column: 1 / -1; text-align: center; padding: 80px 0; color: var(--color-text-placeholder); }
-.empty-state i { font-size: 48px; color: var(--color-border); margin-bottom: 16px; display: block; }
-.table-footer { display: flex; justify-content: center; margin-top: 24px; }
+.empty-state i { font-size: 48px; color: rgba(0,0,0,0.06); margin-bottom: 16px; display: block; }
 </style>
