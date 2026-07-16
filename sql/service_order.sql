@@ -1,5 +1,5 @@
 USE yipei;
-#服务订单表，用于保存服务需求匹配后的客户、陪诊师、价格、收入和订单状态信息
+-- 服务订单表，用于保存服务需求匹配后的客户、陪诊师、价格、收入和订单状态信息
 CREATE TABLE service_order (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     request_id BIGINT NOT NULL UNIQUE,

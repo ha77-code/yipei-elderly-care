@@ -2,13 +2,13 @@
 
 ## 项目名称
 
-“医陪”——银发人群陪诊与生活陪伴服务平台
+"医陪"——银发人群陪诊与生活陪伴服务平台
 
 英文名称：YiPei — Elderly Medical Escort and Daily Companionship Service Platform
 
 ## 当前状态
 
-项目已完成基础 Spring Boot 项目骨架、数据库脚本整理和用户列表查询接口，尚未完成完整业务闭环。
+项目已完成统一响应格式、全局异常处理、用户模块（注册/登录/信息查询）、服务需求模块（发布/列表/详情/取消），以及前端请求工具封装和用户相关页面对接。陪诊师、订单、评价、投诉等模块尚未实现。
 
 当前项目的有效资料包括：
 
@@ -16,129 +16,167 @@
 - `README.md`：项目简介、功能范围和技术栈；
 - `docs/HANDOFF.md`：当前开发状态和后续交接说明。
 
-## 已完成内容
+## 一、已完成内容
 
-### 1. 项目基础结构
+### 1. 基础设施
 
-- 已创建 Spring Boot 主启动类 `YipeiApplication`；
-- 已建立 `controller`、`entity`、`mapper`、`service` 基础代码目录；
-- 已配置 MyBatis 和 MySQL 相关项目依赖；
-- 已保留 Vue 前端目录，但目前尚未实现前端页面。
+| 内容 | 说明 |
+|------|------|
+| Spring Boot 主启动类 | `YipeiApplication` |
+| 项目依赖 | MyBatis、MySQL 8、Redis、Lombok、Validation |
+| CORS 跨域配置 | `config/CorsConfig.java`，允许前端直连 `localhost:8080` |
+| 数据库 | 9 张表已创建（见下方表结构），测试数据需手动导入 |
+| 前端项目 | Vue2 + ElementUI，`frontend/` 目录 |
 
-### 2. 数据库和 SQL 脚本
+### 2. 统一响应与异常处理
 
-- 已删除并重建 `yipei` 数据库；
-- 数据库使用 `utf8mb4` 字符集和 `utf8mb4_0900_ai_ci` 排序规则；
-- 已根据设计文档和 SQL 文件创建以下 9 张表：
-  - `sys_user`：系统用户表；
-  - `companion_profile`：陪诊师资料表；
-  - `audit_record`：审核记录表；
-  - `service_request`：陪诊服务需求表；
-  - `service_order`：服务订单表；
-  - `order_status_log`：订单状态变更记录表；
-  - `service_record`：陪诊服务记录表；
-  - `evaluation`：订单评价表；
-  - `report_record`：订单投诉记录表。
-- 已在 SQL 表定义前补充简要表用途注释；
-- 当前数据库表已创建，但业务数据和测试数据需要后续按需导入；
-- `sql/test.sql` 可用于插入测试用户，尚未作为正式初始化脚本执行。
+| 文件 | 说明 |
+|------|------|
+| `entity/ApiResponse.java` | 统一响应格式 `{ code, message, data }`，工厂方法 `success()` / `error()` |
+| `exception/BusinessException.java` | 业务异常基类，携带 `code` + `message` |
+| `exception/NotFoundException.java` | 继承 BusinessException，code=404 |
+| `exception/ForbiddenException.java` | 继承 BusinessException，code=403 |
+| `handler/GlobalExceptionHandler.java` | `@RestControllerAdvice`，统一处理 BusinessException / Validation / 未知异常 |
 
-### 3. 用户列表查询功能
+### 3. 用户模块
 
-- 已创建 `SysUser` 用户实体，对应 `sys_user` 表；
-- 已创建 `SysUserMapper`，支持按用户编号倒序查询全部用户；
-- 已创建 `UserService`，封装用户列表查询业务；
-- 已创建 `UserController`，提供以下接口：
+**后端文件：**
 
-```text
-GET /api/user/list
+| 文件 | 说明 |
+|------|------|
+| `entity/SysUser.java` | 对应 `sys_user` 表 |
+| `entity/UserVO.java` | 用户视图对象，不含 password |
+| `entity/LoginVO.java` | 登录返回对象，不含 password 和 token |
+| `entity/UserLoginRequest.java` | 登录请求 DTO（@NotBlank username, password） |
+| `entity/UserRegisterRequest.java` | 注册请求 DTO（@NotBlank username/password/nickname/phone/role） |
+| `entity/UpdateUserInfoRequest.java` | 修改个人信息 DTO |
+| `mapper/SysUserMapper.java` | selectAll / selectById / selectByUsername / insert / updateStatus / updateUserInfo |
+| `service/UserService.java` | login / register / getCurrentUser / getUserList / getUserById / updateUserStatus / updateUserInfo |
+| `controller/UserController.java` | 见下方接口列表 |
+
+**用户接口：**
+
+```
+POST /api/user/register       注册（校验角色只允许 CUSTOMER/COMPANION/ADMIN）
+POST /api/user/login          登录（校验账号存在、密码正确、状态正常）
+GET  /api/user/info?id=       获取用户信息（不返回密码）
+GET  /api/user/list           用户列表
+GET  /api/user/{id}           用户详情
+PUT  /api/user/info           修改个人信息（需 X-User-Id header）
 ```
 
-该接口返回系统用户列表。
+- 第一版不做 token，身份通过 `X-User-Id` 请求头传递
+- 注册时校验角色必须是 CUSTOMER、COMPANION 或 ADMIN
+- 登录和注册返回均不包含 password 字段
 
-### 4. 当前已有但未实现的代码
+### 4. 服务需求模块
 
-- `ServiceRequestController` 已建立空控制器类，目前没有接口逻辑；
-- `frontend` 目录目前没有实际页面；
-- 注册、登录、角色权限和密码加密尚未完成；
-- 陪诊师资料、需求发布、订单、服务记录、评价和投诉功能尚未完成。
+**后端文件：**
 
-## 数据库表之间的主要关系
+| 文件 | 说明 |
+|------|------|
+| `entity/ServiceRequest.java` | 对应 `service_request` 表 |
+| `entity/ServiceRequestCreateRequest.java` | 发布需求 DTO（校验 serviceType/date/hospital/department/requirement/contactName/phone） |
+| `mapper/ServiceRequestMapper.java` | selectById / selectByCustomerId / insert / updateStatus / countOrdersByRequestId |
+| `service/ServiceRequestService.java` | create（校验 CUSTOMER 角色）/ listByCustomerId / getById / cancel |
+| `controller/ServiceRequestController.java` | 见下方接口列表 |
 
-```text
-sys_user
-  ├── companion_profile
-  ├── service_request
-  ├── service_order
-  ├── evaluation
-  ├── audit_record
-  └── report_record
+**服务需求接口：**
 
-service_request
-  └── service_order
-
-service_order
-  ├── order_status_log
-  ├── service_record
-  ├── evaluation
-  └── report_record
+```
+POST /api/service-request/create         发布需求（校验角色=CUSTOMER，默认 status=PENDING）
+GET  /api/service-request/list?customerId=  我的需求列表（按创建时间倒序）
+GET  /api/service-request/{id}           需求详情
+PUT  /api/service-request/{id}/cancel    取消需求（校验归属、无订单、状态可取消）
 ```
 
-## 技术基线
+- cancel 校验：①需求归属 ②未生成订单 ③当前状态不是 CANCELLED/CLOSED
 
-- JDK 21；
-- Spring Boot 3.x；
-- MyBatis；
-- MySQL 8；
-- Redis；
-- Vue2；
-- ElementUI；
-- Axios。
+### 5. 前端已对接的模块
 
-项目采用单体 Spring Boot 应用，不提前拆分微服务。
+| 文件 | 说明 |
+|------|------|
+| `api/request.js` | Axios 封装，baseURL=`http://localhost:8080`，自动注入 `X-User-Id`，统一处理 code===200 和 HTTP 错误 |
+| `api/user.js` | 封装 register / login / getUserInfo / updateUserInfo / getUserList |
+| `api/serviceRequest.js` | 封装 createRequest / getMyRequests / getRequestDetail / cancelRequest / getAllRequests |
+| `utils/auth.js` | localStorage 管理用户信息和 token |
+| `utils/testAccounts.js` | 开发环境测试账号快速登录 |
+| `views/Login.vue` | 已对接 login 接口，适配无 token 响应格式 |
+| `views/Register.vue` | 已对接 register 接口 |
+| `views/Profile.vue` | 已对接 getUserInfo / updateUserInfo，传入 userId |
+| `views/customer/MyRequests.vue` | 已对接 getMyRequests，传入 customerId |
+| `views/customer/RequestCreate.vue` | 已对接 createRequest，X-User-Id 由拦截器自动注入 |
+| `views/CompanionDetail.vue` | 已创建页面，等待后端陪诊师接口 |
+| `views/ServiceRecord.vue` | 已创建页面，等待后端服务记录接口 |
 
-## 角色和业务范围
+## 二、数据库表
 
-- `CUSTOMER`：老人或家属用户；
-- `COMPANION`：陪诊师或陪伴师；
-- `ADMIN`：系统管理员。
+已创建 9 张表（均为设计文档 §10 定义）：
 
-平台只提供陪同、路线引导、手续协助、信息记录和生活陪伴，不提供医疗诊断、治疗、用药或医疗操作。
+| 表名 | 说明 | 后端 Entity |
+|------|------|-------------|
+| `sys_user` | 用户 | `SysUser.java` |
+| `companion_profile` | 陪诊师资料 | 未创建 |
+| `service_request` | 服务需求 | `ServiceRequest.java` |
+| `service_order` | 服务订单 | 未创建 |
+| `order_status_log` | 状态变更记录 | 未创建 |
+| `service_record` | 服务记录 | 未创建 |
+| `evaluation` | 评价 | 未创建 |
+| `audit_record` | 审核记录 | 未创建 |
+| `report_record` | 投诉举报 | 未创建 |
 
-## 明确不做
+### 测试数据
 
-- 医疗诊断、治疗、用药和医疗操作；
-- 真实支付、提现和资金托管；
-- 实时 GPS 和轨迹；
-- WebSocket 实时聊天；
-- 视频通话；
-- 短信验证码；
-- 医院系统对接；
-- 医疗保险；
-- 真实个人健康数据。
+```sql
+INSERT INTO sys_user(username, password, nickname, phone, role, status, created_at, updated_at)
+VALUES
+('customer1', '123456', '张三', '13800000001', 'CUSTOMER', 1, NOW(), NOW()),
+('companion1', '123456', '李陪诊', '13800000002', 'COMPANION', 1, NOW(), NOW()),
+('admin1', '123456', '管理员', '13800000003', 'ADMIN', 1, NOW(), NOW());
+```
 
-## 后续开发顺序
+## 三、待完成
 
-1. 完成用户注册、登录和角色权限；
-2. 完成陪诊师资料、新增和入驻审核；
-3. 完成服务需求发布和需求列表；
-4. 完成陪诊师列表和详情；
-5. 完成订单创建、接单和状态流转；
-6. 完成服务记录、完成确认和评价；
-7. 完成管理员用户、订单、陪诊师和投诉管理；
-8. 接入文本 AI 需求摘要或服务标签；
-9. 使用虚拟数据完成完整演示。
+### 后端
 
-## 开发约定
+| 模块 | 状态 | 涉及接口 |
+|------|------|---------|
+| 用户模块 | ✅ 完成 | register / login / info / list / detail / updateInfo |
+| 服务需求模块 | ✅ 完成 | create / list / detail / cancel |
+| 陪诊师模块 | ❌ 未开始 | apply / list / detail / profile / audit |
+| 订单模块 | ❌ 未开始 | create / list / detail / accept / start / complete / confirm / cancel |
+| 评价模块 | ❌ 未开始 | submit / list / received |
+| 投诉模块 | ❌ 未开始 | submit / list / detail / handle |
+| 服务记录模块 | ❌ 未开始 | create / detail / list |
+| 管理员统计 | ❌ 未开始 | statistics |
+
+### 前端
+
+| 问题 | 说明 |
+|------|------|
+| API 路径 `/api` 前缀 | `companion.js` / `order.js` / `evaluation.js` / `report.js` / `serviceRecord.js` / `admin.js` 尚未加 `/api` 前缀，需逐个更新 |
+| 页面传参 | 各 Vue 页面调用 API 时需传入 `customerId` 或确保 `X-User-Id` 由拦截器自动注入 |
+
+## 四、技术基线
+
+- JDK 17（pom.xml 中 java.version=17）
+- Spring Boot 4.0.7
+- MyBatis 4.0.1
+- MySQL 8
+- Redis（已配置，当前未使用）
+- Vue2 + ElementUI + Axios
+
+## 五、开发约定
 
 - 修改前先阅读 `docs/项目设计文档.md`；
-- 不把平台描述成医疗诊断或医疗治疗系统；
+- 统一使用 `ApiResponse<T>` 作为返回格式；
+- 业务异常继承 `BusinessException`，由 `GlobalExceptionHandler` 统一处理；
+- 第一版不做 token，身份通过 `X-User-Id` 请求头传递；
 - 不在代码中写入真实 API Key、手机号或身份证信息；
-- AI 只做文本整理和标签提取，失败时不能阻塞业务流程；
-- 真实支付、地图和实时聊天不作为当前任务；
-- 修改后执行编译、接口或静态检查，并记录验证结果。
+- 不把平台描述成医疗诊断或医疗治疗系统。
 
-## 验证记录
+## 六、验证记录
 
-- 数据库已验证包含 9 张业务表和 16 个外键约束；
-- 曾尝试执行 `mvnw.cmd -q -DskipTests compile`，但当前 PowerShell 环境下 Maven Wrapper 启动失败，报错为 `Cannot index into a null array`，后续需要修复本地 Maven Wrapper 启动环境后重新编译验证。
+- 后端编译：`mvn compile -q` 通过，无错误
+- 数据库：9 张表已创建
+- 接口验证：待启动后通过 Postman 或前端页面验证

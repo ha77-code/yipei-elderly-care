@@ -1,5 +1,5 @@
 USE yipei;
-#陪诊需求表，保存老人或家属发布的服务需求，例如医院、科室、服务日期、需求内容、预算和联系人
+-- 陪诊需求表，保存老人或家属发布的服务需求，例如医院、科室、服务日期、需求内容、预算和联系人
 CREATE TABLE service_request (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     customer_id BIGINT NOT NULL,
