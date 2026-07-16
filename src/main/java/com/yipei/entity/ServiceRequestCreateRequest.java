@@ -25,6 +25,8 @@ public class ServiceRequestCreateRequest {
 
     private String specialNotes;
 
+    private String aiSummary;
+
     @NotBlank(message = "联系人不能为空")
     private String contactName;
 

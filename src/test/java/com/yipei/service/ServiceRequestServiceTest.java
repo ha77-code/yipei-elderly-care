@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -61,6 +62,25 @@ class ServiceRequestServiceTest {
                 eq(100L), eq("按时到院完成检查陪同，注意行动不便。"));
     }
 
+    @Test
+    void createUsesConfirmedAiSummaryWithoutGeneratingAgain() {
+        SysUser customer = new SysUser();
+        customer.setId(2L);
+        customer.setRole(RoleConstants.CUSTOMER);
+        when(sysUserMapper.selectById(2L)).thenReturn(customer);
+        doAnswer(invocation -> {
+            invocation.getArgument(0, ServiceRequest.class).setId(101L);
+            return 1;
+        }).when(serviceRequestMapper).insert(any(ServiceRequest.class));
+        ServiceRequestCreateRequest request = createRequest();
+        request.setAiSummary("已确认的陪诊摘要");
+
+        ServiceRequest created = serviceRequestService.create(2L, request);
+
+        assertEquals("已确认的陪诊摘要", created.getAiSummary());
+        verify(aiSummaryService, never()).generate(any(ServiceRequest.class));
+        verify(serviceRequestMapper, never()).updateAiSummary(any(), any());
+    }
     private ServiceRequestCreateRequest createRequest() {
         ServiceRequestCreateRequest request = new ServiceRequestCreateRequest();
         request.setServiceType("门诊陪诊");

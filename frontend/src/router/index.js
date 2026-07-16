@@ -235,14 +235,22 @@ router.beforeEach((to, from, next) => {
     return next()
   }
 
-  // ② 需登录的页面：未登录
+  // ② 未登录：首页 → 落地页，角色页面 → 登录
   if (!loggedIn) {
-    return next({ path: '/login', query: { redirect: to.fullPath } })
+    if (to.path === '/') {
+      window.location.href = '/landing.html'
+      return
+    }
   }
 
-  // ③ 角色权限检查
+  // ③ 需要特定角色的页面
   const requiredRole = deepMeta.role
   if (requiredRole) {
+    // 未登录 → 去登录
+    if (!loggedIn) {
+      return next({ path: '/login', query: { redirect: to.fullPath } })
+    }
+
     const userRole = user.role
 
     // ADMIN 可访问所有页面
@@ -251,7 +259,7 @@ router.beforeEach((to, from, next) => {
     }
 
     // 角色不匹配
-    if (userRole !== requiredRole) return next(roleHome[userRole] || '/login')
+    if (userRole !== requiredRole) return next(roleHome[userRole] || '/')
   }
 
   next()
