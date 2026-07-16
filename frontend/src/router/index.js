@@ -229,8 +229,14 @@ router.beforeEach((to, from, next) => {
     return next()
   }
 
-  // ② 需登录的页面：未登录 → 跳转登录页（带 redirect 参数）
+  // ② 需登录的页面：未登录
   if (!loggedIn) {
+    // 访问根路径 → 展示品牌 Landing Page
+    if (to.path === '/') {
+      window.location.href = '/landing.html'
+      return
+    }
+    // 其他页面 → 跳转登录页
     return next({ path: '/login', query: { redirect: to.fullPath } })
   }
 
