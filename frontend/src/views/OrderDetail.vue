@@ -170,22 +170,30 @@ export default {
   computed: {
     role() { return getUserRole() },
     userId() { const u = getUser(); return u ? u.id : null },
+    isCompanionOrder() {
+      return this.role === 'COMPANION' &&
+        String(this.order.companionUserId) === String(this.userId)
+    },
+    isCustomerOrder() {
+      return this.role === 'CUSTOMER' &&
+        String(this.order.customerId) === String(this.userId)
+    },
     actions() {
-      const s = this.order.status; const r = this.role
+      const s = this.order.status
       const acts = []
-      if (r === 'COMPANION' && s === 'PENDING_ACCEPT') {
+      if (this.isCompanionOrder && s === 'PENDING_ACCEPT') {
         acts.push({ key: 'accept', label: '接单', type: 'primary', action: 'accept' })
         acts.push({ key: 'reject', label: '拒单', type: 'danger', action: 'reject', class: 'plain' })
       }
-      if (r === 'COMPANION' && s === 'ACCEPTED')
+      if (this.isCompanionOrder && s === 'ACCEPTED')
         acts.push({ key: 'start', label: '开始服务', type: 'primary', action: 'start' })
-      if (r === 'COMPANION' && s === 'IN_SERVICE')
+      if (this.isCompanionOrder && s === 'IN_SERVICE')
         acts.push({ key: 'complete', label: '完成服务', type: 'success', action: 'complete' })
-      if (r === 'CUSTOMER' && (s === 'PENDING_ACCEPT' || s === 'ACCEPTED'))
+      if (this.isCustomerOrder && (s === 'PENDING_ACCEPT' || s === 'ACCEPTED'))
         acts.push({ key: 'cancel', label: '取消订单', type: 'danger', action: 'cancel', class: 'plain' })
-      if (s === 'COMPLETED' && (r === 'CUSTOMER' || r === 'COMPANION'))
+      if (s === 'COMPLETED' && (this.isCustomerOrder || this.isCompanionOrder))
         acts.push({ key: 'evaluate', label: '评价', type: 'warning', action: 'evaluate' })
-      if (r === 'CUSTOMER' || r === 'COMPANION')
+      if (this.isCustomerOrder || this.isCompanionOrder)
         acts.push({ key: 'report', label: '投诉', type: 'danger', action: 'report', class: 'plain' })
       return acts
     }

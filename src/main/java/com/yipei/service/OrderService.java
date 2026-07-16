@@ -265,8 +265,8 @@ public class OrderService {
 
     /* ===== 状态记录 ===== */
 
-    public List<OrderStatusLog> getStatusLogs(Long orderId) {
-        return orderStatusLogMapper.selectByOrderId(orderId);
+    public List<OrderStatusLog> getStatusLogs(Long orderId, Long userId) {
+        return getDetail(orderId, userId).getStatusLogs();
     }
 
     /* ===== 查询 ===== */
@@ -294,10 +294,17 @@ public class OrderService {
         return serviceOrderMapper.selectByRole(userId, user.getRole());
     }
 
-    public OrderDetailVO getDetail(Long id) {
+    public OrderDetailVO getDetail(Long id, Long userId) {
         OrderDetailVO order = serviceOrderMapper.selectDetailById(id);
         if (order == null) {
             throw new NotFoundException("订单不存在，ID: " + id);
+        }
+        SysUser user = sysUserMapper.selectById(userId);
+        boolean isParticipant = order.getCustomerId().equals(userId)
+                || (order.getCompanionUserId() != null
+                && order.getCompanionUserId().equals(userId));
+        if (user == null || (!RoleConstants.ADMIN.equals(user.getRole()) && !isParticipant)) {
+            throw new ForbiddenException("只能查看自己参与的订单");
         }
         List<OrderStatusLog> logs = orderStatusLogMapper.selectByOrderId(id);
         order.setStatusLogs(logs);

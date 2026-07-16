@@ -59,7 +59,7 @@
 
         <!-- 操作按钮 -->
         <div class="detail-actions" v-if="profile.auditStatus === 1">
-          <el-button type="primary" size="medium" round @click="goCreateOrder">
+          <el-button v-if="canCreateOrder" type="primary" size="medium" round @click="goCreateOrder">
             选择该陪诊师
           </el-button>
           <el-button size="medium" round @click="$router.back()">返回</el-button>
@@ -78,6 +78,7 @@
 
 <script>
 import { getCompanionDetail } from '@/api/companion'
+import { getUserRole, ROLES } from '@/utils/auth'
 
 export default {
   name: 'CompanionDetail',
@@ -93,6 +94,9 @@ export default {
       return typeof this.profile.serviceTypes === 'string'
         ? this.profile.serviceTypes.split(',')
         : this.profile.serviceTypes
+    },
+    canCreateOrder() {
+      return getUserRole() === ROLES.CUSTOMER
     }
   },
   created() {
@@ -114,6 +118,7 @@ export default {
       }
     },
     goCreateOrder() {
+      if (!this.canCreateOrder) return
       this.$router.push('/customer/request/create')
     }
   }
