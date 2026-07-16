@@ -30,6 +30,7 @@ const AvailableOrders = () => import('@/views/companion/AvailableOrders.vue')
 const ServiceRecords = () => import('@/views/companion/ServiceRecords.vue')
 
 /* ===== 懒加载：管理员端 ===== */
+const AdminDashboard = () => import('@/views/admin/AdminDashboard.vue')
 const AdminUsers = () => import('@/views/admin/AdminUsers.vue')
 const CompanionReview = () => import('@/views/admin/CompanionReview.vue')
 const AdminRequests = () => import('@/views/admin/AdminRequests.vue')
@@ -149,6 +150,12 @@ const routes = [
       },
 
       /* ---------- 管理员端 ADMIN ---------- */
+      {
+        path: 'admin/dashboard',
+        name: 'AdminDashboard',
+        component: AdminDashboard,
+        meta: { title: '后台首页', role: ROLES.ADMIN }
+      },
       {
         path: 'admin/users',
         name: 'AdminUsers',

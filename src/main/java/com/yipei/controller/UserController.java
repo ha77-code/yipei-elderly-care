@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/user")
@@ -65,5 +66,15 @@ public class UserController {
             @RequestHeader("X-User-Id") Long userId,
             @Valid @RequestBody UpdateUserInfoRequest request) {
         return ApiResponse.success(userService.updateUserInfo(userId, request.getNickname(), request.getPhone()));
+    }
+
+    /** 管理员修改用户状态 */
+    @PutMapping("/{id}/status")
+    public ApiResponse<UserVO> updateStatus(
+            @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long operatorId,
+            @RequestBody Map<String, Object> body) {
+        Integer status = (Integer) body.get("status");
+        return ApiResponse.success(userService.updateUserStatus(id, status, "ADMIN"));
     }
 }

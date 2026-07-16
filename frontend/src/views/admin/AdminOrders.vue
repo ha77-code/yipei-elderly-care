@@ -39,7 +39,7 @@
 </template>
 
 <script>
-import { getAllOrders } from '@/api/order'
+import { getAllOrders } from '@/api/admin'
 
 const STATUS_MAP = {
   PENDING_ACCEPT: '待接单', ACCEPTED: '已接单', IN_SERVICE: '服务中',

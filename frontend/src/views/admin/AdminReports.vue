@@ -54,7 +54,7 @@
 </template>
 
 <script>
-import { getAllReports, handleReport } from '@/api/report'
+import { getAllReports, handleReport } from '@/api/admin'
 
 const STATUS_MAP = { PENDING: '待处理', PROCESSING: '处理中', RESOLVED: '已处理', REJECTED: '已驳回' }
 
