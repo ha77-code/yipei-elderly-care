@@ -41,10 +41,12 @@ export function getOrderDetail(id) {
 
 /** 接单（陪诊师） */
 export function acceptOrder(id) {
-  return request({
-    url: `/api/order/${id}/accept`,
-    method: 'put'
-  })
+  return request({ url: `/api/order/${id}/accept`, method: 'put' })
+}
+
+/** 拒单（陪诊师） */
+export function rejectOrder(id, data) {
+  return request({ url: `/api/order/${id}/reject`, method: 'put', data })
 }
 
 /** 开始服务 */

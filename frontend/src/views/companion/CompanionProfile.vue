@@ -89,7 +89,7 @@
 </template>
 
 <script>
-import { saveCompanionProfile, getMyProfile } from '@/api/companion'
+import { saveCompanionProfile, updateCompanionProfile, getMyProfile } from '@/api/companion'
 
 const AUDIT_CONFIG = {
   0: { cls: 'audit--pending', icon: 'el-icon-time', text: '资料审核中，暂时无法修改' },
@@ -166,10 +166,12 @@ export default {
 
       this.saving = true
       try {
-        await saveCompanionProfile({
-          ...this.form,
-          serviceTypes: this.form.serviceTypes.join(',')
-        })
+        const payload = { ...this.form, serviceTypes: this.form.serviceTypes.join(',') }
+        if (this.submitted) {
+          await updateCompanionProfile(payload)
+        } else {
+          await saveCompanionProfile(payload)
+        }
         this.$message.success('提交成功')
         this.submitted = true
         this.fetchProfile()

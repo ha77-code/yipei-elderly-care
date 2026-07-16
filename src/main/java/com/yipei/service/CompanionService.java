@@ -29,6 +29,11 @@ public class CompanionService {
         this.auditRecordMapper = auditRecordMapper;
     }
 
+    /** 获取我的入驻资料 */
+    public CompanionProfile getMyProfile(Long userId) {
+        return companionProfileMapper.selectByUserId(userId);
+    }
+
     /** 提交入驻申请 */
     public CompanionProfile apply(Long userId, CompanionApplyRequest request) {
         SysUser user = sysUserMapper.selectById(userId);

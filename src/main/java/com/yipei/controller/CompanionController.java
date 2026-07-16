@@ -35,6 +35,13 @@ public class CompanionController {
         return ApiResponse.success(companionService.apply(userId, request));
     }
 
+    /** 获取我的入驻资料 */
+    @GetMapping("/profile/my")
+    public ApiResponse<CompanionProfile> getMyProfile(
+            @RequestHeader("X-User-Id") Long userId) {
+        return ApiResponse.success(companionService.getMyProfile(userId));
+    }
+
     /** 修改入驻资料 */
     @PutMapping("/profile")
     public ApiResponse<Void> updateProfile(
