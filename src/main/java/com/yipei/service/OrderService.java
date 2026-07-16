@@ -15,6 +15,7 @@ import com.yipei.mapper.OrderStatusLogMapper;
 import com.yipei.mapper.ServiceOrderMapper;
 import com.yipei.mapper.ServiceRequestMapper;
 import com.yipei.mapper.SysUserMapper;
+import com.yipei.util.SubmitLock;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -28,6 +29,7 @@ public class OrderService {
     private final SysUserMapper sysUserMapper;
     private final OrderStatusLogMapper orderStatusLogMapper;
     private final CompanionProfileMapper companionProfileMapper;
+    private final SubmitLock submitLock;
 
     private static final BigDecimal PLATFORM_RATE = new BigDecimal("0.1");
 
@@ -35,16 +37,29 @@ public class OrderService {
                         ServiceRequestMapper serviceRequestMapper,
                         SysUserMapper sysUserMapper,
                         OrderStatusLogMapper orderStatusLogMapper,
-                        CompanionProfileMapper companionProfileMapper) {
+                        CompanionProfileMapper companionProfileMapper,
+                        SubmitLock submitLock) {
         this.serviceOrderMapper = serviceOrderMapper;
         this.serviceRequestMapper = serviceRequestMapper;
         this.sysUserMapper = sysUserMapper;
         this.orderStatusLogMapper = orderStatusLogMapper;
         this.companionProfileMapper = companionProfileMapper;
+        this.submitLock = submitLock;
     }
 
     /** 创建订单 */
     public ServiceOrder create(Long customerId, OrderCreateRequest request) {
+        if (!submitLock.tryLock("order_create", customerId, 10)) {
+            throw new ForbiddenException("请勿重复提交，稍后再试");
+        }
+        try {
+            return doCreate(customerId, request);
+        } finally {
+            submitLock.unlock("order_create", customerId);
+        }
+    }
+
+    private ServiceOrder doCreate(Long customerId, OrderCreateRequest request) {
         ServiceRequest sr = serviceRequestMapper.selectById(request.getRequestId());
         if (sr == null) {
             throw new NotFoundException("服务需求不存在，ID: " + request.getRequestId());

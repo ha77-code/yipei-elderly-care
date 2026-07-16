@@ -1,14 +1,15 @@
 package com.yipei.service;
 
+import com.yipei.constant.RoleConstants;
 import com.yipei.entity.LoginVO;
 import com.yipei.entity.SysUser;
 import com.yipei.entity.UserLoginRequest;
 import com.yipei.entity.UserRegisterRequest;
-import com.yipei.constant.RoleConstants;
 import com.yipei.entity.UserVO;
 import com.yipei.exception.ForbiddenException;
 import com.yipei.exception.NotFoundException;
 import com.yipei.mapper.SysUserMapper;
+import com.yipei.util.PasswordUtil;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -26,10 +27,7 @@ public class UserService {
 
     public LoginVO login(UserLoginRequest request) {
         SysUser user = sysUserMapper.selectByUsername(request.getUsername());
-        if (user == null) {
-            throw new ForbiddenException("用户名或密码错误");
-        }
-        if (!user.getPassword().equals(request.getPassword())) {
+        if (user == null || !PasswordUtil.matches(request.getPassword(), user.getPassword())) {
             throw new ForbiddenException("用户名或密码错误");
         }
         if (user.getStatus() != null && user.getStatus() != 1) {
@@ -50,13 +48,12 @@ public class UserService {
         }
         SysUser user = new SysUser();
         user.setUsername(request.getUsername());
-        user.setPassword(request.getPassword());
+        user.setPassword(PasswordUtil.encode(request.getPassword()));
         user.setNickname(request.getNickname());
         user.setPhone(request.getPhone());
         user.setRole(request.getRole());
         user.setStatus(1);
         sysUserMapper.insert(user);
-        // insert 后 id 已回填
         return toUserVO(user);
     }
 
@@ -117,14 +114,13 @@ public class UserService {
         if (user == null) {
             throw new NotFoundException("用户不存在，ID: " + id);
         }
-        if (!user.getPassword().equals(oldPassword)) {
+        if (!PasswordUtil.matches(oldPassword, user.getPassword())) {
             throw new ForbiddenException("旧密码错误");
         }
         if (newPassword == null || newPassword.trim().isEmpty()) {
-            // Service-level validation in addition to controller DTO validation
             throw new ForbiddenException("新密码不能为空");
         }
-        sysUserMapper.updatePassword(id, newPassword);
+        sysUserMapper.updatePassword(id, PasswordUtil.encode(newPassword));
     }
 
     /* ===== VO 转换 ===== */
