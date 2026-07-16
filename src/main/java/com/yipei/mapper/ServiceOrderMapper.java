@@ -7,6 +7,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
 
@@ -68,4 +69,30 @@ public interface ServiceOrderMapper {
             "LEFT JOIN service_request sr ON o.request_id = sr.id " +
             "WHERE o.id = #{id}")
     OrderDetailVO selectDetailById(@Param("id") Long id);
+
+    @Select("SELECT id, request_id, customer_id, companion_id, service_price, " +
+            "platform_fee, companion_income, status, accepted_at, started_at, " +
+            "completed_at, cancel_reason, created_at, updated_at " +
+            "FROM service_order WHERE id = #{id}")
+    ServiceOrder selectById(@Param("id") Long id);
+
+    /** 接单 */
+    @Update("UPDATE service_order SET status = 'ACCEPTED', companion_id = #{companionId}, " +
+            "accepted_at = NOW() WHERE id = #{id} AND status = 'PENDING_ACCEPT'")
+    int accept(@Param("id") Long id, @Param("companionId") Long companionId);
+
+    /** 开始服务 */
+    @Update("UPDATE service_order SET status = 'IN_SERVICE', started_at = NOW() " +
+            "WHERE id = #{id} AND status = 'ACCEPTED'")
+    int start(@Param("id") Long id);
+
+    /** 完成服务 */
+    @Update("UPDATE service_order SET status = 'PENDING_CONFIRM', completed_at = NOW() " +
+            "WHERE id = #{id} AND status = 'IN_SERVICE'")
+    int complete(@Param("id") Long id);
+
+    /** 更新状态和拒绝原因 */
+    @Update("UPDATE service_order SET status = #{status}, cancel_reason = #{cancelReason} WHERE id = #{id}")
+    int updateStatus(@Param("id") Long id, @Param("status") String status,
+                     @Param("cancelReason") String cancelReason);
 }

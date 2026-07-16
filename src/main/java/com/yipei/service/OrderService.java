@@ -68,7 +68,6 @@ public class OrderService {
         order.setStatus("PENDING_ACCEPT");
         serviceOrderMapper.insert(order);
 
-        // 记录状态变更
         OrderStatusLog log = new OrderStatusLog();
         log.setOrderId(order.getId());
         log.setToStatus("PENDING_ACCEPT");
@@ -79,17 +78,111 @@ public class OrderService {
         return order;
     }
 
-    /** 按角色查询订单列表 */
-    public List<OrderDetailVO> listByRole(Long userId, String role) {
-        return serviceOrderMapper.selectByRole(userId, role);
+    /* ===== 陪诊师操作 ===== */
+
+    /** 接单 */
+    public void accept(Long orderId, Long userId) {
+        ServiceOrder order = serviceOrderMapper.selectById(orderId);
+        if (order == null) {
+            throw new NotFoundException("订单不存在，ID: " + orderId);
+        }
+        // 校验陪诊师身份
+        if (!order.getCompanionId().equals(userId)) {
+            throw new ForbiddenException("只能接自己被指定的订单");
+        }
+        if (!"PENDING_ACCEPT".equals(order.getStatus())) {
+            throw new ForbiddenException("当前状态不允许接单");
+        }
+        serviceOrderMapper.accept(orderId, userId);
+
+        OrderStatusLog log = new OrderStatusLog();
+        log.setOrderId(orderId);
+        log.setFromStatus("PENDING_ACCEPT");
+        log.setToStatus("ACCEPTED");
+        log.setOperatorId(userId);
+        log.setRemark("陪诊师接单");
+        orderStatusLogMapper.insert(log);
     }
 
-    /** 可接订单列表（PENDING_ACCEPT，可按服务类型/区域关键词筛选） */
+    /** 拒绝订单 */
+    public void reject(Long orderId, Long userId, String reason) {
+        ServiceOrder order = serviceOrderMapper.selectById(orderId);
+        if (order == null) {
+            throw new NotFoundException("订单不存在，ID: " + orderId);
+        }
+        if (!order.getCompanionId().equals(userId)) {
+            throw new ForbiddenException("只能拒绝自己被指定的订单");
+        }
+        if (!"PENDING_ACCEPT".equals(order.getStatus())) {
+            throw new ForbiddenException("当前状态不允许拒绝");
+        }
+        serviceOrderMapper.updateStatus(orderId, "REJECTED", reason);
+
+        OrderStatusLog log = new OrderStatusLog();
+        log.setOrderId(orderId);
+        log.setFromStatus("PENDING_ACCEPT");
+        log.setToStatus("REJECTED");
+        log.setOperatorId(userId);
+        log.setRemark(reason != null ? reason : "陪诊师拒绝订单");
+        orderStatusLogMapper.insert(log);
+    }
+
+    /** 开始服务 */
+    public void start(Long orderId, Long userId) {
+        ServiceOrder order = serviceOrderMapper.selectById(orderId);
+        if (order == null) {
+            throw new NotFoundException("订单不存在，ID: " + orderId);
+        }
+        if (!order.getCompanionId().equals(userId)) {
+            throw new ForbiddenException("只能操作自己的订单");
+        }
+        if (!"ACCEPTED".equals(order.getStatus())) {
+            throw new ForbiddenException("当前状态不允许开始服务");
+        }
+        serviceOrderMapper.start(orderId);
+
+        OrderStatusLog log = new OrderStatusLog();
+        log.setOrderId(orderId);
+        log.setFromStatus("ACCEPTED");
+        log.setToStatus("IN_SERVICE");
+        log.setOperatorId(userId);
+        log.setRemark("陪诊师开始服务");
+        orderStatusLogMapper.insert(log);
+    }
+
+    /** 提交服务完成 */
+    public void complete(Long orderId, Long userId) {
+        ServiceOrder order = serviceOrderMapper.selectById(orderId);
+        if (order == null) {
+            throw new NotFoundException("订单不存在，ID: " + orderId);
+        }
+        if (!order.getCompanionId().equals(userId)) {
+            throw new ForbiddenException("只能操作自己的订单");
+        }
+        if (!"IN_SERVICE".equals(order.getStatus())) {
+            throw new ForbiddenException("当前状态不允许提交完成");
+        }
+        serviceOrderMapper.complete(orderId);
+
+        OrderStatusLog log = new OrderStatusLog();
+        log.setOrderId(orderId);
+        log.setFromStatus("IN_SERVICE");
+        log.setToStatus("PENDING_CONFIRM");
+        log.setOperatorId(userId);
+        log.setRemark("陪诊师提交服务完成，等待客户确认");
+        orderStatusLogMapper.insert(log);
+    }
+
+    /* ===== 查询 ===== */
+
     public List<OrderDetailVO> listAvailable(String serviceType, String keyword) {
         return serviceOrderMapper.selectAvailable(serviceType, keyword);
     }
 
-    /** 订单详情，含状态变更记录 */
+    public List<OrderDetailVO> listByRole(Long userId, String role) {
+        return serviceOrderMapper.selectByRole(userId, role);
+    }
+
     public OrderDetailVO getDetail(Long id) {
         OrderDetailVO order = serviceOrderMapper.selectDetailById(id);
         if (order == null) {

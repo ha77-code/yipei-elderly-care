@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/order")
@@ -54,5 +56,42 @@ public class OrderController {
     @GetMapping("/{id}")
     public ApiResponse<OrderDetailVO> detail(@PathVariable Long id) {
         return ApiResponse.success(orderService.getDetail(id));
+    }
+
+    /** 接单 */
+    @PutMapping("/{id}/accept")
+    public ApiResponse<Void> accept(
+            @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long userId) {
+        orderService.accept(id, userId);
+        return ApiResponse.success();
+    }
+
+    /** 拒绝订单 */
+    @PutMapping("/{id}/reject")
+    public ApiResponse<Void> reject(
+            @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestBody Map<String, String> body) {
+        orderService.reject(id, userId, body.get("reason"));
+        return ApiResponse.success();
+    }
+
+    /** 开始服务 */
+    @PutMapping("/{id}/start")
+    public ApiResponse<Void> start(
+            @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long userId) {
+        orderService.start(id, userId);
+        return ApiResponse.success();
+    }
+
+    /** 提交服务完成 */
+    @PutMapping("/{id}/complete")
+    public ApiResponse<Void> complete(
+            @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long userId) {
+        orderService.complete(id, userId);
+        return ApiResponse.success();
     }
 }
