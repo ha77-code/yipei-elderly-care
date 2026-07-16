@@ -2,6 +2,7 @@ package com.yipei.controller;
 
 import com.yipei.entity.ApiResponse;
 import com.yipei.entity.LoginVO;
+import com.yipei.entity.UpdatePasswordRequest;
 import com.yipei.entity.UpdateUserInfoRequest;
 import com.yipei.entity.UserLoginRequest;
 import com.yipei.entity.UserRegisterRequest;
@@ -65,5 +66,14 @@ public class UserController {
             @RequestHeader("X-User-Id") Long userId,
             @Valid @RequestBody UpdateUserInfoRequest request) {
         return ApiResponse.success(userService.updateUserInfo(userId, request.getNickname(), request.getPhone()));
+    }
+
+    /** 修改密码 */
+    @PutMapping("/password")
+    public ApiResponse<?> updatePassword(
+            @RequestHeader("X-User-Id") Long userId,
+            @Valid @RequestBody UpdatePasswordRequest request) {
+        userService.updatePassword(userId, request.getOldPassword(), request.getNewPassword());
+        return ApiResponse.success("密码修改成功");
     }
 }
