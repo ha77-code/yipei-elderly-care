@@ -96,6 +96,15 @@ public class OrderController {
         return ApiResponse.success();
     }
 
+    /** 确认完成 */
+    @PutMapping("/{id}/confirm")
+    public ApiResponse<Void> confirm(
+            @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long userId) {
+        orderService.confirm(id, userId);
+        return ApiResponse.success();
+    }
+
     /** 取消订单 */
     @PutMapping("/{id}/cancel")
     public ApiResponse<Void> cancel(

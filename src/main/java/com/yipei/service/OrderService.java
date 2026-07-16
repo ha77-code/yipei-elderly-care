@@ -203,19 +203,30 @@ public class OrderService {
         orderStatusLogMapper.insert(log);
     }
 
-    /* ===== 管理员操作 ===== */
-
-    public List<OrderDetailVO> listForAdmin(String status, Long customerId, Long companionId) {
-        return serviceOrderMapper.selectForAdmin(status, customerId, companionId);
-    }
-
-    /* ===== 状态记录 ===== */
-
-    public List<OrderStatusLog> getStatusLogs(Long orderId) {
-        return orderStatusLogMapper.selectByOrderId(orderId);
-    }
-
     /* ===== 客户操作 ===== */
+
+    /** 确认完成 */
+    public void confirm(Long orderId, Long userId) {
+        ServiceOrder order = serviceOrderMapper.selectById(orderId);
+        if (order == null) {
+            throw new NotFoundException("订单不存在，ID: " + orderId);
+        }
+        if (!order.getCustomerId().equals(userId)) {
+            throw new ForbiddenException("只能确认自己的订单");
+        }
+        if (!"PENDING_CONFIRM".equals(order.getStatus())) {
+            throw new ForbiddenException("当前状态不允许确认完成");
+        }
+        serviceOrderMapper.confirm(orderId);
+
+        OrderStatusLog log = new OrderStatusLog();
+        log.setOrderId(orderId);
+        log.setFromStatus("PENDING_CONFIRM");
+        log.setToStatus("COMPLETED");
+        log.setOperatorId(userId);
+        log.setRemark("客户确认服务完成");
+        orderStatusLogMapper.insert(log);
+    }
 
     /** 取消订单（仅未开始订单） */
     public void cancel(Long orderId, Long userId, String reason) {
@@ -240,6 +251,18 @@ public class OrderService {
         log.setOperatorId(userId);
         log.setRemark(reason != null ? reason : "客户取消订单");
         orderStatusLogMapper.insert(log);
+    }
+
+    /* ===== 管理员操作 ===== */
+
+    public List<OrderDetailVO> listForAdmin(String status, Long customerId, Long companionId) {
+        return serviceOrderMapper.selectForAdmin(status, customerId, companionId);
+    }
+
+    /* ===== 状态记录 ===== */
+
+    public List<OrderStatusLog> getStatusLogs(Long orderId) {
+        return orderStatusLogMapper.selectByOrderId(orderId);
     }
 
     /* ===== 查询 ===== */

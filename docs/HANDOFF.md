@@ -2,154 +2,185 @@
 
 ## 项目名称
 
-"医陪"——银发人群陪诊与生活陪伴服务平台
-
-英文名称：YiPei — Elderly Medical Escort and Daily Companionship Service Platform
+"医陪" YiPei -- 银发人群陪诊与生活陪伴服务平台
 
 ## 当前状态
 
-项目已完成用户模块、服务需求模块、订单模块（含完整状态流转）的后端接口，以及前端的请求封装、登录注册和个人信息页面对接。陪诊师、评价、投诉、服务记录模块尚未实现。
+后端 11 个模块全部完成，订单完整状态流转 PENDING_ACCEPT→ACCEPTED→IN_SERVICE→PENDING_CONFIRM→COMPLETED。前端 20+ 页面全部就绪，全局视觉已升级。可通过 Postman 完整跑通全部业务流程。
 
-当前项目的有效资料包括：
-
-- `docs/项目设计文档.md`：产品、业务、技术和验收说明；
-- `README.md`：项目简介、功能范围和技术栈；
-- `docs/HANDOFF.md`：当前开发状态和后续交接说明。
-
-## 一、已完成内容
+## 一、后端已完成
 
 ### 1. 基础设施
 
 | 内容 | 说明 |
 |------|------|
-| Spring Boot 主启动类 | `YipeiApplication` |
-| 项目依赖 | MyBatis、MySQL 8、Redis、Lombok、Validation |
-| CORS 跨域配置 | `config/CorsConfig.java`，允许前端直连 `localhost:8080` |
-| AppProperties 配置 | `config/AppProperties.java`，前缀 `yipei`，含 uploadDir / platformFeeRate |
-| 数据库 | 9 张表已创建，测试数据需手动导入 |
-| 前端项目 | Vue2 + ElementUI，`frontend/` 目录 |
+| `YipeiApplication.java` | Spring Boot 4.0.7 启动类 |
+| `config/CorsConfig.java` | CORS 跨域 |
+| `config/WebConfig.java` | 静态资源映射 /uploads |
+| `config/AppProperties.java` | 应用配置（上传目录、抽成比例） |
+| `constant/RoleConstants.java` | 角色常量 CUSTOMER/COMPANION/ADMIN |
+| `exception/` | BusinessException / NotFoundException / ForbiddenException |
+| `handler/GlobalExceptionHandler.java` | 统一异常处理 |
+| `util/PasswordUtil.java` | SHA-256 + 随机盐密码加密 |
+| `util/SubmitLock.java` | Redis 防重复提交锁 |
+| `entity/` | 20+ 实体类和 DTO/VO |
 
-### 2. 统一响应与异常处理
+### 2. 接口清单
 
-| 文件 | 说明 |
-|------|------|
-| `entity/ApiResponse.java` | 统一响应格式 `{ code, message, data }` |
-| `exception/BusinessException.java` | 业务异常基类，携带 `code` + `message` |
-| `exception/NotFoundException.java` | 继承 BusinessException，code=404 |
-| `exception/ForbiddenException.java` | 继承 BusinessException，code=403 |
-| `handler/GlobalExceptionHandler.java` | `@RestControllerAdvice`，统一处理 BusinessException / Validation / 未知异常 |
-
-### 3. 用户模块
-
-**接口：**
+#### 用户模块 UserController
 
 ```
-POST /api/user/register       注册（校验角色=CUSTOMER/COMPANION/ADMIN，校验用户名不重复）
-POST /api/user/login          登录（校验账号存在、密码正确、状态正常，不返回密码和 token）
-GET  /api/user/info?id=       获取用户信息（不返回密码）
-GET  /api/user/list           用户列表
-GET  /api/user/{id}           用户详情
-PUT  /api/user/info           修改个人信息（需 X-User-Id header）
+POST /api/user/register        注册（加密密码、校验角色、用户名不重复）
+POST /api/user/login           登录（加密比对、不返回密码和 token）
+GET  /api/user/info?id=        获取用户信息
+GET  /api/user/list            用户列表
+GET  /api/user/{id}            用户详情
+PUT  /api/user/info            修改个人信息（X-User-Id）
+PUT  /api/user/{id}/status     管理员修改用户状态
+PUT  /api/user/password        修改密码（校验旧密码，加密新密码）
 ```
 
-- 第一版不做 token，身份通过 `X-User-Id` 请求头传递
-- 登录和注册返回均不包含 password 字段
-
-### 4. 服务需求模块
-
-**接口：**
+#### 陪诊师模块 CompanionController + AdminController
 
 ```
-POST /api/service-request/create             发布需求（校验角色=CUSTOMER，默认 status=PENDING）
-GET  /api/service-request/list?customerId=    我的需求列表（按创建时间倒序）
+POST /api/companion/apply              提交入驻（角色=COMPANION，audit_status=0）
+PUT  /api/companion/profile            修改资料（回退待审核）
+GET  /api/companion/profile/my         获取我的入驻资料
+GET  /api/companion/list?serviceArea=&serviceType=  审核通过列表（按评分降序）
+GET  /api/companion/{id}              详情（未审核通过 404）
+GET  /api/admin/companion/pending      管理员-待审核列表
+PUT  /api/admin/companion/{id}/audit   管理员-审核（1通过/2拒绝，写 audit_record）
+```
+
+#### 服务需求模块 ServiceRequestController + AdminController
+
+```
+POST /api/service-request/create             发布需求（角色=CUSTOMER）
+GET  /api/service-request/list?customerId=    我的需求（按时间倒序）
 GET  /api/service-request/{id}                需求详情
-PUT  /api/service-request/{id}/cancel         取消需求（校验归属、无订单、状态可取消）
+PUT  /api/service-request/{id}/cancel         取消需求（校验归属+无订单+状态）
+GET  /api/admin/service-request/list?status=&serviceType=  管理员全部需求（筛选）
 ```
 
-**管理员需求管理：**
+#### 订单模块 OrderController + AdminController
 
 ```
-GET  /api/admin/service-request/list?status=&serviceType=   全部需求（支持按状态/类型筛选）
-GET  /api/admin/statistics                                  平台统计数据
+POST /api/order/create                     创建订单（校验需求/陪诊师/不重复；平台费=10%）
+GET  /api/order/list?userId=&role=          订单列表（CUSTOMER/COMPANION/ADMIN）
+GET  /api/order/available?serviceType=&keyword=  可接订单（PENDING_ACCEPT）
+GET  /api/order/{id}                        订单详情（含需求+客户/陪诊师名+状态日志）
+PUT  /api/order/{id}/accept                 接单（校验陪诊师身份）→ ACCEPTED
+PUT  /api/order/{id}/reject                 拒单（记录原因）→ REJECTED
+PUT  /api/order/{id}/start                  开始服务 → IN_SERVICE
+PUT  /api/order/{id}/complete               完成服务 → PENDING_CONFIRM
+PUT  /api/order/{id}/confirm                客户确认完成 → COMPLETED
+PUT  /api/order/{id}/cancel                 取消（仅未开始订单）→ CANCELLED
+GET  /api/order/{id}/status-log             状态变更记录
+GET  /api/admin/orders?status=&customerId=&companionId=  管理员全部订单（筛选）
 ```
 
-### 5. 订单模块 ⬅ 本次新增
-
-**后端文件：**
-
-| 文件 | 说明 |
-|------|------|
-| `entity/ServiceOrder.java` | 对应 `service_order` 表 |
-| `entity/OrderDetailVO.java` | 订单详情 VO，含客户名、陪诊师名、需求摘要、状态变更记录 |
-| `entity/OrderCreateRequest.java` | 创建订单 DTO |
-| `entity/OrderStatusLog.java` | 状态变更记录实体 |
-| `mapper/ServiceOrderMapper.java` | insert / selectById / selectByRole / selectAvailable / selectDetailById / accept / start / complete / updateStatus |
-| `mapper/OrderStatusLogMapper.java` | selectByOrderId / insert |
-| `service/OrderService.java` | create / listByRole / listAvailable / getDetail / accept / reject / start / complete |
-| `controller/OrderController.java` | 见下方接口列表 |
-
-**订单接口：**
-
+订单状态流转：
 ```
-POST /api/order/create                  创建订单（校验需求归属、陪诊师存在、不重复创建；计算平台费=10%）
-GET  /api/order/list?userId=&role=      订单列表（CUSTOMER查自己/COMPANION查自己/ADMIN全部）
-GET  /api/order/available?serviceType=&keyword=  可接订单（PENDING_ACCEPT状态，支持按类型/区域筛选）
-GET  /api/order/{id}                    订单详情（含需求摘要+客户/陪诊师名+状态变更记录）
-PUT  /api/order/{id}/accept             接单（校验陪诊师身份 PENDING_ACCEPT→ACCEPTED）
-PUT  /api/order/{id}/reject             拒绝（PENDING_ACCEPT→REJECTED，记录拒绝原因）
-PUT  /api/order/{id}/start              开始服务（ACCEPTED→IN_SERVICE）
-PUT  /api/order/{id}/complete           提交完成（IN_SERVICE→PENDING_CONFIRM）
+PENDING_ACCEPT ──accept──▶ ACCEPTED ──start──▶ IN_SERVICE ──complete──▶ PENDING_CONFIRM ──confirm──▶ COMPLETED
+       │                      │
+       ├──reject──▶ REJECTED  ├──cancel──▶ CANCELLED
+       └──cancel──▶ CANCELLED
 ```
 
-**订单状态流转：**
+每次状态变更写入 `order_status_log`。
+
+#### 评价模块 EvaluationController
 
 ```
-PENDING_ACCEPT ──accept──▶ ACCEPTED ──start──▶ IN_SERVICE ──complete──▶ PENDING_CONFIRM
-       │                       │
-       └──reject──▶ REJECTED   └──cancel──▶ CANCELLED（待实现）
+POST /api/evaluation/create               创建评价（校验订单已完成、本人参与、不重复、1-5分）
+GET  /api/evaluation/order/{orderId}      订单下的评价
+GET  /api/evaluation/companion/{companionId}  陪诊师收到的评价
+```
+- 评价陪诊师后自动更新 `companion_profile.rating`
+
+#### 投诉模块 ReportController + AdminController
+
+```
+POST /api/report/create                    发起投诉（校验订单参与方）
+GET  /api/admin/report/list?status=        管理员投诉列表
+PUT  /api/admin/report/{id}/handle         处理投诉（RESOLVED/REJECTED）
 ```
 
-每个状态变更均写入 `order_status_log`，记录 `from_status` / `to_status` / `operator_id` / `remark`。
-
-**费用计算规则：**
+#### 服务记录模块 ServiceRecordController
 
 ```
-platformFee    = servicePrice × 10%（四舍五入到分）
-companionIncome = servicePrice − platformFee
+POST /api/service-record/create            创建服务记录（仅订单陪诊师）
+GET  /api/service-record/order/{orderId}   查看订单服务记录
 ```
 
-### 6. 前端已对接
+#### 其他
 
-| 文件 | 说明 |
-|------|------|
-| `api/request.js` | Axios 封装，baseURL=`http://localhost:8080`，自动注入 `X-User-Id`，统一处理 code===200 |
-| `api/user.js` | `/api` 前缀，封装 register / login / getUserInfo / updateUserInfo / getUserList |
-| `api/serviceRequest.js` | `/api` 前缀，封装 create / list / detail / cancel / admin list |
-| `api/order.js` | `/api` 前缀，封装 create / list / available / detail / accept / start / complete / confirm / cancel |
-| `api/admin.js` | `/api` 前缀，封装 getUserList / updateUserStatus / getPendingCompanions / getStatistics |
-| `utils/auth.js` | localStorage 管理用户信息 |
-| `utils/testAccounts.js` | 开发环境测试账号快速登录 |
-| `views/Login.vue` | 液态玻璃+光感交互设计，已对接 login |
-| `views/Register.vue` | 已对接 register |
-| `views/Profile.vue` | 已对接 getUserInfo / updateUserInfo |
-| `views/customer/MyRequests.vue` | 已对接 getMyRequests，传入 customerId |
-| `views/customer/RequestCreate.vue` | 已对接 createRequest |
-| `views/CompanionDetail.vue` | 已创建，等待后端陪诊师接口 |
-| `views/ServiceRecord.vue` | 已创建，等待后端服务记录接口 |
+```
+POST /api/file/upload                      文件上传（保存至 uploads/）
+POST /api/ai/service-summary               AI 需求摘要（Stub）
+POST /api/ai/service-tags                  AI 服务标签（Stub）
+GET  /api/export/users                     导出用户 CSV
+GET  /api/export/orders                    导出订单 CSV
+GET  /api/admin/statistics                 平台统计（用户/陪诊师/订单/投诉/收入）
+```
 
-## 二、数据库表
+## 二、前端已完成
 
-| 表名 | 说明 | 后端 Entity |
-|------|------|-------------|
-| `sys_user` | 用户 | `SysUser.java` |
-| `companion_profile` | 陪诊师资料 | 未创建 |
-| `service_request` | 服务需求 | `ServiceRequest.java` |
-| `service_order` | 服务订单 | `ServiceOrder.java` |
-| `order_status_log` | 状态变更记录 | `OrderStatusLog.java` |
-| `service_record` | 服务记录 | 未创建 |
-| `evaluation` | 评价 | 未创建 |
-| `audit_record` | 审核记录 | 未创建 |
-| `report_record` | 投诉举报 | 未创建 |
+### 全局设计系统 (App.vue)
+
+- CSS 变量体系：品牌色/中性色/阴影/圆角/字体
+- ElementUI 全局覆写：按钮/表格/表单/弹窗/标签/分页/菜单
+
+### 布局 (MainLayout.vue)
+
+- 64px 毛玻璃顶栏，导航下划线展开动画
+- 侧边栏左侧竖线激活指示器
+- 响应式设计
+
+### 页面清单
+
+| 路由 | 页面 | 状态 |
+|------|------|------|
+| `/login` | 登录（液态玻璃 + 光感交互） | ✅ |
+| `/register` | 注册 | ✅ |
+| `/` | 首页（快捷入口 + 统计） | ✅ |
+| `/profile` | 个人信息（含修改密码） | ✅ |
+| `/customer/companions` | 陪诊师列表（筛选） | ✅ |
+| `/customer/request/create` | 发布需求 | ✅ |
+| `/customer/requests` | 我的需求 | ✅ |
+| `/customer/orders` | 客户订单列表 | ✅ |
+| `/companion/:id` | 陪诊师详情 | ✅ |
+| `/companion/profile` | 入驻资料 | ✅ |
+| `/companion/available-orders` | 可接订单（卡片+渐变条） | ✅ |
+| `/companion/orders` | 陪诊师订单 | ✅ |
+| `/companion/service-records` | 服务记录列表 | ✅ |
+| `/order/:id` | 订单详情（状态流+操作+评价+投诉+时间线） | ✅ |
+| `/order/:id/service-record` | 服务记录 | ✅ |
+| `/admin/dashboard` | 后台首页 | ✅ |
+| `/admin/users` | 用户管理 | ✅ |
+| `/admin/companion-review` | 陪诊师审核 | ✅ |
+| `/admin/requests` | 需求管理 | ✅ |
+| `/admin/orders` | 订单管理 | ✅ |
+| `/admin/reports` | 投诉处理 | ✅ |
+| `/admin/statistics` | 平台统计（12 卡片） | ✅ |
+
+### API 封装 (frontend/src/api/)
+
+全部 9 个 API 文件均已加 `/api` 前缀，baseURL=`http://localhost:8080`，自动注入 `X-User-Id`。
+
+## 三、数据库表
+
+| 表名 | Entity | 状态 |
+|------|--------|------|
+| `sys_user` | `SysUser.java` | ✅ |
+| `companion_profile` | `CompanionProfile.java` | ✅ |
+| `service_request` | `ServiceRequest.java` | ✅ |
+| `service_order` | `ServiceOrder.java` | ✅ |
+| `order_status_log` | `OrderStatusLog.java` | ✅ |
+| `service_record` | `ServiceRecord.java` | ✅ |
+| `evaluation` | `Evaluation.java` | ✅ |
+| `audit_record` | `AuditRecord.java` | ✅ |
+| `report_record` | `ReportRecord.java` | ✅ |
 
 ### 测试数据
 
@@ -161,47 +192,49 @@ VALUES
 ('admin1', '123456', '管理员', '13800000003', 'ADMIN', 1, NOW(), NOW());
 ```
 
-## 三、待完成
+注意：密码现在是 SHA-256 加密存储，需通过 API 注册才会自动加密。直接 SQL INSERT 的明文密码无法登录。
 
-### 后端
+## 四、待完成
 
-| 模块 | 状态 | 涉及接口 |
-|------|------|---------|
-| 用户模块 | ✅ 完成 | 6 个接口 |
-| 服务需求模块 | ✅ 完成 | 4 个接口 + 管理员筛选 |
-| 订单模块 | ⚠️ 部分 | 创建/列表/详情/可接/接单/拒绝/开始/完成已实现；取消/确认完成待实现 |
-| 陪诊师模块 | ❌ 未开始 | apply / list / detail / profile / audit |
-| 评价模块 | ❌ 未开始 | submit / list / received |
-| 投诉模块 | ❌ 未开始 | submit / list / detail / handle |
-| 服务记录模块 | ❌ 未开始 | create / detail / list |
-
-### 前端
-
-| 问题 | 说明 |
+| 内容 | 说明 |
 |------|------|
-| API 路径 `/api` 前缀 | `companion.js` / `evaluation.js` / `report.js` / `serviceRecord.js` 尚未加 `/api` 前缀 |
-| 页面传参 | 各页面调用 GET /list 类接口时需传入 customerId 或 userId |
+| 密码加密后旧数据 | 数据库中旧明文密码无法登录，运行 `sql/init.sql` 重新初始化 |
+| AI 接口 | 目前是 Stub 占位，需接入真实大模型 API |
+| companion 目录额外页面 | Apply.vue、Evaluate.vue、CompanionList.vue、Order.vue 等文件存在但未在 router 注册 |
+| 测试数据 | 需通过 API 注册或运行 `sql/init.sql` 导入预加密测试账号 |
 
-## 四、技术基线
+## 五、技术基线
 
-- JDK 17
-- Spring Boot 4.0.7
-- MyBatis 4.0.1
-- MySQL 8
-- Redis（已配置，当前未使用）
+- JDK 17 / Spring Boot 4.0.7 / MyBatis 4.0.1 / MySQL 8 / Redis
 - Vue2 + ElementUI + Axios
 
-## 五、开发约定
+## 六、开发约定
 
-- 统一使用 `ApiResponse<T>` 作为返回格式；
-- 业务异常继承 `BusinessException`，由 `GlobalExceptionHandler` 统一处理；
-- 第一版不做 token，身份通过 `X-User-Id` 请求头传递；
-- 订单状态变更同步写入 `order_status_log`，记录操作人和时间；
-- 不在代码中写入真实 API Key、手机号或身份证信息；
-- 不把平台描述成医疗诊断或医疗治疗系统。
+- `ApiResponse<T>` 统一返回 `{ code, message, data }`
+- 业务异常继承 `BusinessException`，GlobalExceptionHandler 统一处理
+- 身份通过 `X-User-Id` 请求头传递（第一版无 token）
+- 订单状态变更同步写入 `order_status_log`
+- 密码 SHA-256 + 随机盐加密，不存明文
+- 不描述成医疗诊断或治疗系统
 
-## 六、验证记录
+## 七、启动步骤
 
-- 后端编译：`mvn compile -q` 通过，无错误
-- 数据库：9 张表已创建
-- 接口验证：可用 curl 命令行逐接口测试
+```bash
+# 1. MySQL 一键初始化（建库+建表+测试数据）
+mysql -u root -p < sql/init.sql
+
+# 2. 启动后端（Redis 非必须，未启动时自动降级）
+mvn spring-boot:run
+
+# 3. 注册测试用户（Postman）
+POST http://localhost:8080/api/user/register
+Body: {"username":"cus","password":"123456","nickname":"张三","phone":"13800000001","role":"CUSTOMER"}
+
+# 4. 启动前端
+cd frontend && npm install && npm run serve
+```
+
+## 八、验证记录
+
+- 后端编译：`mvn compile -q` 通过
+- 全流程跑通：注册→登录→入驻→审核→需求→订单→接单→开始→完成→详情→状态日志，全部 200

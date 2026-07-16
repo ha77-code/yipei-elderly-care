@@ -93,6 +93,11 @@ public interface ServiceOrderMapper {
             "WHERE id = #{id} AND status = 'IN_SERVICE'")
     int complete(@Param("id") Long id);
 
+    /** 确认完成 */
+    @Update("UPDATE service_order SET status = 'COMPLETED', confirmed_at = NOW() " +
+            "WHERE id = #{id} AND status = 'PENDING_CONFIRM'")
+    int confirm(@Param("id") Long id);
+
     /** 取消订单 */
     @Update("UPDATE service_order SET status = 'CANCELLED', cancel_reason = #{cancelReason} " +
             "WHERE id = #{id}")
