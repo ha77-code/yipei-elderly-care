@@ -24,9 +24,9 @@ public class AdminUserController {
     @PutMapping("/{id}/status")
     public ApiResponse<UserVO> updateStatus(
             @PathVariable Long id,
-            @RequestHeader("X-User-Role") String operatorRole,
+            @RequestHeader("X-User-Id") Long operatorId,
             @Valid @RequestBody UpdateStatusRequest request) {
-        UserVO userVO = userService.updateUserStatus(id, request.getStatus(), operatorRole);
+        UserVO userVO = userService.updateUserStatus(id, request.getStatus(), operatorId);
         return ApiResponse.success(userVO);
     }
 }

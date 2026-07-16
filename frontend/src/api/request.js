@@ -8,7 +8,8 @@ import { getUser, clearUser } from '@/utils/auth'
 import router from '@/router'
 
 const request = axios.create({
-  baseURL: 'http://localhost:8080',
+  // 本地开发时由 vue.config.js 转发 /api，部署时可通过环境变量指定后端地址。
+  baseURL: process.env.VUE_APP_API_BASE_URL || '',
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json'
@@ -47,16 +48,17 @@ request.interceptors.response.use(
   },
   error => {
     const status = error.response?.status
+    const message = error.response?.data?.message
     if (status === 401) {
       clearUser()
-      Message.error('登录已过期，请重新登录')
+      Message.error(message || '登录已过期，请重新登录')
       router.push({ path: '/login', query: { redirect: router.currentRoute.fullPath } })
     } else if (status === 403) {
-      Message.error('无权限执行此操作')
+      Message.error(message || '无权限执行此操作')
     } else if (status === 404) {
-      Message.error('请求的资源不存在')
+      Message.error(message || '请求的资源不存在')
     } else if (status >= 500) {
-      Message.error('服务器异常，请稍后重试')
+      Message.error(message || '服务器异常，请稍后重试')
     } else {
       Message.error(error.message || '网络异常')
     }

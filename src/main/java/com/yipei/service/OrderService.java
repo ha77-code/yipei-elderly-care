@@ -267,12 +267,27 @@ public class OrderService {
 
     /* ===== 查询 ===== */
 
-    public List<OrderDetailVO> listAvailable(String serviceType, String keyword) {
-        return serviceOrderMapper.selectAvailable(serviceType, keyword);
+    public List<OrderDetailVO> listAvailable(Long userId, String serviceType, String keyword) {
+        SysUser user = sysUserMapper.selectById(userId);
+        if (user == null || !RoleConstants.COMPANION.equals(user.getRole())) {
+            throw new ForbiddenException("仅陪诊师可以查看可接订单");
+        }
+        return serviceOrderMapper.selectAvailable(userId, serviceType, keyword);
     }
 
     public List<OrderDetailVO> listByRole(Long userId, String role) {
         return serviceOrderMapper.selectByRole(userId, role);
+    }
+
+    public List<OrderDetailVO> listMine(Long userId) {
+        SysUser user = sysUserMapper.selectById(userId);
+        if (user == null) {
+            throw new NotFoundException("用户不存在，ID: " + userId);
+        }
+        if (RoleConstants.ADMIN.equals(user.getRole())) {
+            return listForAdmin(null, null, null);
+        }
+        return serviceOrderMapper.selectByRole(userId, user.getRole());
     }
 
     public OrderDetailVO getDetail(Long id) {

@@ -73,7 +73,7 @@ export default {
     showDetail(row) { this.current = row; this.detailVisible = true },
     handleAction(row, status) {
       const label = status === 'PROCESSING' ? '开始处理' : '标记解决'
-      this.$prompt(`处理备注（选填）`, label, { inputType: 'textarea' }).then(async ({ value }) => { try { await handleReport(row.id, { status, handleRemark: value }); this.$message.success('操作成功'); this.fetchList() } catch {} }).catch(() => {})
+      this.$prompt(`处理备注（选填）`, label, { inputType: 'textarea' }).then(async ({ value }) => { try { await handleReport(row.id, { status, remark: value }); this.$message.success('操作成功'); this.fetchList() } catch {} }).catch(() => {})
     },
     fmt(d) { if (!d) return '-'; return d.replace('T', ' ').substring(0, 16) }
   }

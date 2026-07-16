@@ -12,6 +12,7 @@ public class OrderDetailVO {
     private Long customerId;
     private String customerName;
     private Long companionId;
+    private Long companionUserId;
     private String companionName;
     private BigDecimal servicePrice;
     private BigDecimal platformFee;

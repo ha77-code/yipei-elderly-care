@@ -24,7 +24,7 @@ public interface ServiceOrderMapper {
     /** 按角色查询订单列表 */
     @Select("<script>" +
             "SELECT o.id, o.request_id, o.customer_id, cu.nickname AS customer_name, " +
-            "o.companion_id, co.nickname AS companion_name, " +
+            "o.companion_id, cp.user_id AS companion_user_id, co.nickname AS companion_name, " +
             "o.service_price, o.platform_fee, o.companion_income, o.status, " +
             "o.accepted_at, o.started_at, o.completed_at, o.cancel_reason, " +
             "o.created_at, o.updated_at " +
@@ -42,24 +42,26 @@ public interface ServiceOrderMapper {
 
     /** 可接订单（PENDING_ACCEPT），含需求详情 */
     @Select("<script>" +
-            "SELECT o.id, o.request_id, o.customer_id, o.companion_id, " +
+            "SELECT o.id, o.request_id, o.customer_id, o.companion_id, cp.user_id AS companion_user_id, " +
             "o.service_price, o.platform_fee, o.companion_income, o.status, " +
             "sr.service_type, sr.hospital_name, sr.department, sr.service_date, " +
             "sr.requirement, sr.contact_name, sr.contact_phone, " +
             "o.created_at, o.updated_at " +
             "FROM service_order o " +
             "JOIN service_request sr ON o.request_id = sr.id " +
-            "WHERE o.status = 'PENDING_ACCEPT' " +
+            "JOIN companion_profile cp ON o.companion_id = cp.id " +
+            "WHERE o.status = 'PENDING_ACCEPT' AND cp.user_id = #{userId} " +
             "<if test='serviceType != null and serviceType != \"\"'> AND sr.service_type = #{serviceType}</if>" +
             "<if test='keyword != null and keyword != \"\"'> AND (sr.hospital_name LIKE CONCAT('%',#{keyword},'%') OR sr.department LIKE CONCAT('%',#{keyword},'%'))</if>" +
             " ORDER BY o.created_at DESC" +
             "</script>")
-    List<OrderDetailVO> selectAvailable(@Param("serviceType") String serviceType,
-                                        @Param("keyword") String keyword);
+    List<OrderDetailVO> selectAvailable(@Param("userId") Long userId,
+                                         @Param("serviceType") String serviceType,
+                                         @Param("keyword") String keyword);
 
     /** 订单详情，含请求信息 */
     @Select("SELECT o.id, o.request_id, o.customer_id, cu.nickname AS customer_name, " +
-            "o.companion_id, co.nickname AS companion_name, " +
+            "o.companion_id, cp.user_id AS companion_user_id, co.nickname AS companion_name, " +
             "o.service_price, o.platform_fee, o.companion_income, o.status, " +
             "o.accepted_at, o.started_at, o.completed_at, o.cancel_reason, " +
             "sr.service_type, sr.hospital_name, sr.department, sr.service_date, " +
@@ -106,7 +108,7 @@ public interface ServiceOrderMapper {
     /** 管理员订单列表 */
     @Select("<script>" +
             "SELECT o.id, o.request_id, o.customer_id, cu.nickname AS customer_name, " +
-            "o.companion_id, co.nickname AS companion_name, " +
+            "o.companion_id, cp.user_id AS companion_user_id, co.nickname AS companion_name, " +
             "o.service_price, o.platform_fee, o.companion_income, o.status, " +
             "o.accepted_at, o.started_at, o.completed_at, o.cancel_reason, " +
             "o.created_at, o.updated_at " +

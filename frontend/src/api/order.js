@@ -85,7 +85,7 @@ export function cancelOrder(id, data) {
 /** 获取所有订单（管理员） */
 export function getAllOrders(params) {
   return request({
-    url: '/api/order/list',
+    url: '/api/admin/orders',
     method: 'get',
     params
   })

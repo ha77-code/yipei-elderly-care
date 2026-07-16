@@ -1,6 +1,5 @@
 package com.yipei.controller;
 
-import com.yipei.constant.RoleConstants;
 import com.yipei.entity.ApiResponse;
 import com.yipei.entity.ChangePasswordRequest;
 import com.yipei.entity.LoginVO;
@@ -77,7 +76,7 @@ public class UserController {
             @RequestHeader("X-User-Id") Long operatorId,
             @RequestBody Map<String, Object> body) {
         Integer status = (Integer) body.get("status");
-        return ApiResponse.success(userService.updateUserStatus(id, status, RoleConstants.ADMIN));
+        return ApiResponse.success(userService.updateUserStatus(id, status, operatorId));
     }
 
     /** 修改密码 */

@@ -37,14 +37,18 @@ public class EvaluationService {
         if (!"COMPLETED".equals(order.getStatus())) {
             throw new ForbiddenException("仅已完成订单可以评价");
         }
-        // 校验评价人是订单相关方
-        if (!order.getCustomerId().equals(userId) && !order.getCompanionId().equals(userId)) {
+        CompanionProfile companionProfile = companionProfileMapper.selectById(order.getCompanionId());
+        Long companionUserId = companionProfile == null ? null : companionProfile.getUserId();
+        boolean isCustomer = order.getCustomerId().equals(userId);
+        boolean isCompanion = userId.equals(companionUserId);
+        // companion_id 保存的是陪诊师资料 ID，不能和用户 ID 直接比较。
+        if (!isCustomer && !isCompanion) {
             throw new ForbiddenException("只能评价自己参与的订单");
         }
         // 校验被评价人是订单另一方
-        boolean isCustomerEvaluating = order.getCustomerId().equals(userId)
-                && order.getCompanionId().equals(request.getToUserId());
-        boolean isCompanionEvaluating = order.getCompanionId().equals(userId)
+        boolean isCustomerEvaluating = isCustomer
+                && companionUserId != null && companionUserId.equals(request.getToUserId());
+        boolean isCompanionEvaluating = isCompanion
                 && order.getCustomerId().equals(request.getToUserId());
         if (!isCustomerEvaluating && !isCompanionEvaluating) {
             throw new ForbiddenException("只能评价订单的另一方");

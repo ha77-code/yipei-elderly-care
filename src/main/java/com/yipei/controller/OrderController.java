@@ -45,12 +45,20 @@ public class OrderController {
         return ApiResponse.success(orderService.listByRole(userId, role));
     }
 
+    /** 当前登录用户的订单 */
+    @GetMapping("/my")
+    public ApiResponse<List<OrderDetailVO>> myOrders(
+            @RequestHeader("X-User-Id") Long userId) {
+        return ApiResponse.success(orderService.listMine(userId));
+    }
+
     /** 可接订单（陪诊师查看） */
     @GetMapping("/available")
     public ApiResponse<List<OrderDetailVO>> available(
+            @RequestHeader("X-User-Id") Long userId,
             @RequestParam(required = false) String serviceType,
             @RequestParam(required = false) String keyword) {
-        return ApiResponse.success(orderService.listAvailable(serviceType, keyword));
+        return ApiResponse.success(orderService.listAvailable(userId, serviceType, keyword));
     }
 
     /** 订单详情 */

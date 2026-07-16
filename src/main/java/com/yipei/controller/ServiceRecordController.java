@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/service-record")
 public class ServiceRecordController {
@@ -34,5 +36,12 @@ public class ServiceRecordController {
     @GetMapping("/order/{orderId}")
     public ApiResponse<ServiceRecord> getByOrder(@PathVariable Long orderId) {
         return ApiResponse.success(serviceRecordService.getByOrderId(orderId));
+    }
+
+    /** 当前陪诊师填写的服务记录 */
+    @GetMapping("/my")
+    public ApiResponse<List<ServiceRecord>> myRecords(
+            @RequestHeader("X-User-Id") Long userId) {
+        return ApiResponse.success(serviceRecordService.listMine(userId));
     }
 }

@@ -82,9 +82,13 @@ public class UserService {
 
     /* ===== 管理员操作 ===== */
 
-    public UserVO updateUserStatus(Long id, int status, String operatorRole) {
-        if (!RoleConstants.ADMIN.equals(operatorRole)) {
+    public UserVO updateUserStatus(Long id, int status, Long operatorId) {
+        SysUser operator = sysUserMapper.selectById(operatorId);
+        if (operator == null || !RoleConstants.ADMIN.equals(operator.getRole())) {
             throw new ForbiddenException("仅管理员可操作");
+        }
+        if (status != 0 && status != 1) {
+            throw new ForbiddenException("用户状态只能为 0（禁用）或 1（正常）");
         }
         SysUser user = sysUserMapper.selectById(id);
         if (user == null) {

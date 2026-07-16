@@ -178,9 +178,10 @@ export default {
         acts.push({ key: 'complete', label: '完成服务', type: 'success', action: 'complete' })
       if (r === 'CUSTOMER' && (s === 'PENDING_ACCEPT' || s === 'ACCEPTED'))
         acts.push({ key: 'cancel', label: '取消订单', type: 'danger', action: 'cancel', class: 'plain' })
-      if (s === 'COMPLETED')
+      if (s === 'COMPLETED' && (r === 'CUSTOMER' || r === 'COMPANION'))
         acts.push({ key: 'evaluate', label: '评价', type: 'warning', action: 'evaluate' })
-      acts.push({ key: 'report', label: '投诉', type: 'danger', action: 'report', class: 'plain' })
+      if (r === 'CUSTOMER' || r === 'COMPANION')
+        acts.push({ key: 'report', label: '投诉', type: 'danger', action: 'report', class: 'plain' })
       return acts
     }
   },
@@ -235,7 +236,7 @@ export default {
     async submitEval() {
       if (!this.evalForm.score) { this.$message.warning('请选择评分'); return }
       this.acting = 'evaluate'
-      const toUserId = this.role === 'CUSTOMER' ? this.order.companionId : this.order.customerId
+      const toUserId = this.role === 'CUSTOMER' ? this.order.companionUserId : this.order.customerId
       try {
         await submitEvaluation({ orderId: this.order.id, toUserId: toUserId, score: this.evalForm.score, content: this.evalForm.content })
         this.$message.success('评价成功')

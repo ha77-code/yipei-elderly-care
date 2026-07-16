@@ -11,6 +11,8 @@ import com.yipei.mapper.ServiceOrderMapper;
 import com.yipei.mapper.ServiceRecordMapper;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class ServiceRecordService {
     private final ServiceRecordMapper serviceRecordMapper;
@@ -49,5 +51,10 @@ public class ServiceRecordService {
     /** 根据订单 ID 查询服务记录 */
     public ServiceRecord getByOrderId(Long orderId) {
         return serviceRecordMapper.selectByOrderId(orderId);
+    }
+
+    /** 当前陪诊师填写的服务记录 */
+    public List<ServiceRecord> listMine(Long userId) {
+        return serviceRecordMapper.selectByCompletedBy(userId);
     }
 }
