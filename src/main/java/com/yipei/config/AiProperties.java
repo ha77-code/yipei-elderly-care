@@ -6,11 +6,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class AiProperties {
 
     private boolean enabled;
-    private String baseUrl = "https://api.openai.com/v1";
+    private String baseUrl = "https://api.deepseek.com/v1";
     private String apiKey = "";
-    private String model = "gpt-4o-mini";
-    private int timeoutSeconds = 20;
-    private int maxTokens = 180;
+    private String model = "deepseek-chat";
+    private int timeoutSeconds = 30;
+    private int maxTokens = 200;
 
     public boolean isEnabled() {
         return enabled;
