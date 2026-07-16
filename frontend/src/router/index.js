@@ -231,6 +231,10 @@ router.beforeEach((to, from, next) => {
 
   // ② 需登录的页面：未登录
   if (!loggedIn) {
+    if (to.path === '/') {
+      window.location.href = '/landing.html'
+      return
+    }
     return next({ path: '/login', query: { redirect: to.fullPath } })
   }
 
