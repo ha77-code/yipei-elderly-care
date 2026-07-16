@@ -1,10 +1,10 @@
 /**
  * Axios 封装 — 统一请求实例
- * 包含：基础配置、请求拦截器（注入 token）、响应拦截器（统一错误处理）
+ * 包含：基础配置、请求拦截器（注入 X-User-Id）、响应拦截器（统一错误处理）
  */
 import axios from 'axios'
 import { Message } from 'element-ui'
-import { getToken, getUser, clearUser } from '@/utils/auth'
+import { getUser, clearUser } from '@/utils/auth'
 import router from '@/router'
 
 const request = axios.create({
@@ -21,10 +21,6 @@ request.interceptors.request.use(
     const user = getUser()
     if (user && user.id) {
       config.headers['X-User-Id'] = user.id
-    }
-    const token = getToken()
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`
     }
     return config
   },
