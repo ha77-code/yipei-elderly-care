@@ -52,6 +52,11 @@
           </el-descriptions>
         </el-card>
 
+        <el-card shadow="never" class="info-card" v-if="role === 'COMPANION' && order.aiSummary">
+          <div slot="header"><span>AI需求摘要</span></div>
+          <div class="ai-summary">{{ order.aiSummary }}</div>
+        </el-card>
+
         <!-- 服务记录 -->
         <el-card shadow="never" class="info-card" v-if="serviceRecord">
           <div slot="header"><span>服务记录</span></div>
@@ -282,6 +287,7 @@ export default {
 
 /* 服务记录 */
 .record-content { font-size: 14px; color: #333; line-height: 1.8; white-space: pre-wrap; }
+.ai-summary { font-size: 14px; color: #4A5E4D; line-height: 1.8; white-space: pre-wrap; padding: 10px 12px; background: #F3F7F1; border-left: 3px solid #7A9A7E; border-radius: 4px; }
 .record-notes { margin-top: 12px; padding: 10px 12px; background: #FFF8E1; border-radius: 6px; font-size: 13px; color: #8B7355; }
 .notes-label { font-weight: 600; }
 

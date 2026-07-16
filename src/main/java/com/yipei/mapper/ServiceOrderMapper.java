@@ -26,12 +26,13 @@ public interface ServiceOrderMapper {
             "SELECT o.id, o.request_id, o.customer_id, cu.nickname AS customer_name, " +
             "o.companion_id, cp.user_id AS companion_user_id, co.nickname AS companion_name, " +
             "o.service_price, o.platform_fee, o.companion_income, o.status, " +
-            "o.accepted_at, o.started_at, o.completed_at, o.cancel_reason, " +
+            "o.accepted_at, o.started_at, o.completed_at, o.cancel_reason, sr.ai_summary, " +
             "o.created_at, o.updated_at " +
             "FROM service_order o " +
             "LEFT JOIN sys_user cu ON o.customer_id = cu.id " +
             "LEFT JOIN companion_profile cp ON o.companion_id = cp.id " +
             "LEFT JOIN sys_user co ON cp.user_id = co.id " +
+            "LEFT JOIN service_request sr ON o.request_id = sr.id " +
             "WHERE 1=1 " +
             "<if test='role == \"CUSTOMER\"'> AND o.customer_id = #{userId}</if>" +
             "<if test='role == \"COMPANION\"'> AND cp.user_id = #{userId}</if>" +
@@ -45,7 +46,7 @@ public interface ServiceOrderMapper {
             "SELECT o.id, o.request_id, o.customer_id, o.companion_id, cp.user_id AS companion_user_id, " +
             "o.service_price, o.platform_fee, o.companion_income, o.status, " +
             "sr.service_type, sr.hospital_name, sr.department, sr.service_date, " +
-            "sr.requirement, sr.contact_name, sr.contact_phone, " +
+            "sr.requirement, sr.ai_summary, sr.contact_name, sr.contact_phone, " +
             "o.created_at, o.updated_at " +
             "FROM service_order o " +
             "JOIN service_request sr ON o.request_id = sr.id " +
@@ -64,7 +65,7 @@ public interface ServiceOrderMapper {
             "o.companion_id, cp.user_id AS companion_user_id, co.nickname AS companion_name, " +
             "o.service_price, o.platform_fee, o.companion_income, o.status, " +
             "o.accepted_at, o.started_at, o.completed_at, o.cancel_reason, " +
-            "sr.service_type, sr.hospital_name, sr.department, sr.service_date, " +
+            "sr.service_type, sr.hospital_name, sr.department, sr.service_date, sr.ai_summary, " +
             "o.created_at, o.updated_at " +
             "FROM service_order o " +
             "LEFT JOIN sys_user cu ON o.customer_id = cu.id " +
@@ -110,12 +111,13 @@ public interface ServiceOrderMapper {
             "SELECT o.id, o.request_id, o.customer_id, cu.nickname AS customer_name, " +
             "o.companion_id, cp.user_id AS companion_user_id, co.nickname AS companion_name, " +
             "o.service_price, o.platform_fee, o.companion_income, o.status, " +
-            "o.accepted_at, o.started_at, o.completed_at, o.cancel_reason, " +
+            "o.accepted_at, o.started_at, o.completed_at, o.cancel_reason, sr.ai_summary, " +
             "o.created_at, o.updated_at " +
             "FROM service_order o " +
             "LEFT JOIN sys_user cu ON o.customer_id = cu.id " +
             "LEFT JOIN companion_profile cp ON o.companion_id = cp.id " +
             "LEFT JOIN sys_user co ON cp.user_id = co.id " +
+            "LEFT JOIN service_request sr ON o.request_id = sr.id " +
             "WHERE 1=1 " +
             "<if test='status != null and status != \"\"'> AND o.status = #{status}</if>" +
             "<if test='customerId != null'> AND o.customer_id = #{customerId}</if>" +

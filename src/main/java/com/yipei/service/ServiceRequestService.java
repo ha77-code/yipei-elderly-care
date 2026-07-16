@@ -16,11 +16,14 @@ import java.util.List;
 public class ServiceRequestService {
     private final ServiceRequestMapper serviceRequestMapper;
     private final SysUserMapper sysUserMapper;
+    private final AiSummaryService aiSummaryService;
 
     public ServiceRequestService(ServiceRequestMapper serviceRequestMapper,
-                                 SysUserMapper sysUserMapper) {
+                                 SysUserMapper sysUserMapper,
+                                 AiSummaryService aiSummaryService) {
         this.serviceRequestMapper = serviceRequestMapper;
         this.sysUserMapper = sysUserMapper;
+        this.aiSummaryService = aiSummaryService;
     }
 
     /** 发布服务需求 */
@@ -45,6 +48,10 @@ public class ServiceRequestService {
         sr.setBudget(request.getBudget());
         sr.setStatus("PENDING");
         serviceRequestMapper.insert(sr);
+        aiSummaryService.generate(sr).ifPresent(summary -> {
+            sr.setAiSummary(summary);
+            serviceRequestMapper.updateAiSummary(sr.getId(), summary);
+        });
         return sr;
     }
 

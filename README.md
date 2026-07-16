@@ -92,6 +92,21 @@ powershell.exe -ExecutionPolicy Bypass -File .\scripts\start-dev.ps1
 
 后端默认使用 `root / 123456` 连接本机 MySQL。可通过 `YIPEI_DB_URL`、`YIPEI_DB_USERNAME`、`YIPEI_DB_PASSWORD` 环境变量覆盖，配置见 `src/main/resources/application.yaml`。
 
+## AI 需求摘要配置
+
+发布陪诊需求后，后端会调用一个 OpenAI 兼容的 `chat/completions` 接口生成摘要，并将摘要保存到 `service_request.ai_summary`。陪诊师可在可接订单、我的订单和订单详情中查看摘要。模型调用失败不会阻塞需求发布。
+
+默认关闭 AI 功能。启动后端前，在同一个 PowerShell 窗口设置以下环境变量：
+
+```powershell
+$env:YIPEI_AI_ENABLED = 'true'
+$env:YIPEI_AI_BASE_URL = 'https://api.openai.com/v1'
+$env:YIPEI_AI_API_KEY = 'your_api_key'
+$env:YIPEI_AI_MODEL = 'gpt-4o-mini'
+```
+
+DeepSeek 等兼容 OpenAI Chat Completions 的服务同样可用，只需替换 `YIPEI_AI_BASE_URL` 和 `YIPEI_AI_MODEL`。不要将 API Key 写入仓库；完整配置项见 `src/main/resources/application-example.yaml`。
+
 ## 主要角色
 
 - 老人/家属用户；

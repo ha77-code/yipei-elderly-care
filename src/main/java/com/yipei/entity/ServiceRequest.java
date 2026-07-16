@@ -14,6 +14,7 @@ public class ServiceRequest {
     private String department;
     private String requirement;
     private String specialNotes;
+    private String aiSummary;
     private String contactName;
     private String contactPhone;
     private BigDecimal budget;
