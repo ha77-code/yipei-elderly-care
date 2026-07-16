@@ -40,4 +40,7 @@ public interface SysUserMapper {
     int updateUserInfo(@Param("id") Long id,
                        @Param("nickname") String nickname,
                        @Param("phone") String phone);
+
+    @Update("UPDATE sys_user SET password = #{password} WHERE id = #{id}")
+    int updatePassword(@Param("id") Long id, @Param("password") String password);
 }

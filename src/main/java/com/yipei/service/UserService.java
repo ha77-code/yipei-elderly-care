@@ -115,6 +115,23 @@ public class UserService {
         return toUserVO(updated);
     }
 
+    /* ===== 修改密码 ===== */
+
+    public void updatePassword(Long id, String oldPassword, String newPassword) {
+        SysUser user = sysUserMapper.selectById(id);
+        if (user == null) {
+            throw new NotFoundException("用户不存在，ID: " + id);
+        }
+        if (!user.getPassword().equals(oldPassword)) {
+            throw new ForbiddenException("旧密码错误");
+        }
+        if (newPassword == null || newPassword.trim().isEmpty()) {
+            // Service-level validation in addition to controller DTO validation
+            throw new ForbiddenException("新密码不能为空");
+        }
+        sysUserMapper.updatePassword(id, newPassword);
+    }
+
     /* ===== VO 转换 ===== */
 
     private LoginVO toLoginVO(SysUser user) {
