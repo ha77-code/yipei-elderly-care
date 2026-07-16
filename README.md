@@ -68,6 +68,30 @@
 - 文本 AI API
 - Spring Boot MultipartFile 本地文件存储
 
+## 本地启动
+
+克隆项目后都需要初始化自己的本地 MySQL，不能复用数据库或手工插入明文密码。
+
+```powershell
+# 1. 创建 yipei 数据库、表和可登录的演示账号
+powershell.exe -ExecutionPolicy Bypass -File .\scripts\bootstrap-local.ps1
+
+# MySQL 密码不是 123456 时，显式传入自己的密码
+powershell.exe -ExecutionPolicy Bypass -File .\scripts\bootstrap-local.ps1 -DbPassword 'your_mysql_password'
+
+# 2. 安装前端依赖（首次即可）
+cd frontend
+npm.cmd install
+cd ..
+
+# 3. 启动前后端（会打开两个可查看日志的 PowerShell 窗口）
+powershell.exe -ExecutionPolicy Bypass -File .\scripts\start-dev.ps1
+```
+
+浏览器访问 `http://localhost:3000`。演示账号为 `customer1`、`companion1`、`admin1`，密码均为 `123456`。
+
+后端默认使用 `root / 123456` 连接本机 MySQL。可通过 `YIPEI_DB_URL`、`YIPEI_DB_USERNAME`、`YIPEI_DB_PASSWORD` 环境变量覆盖，配置见 `src/main/resources/application.yaml`。
+
 ## 主要角色
 
 - 老人/家属用户；
