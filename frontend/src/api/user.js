@@ -1,6 +1,6 @@
 /**
  * 用户相关 API
- * — 登录、注册、获取/修改个人信息、用户列表
+ * — 登录、注册、获取/修改个人信息
  */
 import request from './request'
 
@@ -37,14 +37,5 @@ export function updateUserInfo(data) {
     url: '/api/user/info',
     method: 'put',
     data
-  })
-}
-
-/** 获取用户列表 */
-export function getUserList(params) {
-  return request({
-    url: '/api/user/list',
-    method: 'get',
-    params
   })
 }

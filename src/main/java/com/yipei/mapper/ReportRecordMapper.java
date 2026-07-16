@@ -32,11 +32,6 @@ public interface ReportRecordMapper {
             "FROM report_record WHERE id = #{id}")
     ReportRecord selectById(@Param("id") Long id);
 
-    @Select("SELECT id, order_id, reporter_id, reason, content, status, " +
-            "handled_by, handled_at, handle_remark, created_at " +
-            "FROM report_record WHERE reporter_id = #{userId} ORDER BY created_at DESC")
-    List<ReportRecord> selectByReporterId(@Param("userId") Long userId);
-
     @Update("UPDATE report_record SET status = #{status}, handled_by = #{handlerId}, " +
             "handled_at = NOW(), handle_remark = #{remark} WHERE id = #{id}")
     int updateHandle(@Param("id") Long id, @Param("status") String status,
