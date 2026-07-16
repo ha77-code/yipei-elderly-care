@@ -9,6 +9,8 @@ import com.yipei.mapper.ReportRecordMapper;
 import com.yipei.mapper.ServiceOrderMapper;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class ReportService {
     private final ReportRecordMapper reportRecordMapper;
@@ -22,12 +24,10 @@ public class ReportService {
 
     /** 发起投诉 */
     public ReportRecord create(Long userId, ReportCreateRequest request) {
-        // 校验订单存在
         ServiceOrder order = serviceOrderMapper.selectById(request.getOrderId());
         if (order == null) {
             throw new NotFoundException("订单不存在，ID: " + request.getOrderId());
         }
-        // 校验投诉人是订单相关方
         if (!order.getCustomerId().equals(userId) && !order.getCompanionId().equals(userId)) {
             throw new ForbiddenException("只能投诉自己参与的订单");
         }
@@ -40,5 +40,22 @@ public class ReportService {
         report.setStatus("PENDING");
         reportRecordMapper.insert(report);
         return report;
+    }
+
+    /** 投诉列表（按状态筛选） */
+    public List<ReportRecord> listAll(String status) {
+        return reportRecordMapper.selectAll(status);
+    }
+
+    /** 处理投诉 */
+    public void handle(Long id, Long handlerId, String status, String remark) {
+        ReportRecord report = reportRecordMapper.selectById(id);
+        if (report == null) {
+            throw new NotFoundException("投诉不存在，ID: " + id);
+        }
+        if (!"RESOLVED".equals(status) && !"REJECTED".equals(status)) {
+            throw new ForbiddenException("处理状态只能为 RESOLVED 或 REJECTED");
+        }
+        reportRecordMapper.updateHandle(id, status, handlerId, remark);
     }
 }
