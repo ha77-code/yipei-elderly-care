@@ -12,4 +12,8 @@ public interface CompanionProfileMapper {
             "experience_years, rating, completed_count, audit_status, created_at, updated_at " +
             "FROM companion_profile WHERE id = #{id}")
     CompanionProfile selectById(@Param("id") Long id);
+
+    @org.apache.ibatis.annotations.Update(
+            "UPDATE companion_profile SET rating = #{rating} WHERE id = #{id}")
+    int updateRating(@Param("id") Long id, @Param("rating") double rating);
 }
