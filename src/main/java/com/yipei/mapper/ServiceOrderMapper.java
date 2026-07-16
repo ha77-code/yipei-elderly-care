@@ -91,6 +91,11 @@ public interface ServiceOrderMapper {
             "WHERE id = #{id} AND status = 'IN_SERVICE'")
     int complete(@Param("id") Long id);
 
+    /** 取消订单 */
+    @Update("UPDATE service_order SET status = 'CANCELLED', cancel_reason = #{cancelReason} " +
+            "WHERE id = #{id}")
+    int cancel(@Param("id") Long id, @Param("cancelReason") String cancelReason);
+
     /** 更新状态和拒绝原因 */
     @Update("UPDATE service_order SET status = #{status}, cancel_reason = #{cancelReason} WHERE id = #{id}")
     int updateStatus(@Param("id") Long id, @Param("status") String status,

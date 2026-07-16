@@ -94,4 +94,14 @@ public class OrderController {
         orderService.complete(id, userId);
         return ApiResponse.success();
     }
+
+    /** 取消订单 */
+    @PutMapping("/{id}/cancel")
+    public ApiResponse<Void> cancel(
+            @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestBody Map<String, String> body) {
+        orderService.cancel(id, userId, body.get("cancelReason"));
+        return ApiResponse.success();
+    }
 }

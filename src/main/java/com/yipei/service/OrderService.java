@@ -173,6 +173,33 @@ public class OrderService {
         orderStatusLogMapper.insert(log);
     }
 
+    /* ===== 客户操作 ===== */
+
+    /** 取消订单（仅未开始订单） */
+    public void cancel(Long orderId, Long userId, String reason) {
+        ServiceOrder order = serviceOrderMapper.selectById(orderId);
+        if (order == null) {
+            throw new NotFoundException("订单不存在，ID: " + orderId);
+        }
+        if (!order.getCustomerId().equals(userId)) {
+            throw new ForbiddenException("只能取消自己的订单");
+        }
+        if (!"PENDING_ACCEPT".equals(order.getStatus())
+                && !"ACCEPTED".equals(order.getStatus())) {
+            throw new ForbiddenException("当前状态不允许取消，仅未开始的订单可取消");
+        }
+        String fromStatus = order.getStatus();
+        serviceOrderMapper.cancel(orderId, reason);
+
+        OrderStatusLog log = new OrderStatusLog();
+        log.setOrderId(orderId);
+        log.setFromStatus(fromStatus);
+        log.setToStatus("CANCELLED");
+        log.setOperatorId(userId);
+        log.setRemark(reason != null ? reason : "客户取消订单");
+        orderStatusLogMapper.insert(log);
+    }
+
     /* ===== 查询 ===== */
 
     public List<OrderDetailVO> listAvailable(String serviceType, String keyword) {
