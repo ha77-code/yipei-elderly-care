@@ -3,6 +3,7 @@ package com.yipei.entity;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 public class OrderDetailVO {
@@ -26,4 +27,7 @@ public class OrderDetailVO {
     private LocalDateTime serviceDate;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    /** 状态变更记录 */
+    private List<OrderStatusLog> statusLogs;
 }

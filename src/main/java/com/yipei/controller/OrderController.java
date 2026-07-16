@@ -42,6 +42,14 @@ public class OrderController {
         return ApiResponse.success(orderService.listByRole(userId, role));
     }
 
+    /** 可接订单（陪诊师查看） */
+    @GetMapping("/available")
+    public ApiResponse<List<OrderDetailVO>> available(
+            @RequestParam(required = false) String serviceType,
+            @RequestParam(required = false) String keyword) {
+        return ApiResponse.success(orderService.listAvailable(serviceType, keyword));
+    }
+
     /** 订单详情 */
     @GetMapping("/{id}")
     public ApiResponse<OrderDetailVO> detail(@PathVariable Long id) {
