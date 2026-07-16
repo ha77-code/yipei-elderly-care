@@ -3,6 +3,7 @@ package com.yipei.controller;
 import com.yipei.entity.ApiResponse;
 import com.yipei.entity.OrderCreateRequest;
 import com.yipei.entity.OrderDetailVO;
+import com.yipei.entity.OrderStatusLog;
 import com.yipei.entity.ServiceOrder;
 import com.yipei.service.OrderService;
 import jakarta.validation.Valid;
@@ -93,5 +94,21 @@ public class OrderController {
             @RequestHeader("X-User-Id") Long userId) {
         orderService.complete(id, userId);
         return ApiResponse.success();
+    }
+
+    /** 取消订单 */
+    @PutMapping("/{id}/cancel")
+    public ApiResponse<Void> cancel(
+            @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestBody Map<String, String> body) {
+        orderService.cancel(id, userId, body.get("cancelReason"));
+        return ApiResponse.success();
+    }
+
+    /** 订单状态变更记录 */
+    @GetMapping("/{id}/status-log")
+    public ApiResponse<List<OrderStatusLog>> statusLog(@PathVariable Long id) {
+        return ApiResponse.success(orderService.getStatusLogs(id));
     }
 }
