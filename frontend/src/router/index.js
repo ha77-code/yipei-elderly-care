@@ -285,7 +285,12 @@ router.beforeEach((to, from, next) => {
     return next({ path: '/login', query: { redirect: to.fullPath } })
   }
 
-  // ③ 需要特定角色的页面
+  // ③ 未登录 → 去登录
+  if (!loggedIn) {
+    return next({ path: '/login', query: { redirect: to.fullPath } })
+  }
+
+  // ④ 需要特定角色的页面
   const requiredRole = deepMeta.role
   if (requiredRole) {
     // 未登录 → 去登录
