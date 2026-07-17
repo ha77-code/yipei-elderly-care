@@ -69,6 +69,10 @@
           </el-col>
         </el-row>
 
+        <el-form-item label="需要接送">
+          <el-switch v-model="form.needPickup" active-text="需要陪诊师上门接送" inactive-text="自己前往医院" />
+        </el-form-item>
+
         <el-form-item label="预算（元）" prop="budget">
           <el-input-number
             v-model="form.budget"
@@ -103,6 +107,14 @@
           />
         </el-form-item>
 
+        <el-form-item label="AI需求摘要">
+          <div class="ai-summary-tools">
+            <el-button icon="el-icon-magic-stick" :loading="summaryGenerating" @click="handleGenerateSummary">生成摘要</el-button>
+            <span class="form-hint">生成后可修改，提交时将展示给陪诊师。</span>
+          </div>
+          <el-input v-if="form.aiSummary" v-model="form.aiSummary" type="textarea" :rows="3" maxlength="800" show-word-limit class="ai-summary-input" />
+        </el-form-item>
+
         <el-form-item>
           <el-button
             type="primary"
@@ -124,6 +136,7 @@
 
 <script>
 import { createRequest } from '@/api/serviceRequest'
+import { generateServiceSummary } from '@/api/ai'
 
 export default {
   name: 'RequestCreate',
@@ -139,7 +152,9 @@ export default {
         contactPhone: '',
         budget: undefined,
         requirement: '',
-        specialNotes: ''
+        specialNotes: '',
+        aiSummary: '',
+        needPickup: false
       },
       rules: {
         serviceType: [
@@ -165,7 +180,8 @@ export default {
           { required: true, message: '请填写需求内容', trigger: 'blur' }
         ]
       },
-      submitting: false
+      submitting: false,
+      summaryGenerating: false
     }
   },
   computed: {
@@ -174,6 +190,30 @@ export default {
     }
   },
   methods: {
+    async handleGenerateSummary() {
+      if (!this.form.requirement.trim()) {
+        this.$message.warning('请先填写需求内容')
+        return
+      }
+      this.summaryGenerating = true
+      try {
+        const res = await generateServiceSummary({
+          serviceType: this.form.serviceType,
+          serviceDate: this.form.serviceDate ? this.form.serviceDate.replace(' ', 'T') : '',
+          hospitalName: this.form.hospitalName,
+          department: this.form.department,
+          text: this.form.requirement,
+          specialNotes: this.form.specialNotes
+        })
+        const data = res.data || res
+        this.form.aiSummary = data.summary || ''
+        this.$message.success('摘要已生成')
+      } catch {
+        // Error feedback is handled by the shared request interceptor.
+      } finally {
+        this.summaryGenerating = false
+      }
+    },
     async handleSubmit() {
       try {
         await this.$refs.requestForm.validate()
@@ -263,4 +303,6 @@ export default {
   font-size: 13px;
   color: var(--color-text-placeholder);
 }
+.ai-summary-tools { display: flex; align-items: center; }
+.ai-summary-input { margin-top: 10px; }
 </style>

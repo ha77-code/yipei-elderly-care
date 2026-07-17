@@ -2,7 +2,7 @@
   <div class="page-wrap" v-loading="loading">
     <div class="page-head">
       <div>
-        <h2 class="page-title">订单详情 #{{ order.id }}</h2>
+        <h2 class="page-title">订单详情 #{{ order.id }} <TtsPlayer :text="ttsText" /></h2>
         <p class="page-subtitle">
           <span :class="['status-tag', statusClass(order.status)]">{{ statusMap[order.status] || order.status }}</span>
           <span class="muted">创建于 {{ fmt(order.createdAt) }}</span>
@@ -50,6 +50,11 @@
             <el-descriptions-item label="科室">{{ order.department || '-' }}</el-descriptions-item>
             <el-descriptions-item label="服务时间">{{ fmt(order.serviceDate) }}</el-descriptions-item>
           </el-descriptions>
+        </el-card>
+
+        <el-card shadow="never" class="info-card" v-if="role === 'COMPANION' && order.aiSummary">
+          <div slot="header"><span>AI需求摘要</span></div>
+          <div class="ai-summary">{{ order.aiSummary }}</div>
         </el-card>
 
         <!-- 服务记录 -->
@@ -145,6 +150,7 @@ import { getServiceRecordByOrder } from '@/api/serviceRecord'
 import { getEvaluationByOrder, submitEvaluation } from '@/api/evaluation'
 import { submitReport } from '@/api/report'
 import { getUserRole, getUser } from '@/utils/auth'
+import TtsPlayer from '@/components/TtsPlayer.vue'
 
 const STATUS_MAP = {
   PENDING_ACCEPT: '待接单', ACCEPTED: '已接单', IN_SERVICE: '服务中',
@@ -154,6 +160,7 @@ const STATUS_MAP = {
 
 export default {
   name: 'OrderDetail',
+  components: { TtsPlayer },
   data() {
     return {
       loading: false, acting: null, order: {}, serviceRecord: null,
@@ -165,24 +172,47 @@ export default {
   computed: {
     role() { return getUserRole() },
     userId() { const u = getUser(); return u ? u.id : null },
+    isCompanionOrder() {
+      return this.role === 'COMPANION' &&
+        String(this.order.companionUserId) === String(this.userId)
+    },
+    isCustomerOrder() {
+      return this.role === 'CUSTOMER' &&
+        String(this.order.customerId) === String(this.userId)
+    },
     actions() {
-      const s = this.order.status; const r = this.role
+      const s = this.order.status
       const acts = []
-      if (r === 'COMPANION' && s === 'PENDING_ACCEPT') {
+      if (this.isCompanionOrder && s === 'PENDING_ACCEPT') {
         acts.push({ key: 'accept', label: '接单', type: 'primary', action: 'accept' })
         acts.push({ key: 'reject', label: '拒单', type: 'danger', action: 'reject', class: 'plain' })
       }
-      if (r === 'COMPANION' && s === 'ACCEPTED')
+      if (this.isCompanionOrder && s === 'ACCEPTED')
         acts.push({ key: 'start', label: '开始服务', type: 'primary', action: 'start' })
-      if (r === 'COMPANION' && s === 'IN_SERVICE')
+      if (this.isCompanionOrder && s === 'IN_SERVICE')
         acts.push({ key: 'complete', label: '完成服务', type: 'success', action: 'complete' })
-      if (r === 'CUSTOMER' && (s === 'PENDING_ACCEPT' || s === 'ACCEPTED'))
+      if (this.isCustomerOrder && (s === 'PENDING_ACCEPT' || s === 'ACCEPTED'))
         acts.push({ key: 'cancel', label: '取消订单', type: 'danger', action: 'cancel', class: 'plain' })
-      if (s === 'COMPLETED' && (r === 'CUSTOMER' || r === 'COMPANION'))
+      if (s === 'COMPLETED' && (this.isCustomerOrder || this.isCompanionOrder))
         acts.push({ key: 'evaluate', label: '评价', type: 'warning', action: 'evaluate' })
-      if (r === 'CUSTOMER' || r === 'COMPANION')
+      if (this.isCustomerOrder || this.isCompanionOrder)
         acts.push({ key: 'report', label: '投诉', type: 'danger', action: 'report', class: 'plain' })
       return acts
+    },
+    ttsText() {
+      const o = this.order
+      if (!o.id) return ''
+      let text = '订单编号' + o.id + ' '
+      text += '状态' + (STATUS_MAP[o.status] || '未知') + ' '
+      if (o.customerName) text += '客户' + o.customerName + ' '
+      if (o.companionName) text += '陪诊师' + o.companionName + ' '
+      if (o.serviceType) text += '服务类型' + o.serviceType + ' '
+      if (o.hospitalName) text += '医院' + o.hospitalName + ' '
+      if (o.department) text += '科室' + o.department + ' '
+      if (o.serviceDate) text += '服务时间' + this.fmt(o.serviceDate) + ' '
+      if (o.servicePrice) text += '价格' + o.servicePrice + '元 '
+      if (o.aiSummary) text += 'AI摘要 ' + o.aiSummary + ' '
+      return text
     }
   },
   created() { this.fetchAll() },
@@ -264,7 +294,7 @@ export default {
 <style scoped>
 .page-wrap { padding: 24px 32px; max-width: 1100px; }
 .page-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
-.page-title { font-size: 20px; font-weight: 700; color: #1A1A1A; margin: 0; }
+.page-title { font-size: 20px; font-weight: 700; color: #2C2418; margin: 0; }
 .page-subtitle { margin: 6px 0 0; font-size: 13px; color: #999; display: flex; align-items: center; gap: 10px; }
 .muted { color: #999; font-size: 12px; }
 
@@ -282,6 +312,7 @@ export default {
 
 /* 服务记录 */
 .record-content { font-size: 14px; color: #333; line-height: 1.8; white-space: pre-wrap; }
+.ai-summary { font-size: 14px; color: #4A5E4D; line-height: 1.8; white-space: pre-wrap; padding: 10px 12px; background: #F3F7F1; border-left: 3px solid #7A9A7E; border-radius: 4px; }
 .record-notes { margin-top: 12px; padding: 10px 12px; background: #FFF8E1; border-radius: 6px; font-size: 13px; color: #8B7355; }
 .notes-label { font-weight: 600; }
 

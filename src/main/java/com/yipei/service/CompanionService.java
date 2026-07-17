@@ -51,6 +51,7 @@ public class CompanionService {
         profile.setIntroduction(request.getIntroduction());
         profile.setServiceArea(request.getServiceArea());
         profile.setServiceTypes(request.getServiceTypes());
+        profile.setTraits(request.getTraits());
         profile.setExperienceYears(request.getExperienceYears());
         profile.setAuditStatus(0);
         companionProfileMapper.insert(profile);
@@ -65,12 +66,13 @@ public class CompanionService {
         }
         companionProfileMapper.update(profile.getId(),
                 request.getRealName(), request.getAvatar(), request.getIntroduction(),
-                request.getServiceArea(), request.getServiceTypes(), request.getExperienceYears());
+                request.getServiceArea(), request.getServiceTypes(), request.getTraits(),
+                request.getExperienceYears());
     }
 
     /** 审核通过的陪诊师列表 */
-    public List<CompanionVO> listApproved(String serviceArea, String serviceType) {
-        return companionProfileMapper.selectApproved(serviceArea, serviceType);
+    public List<CompanionVO> listApproved(String serviceArea, String serviceType, String traits) {
+        return companionProfileMapper.selectApproved(serviceArea, serviceType, traits);
     }
 
     /** 陪诊师详情 */

@@ -37,8 +37,3 @@ export function getAllReports(params) {
 export function handleReport(id, data) {
   return request({ url: `/api/admin/report/${id}/handle`, method: 'put', data })
 }
-
-/** 获取所有订单（管理员） */
-export function getAllOrders(params) {
-  return request({ url: '/api/admin/orders', method: 'get', params })
-}

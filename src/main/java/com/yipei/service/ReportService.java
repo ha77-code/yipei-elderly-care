@@ -54,18 +54,6 @@ public class ReportService {
         return reportRecordMapper.selectAll(status);
     }
 
-    public List<ReportRecord> listMine(Long userId) {
-        return reportRecordMapper.selectByReporterId(userId);
-    }
-
-    public ReportRecord getById(Long id) {
-        ReportRecord report = reportRecordMapper.selectById(id);
-        if (report == null) {
-            throw new NotFoundException("投诉不存在，ID: " + id);
-        }
-        return report;
-    }
-
     /** 处理投诉 */
     public void handle(Long id, Long handlerId, String status, String remark) {
         ReportRecord report = reportRecordMapper.selectById(id);

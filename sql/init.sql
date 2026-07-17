@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS service_request (
     department VARCHAR(100),
     requirement VARCHAR(2000) NOT NULL,
     special_notes VARCHAR(1000),
+    ai_summary VARCHAR(1000),
     contact_name VARCHAR(100) NOT NULL,
     contact_phone VARCHAR(20) NOT NULL,
     budget DECIMAL(10,2),
@@ -61,6 +62,22 @@ CREATE TABLE IF NOT EXISTS service_request (
     INDEX idx_request_status_date (status, service_date),
     INDEX idx_request_service_type (service_type)
 );
+
+SET @ai_summary_column_exists = (
+    SELECT COUNT(*)
+    FROM information_schema.columns
+    WHERE table_schema = DATABASE()
+      AND table_name = 'service_request'
+      AND column_name = 'ai_summary'
+);
+SET @ai_summary_migration_sql = IF(
+    @ai_summary_column_exists = 0,
+    'ALTER TABLE service_request ADD COLUMN ai_summary VARCHAR(1000) AFTER special_notes',
+    'SELECT 1'
+);
+PREPARE ai_summary_migration_statement FROM @ai_summary_migration_sql;
+EXECUTE ai_summary_migration_statement;
+DEALLOCATE PREPARE ai_summary_migration_statement;
 
 CREATE TABLE IF NOT EXISTS service_order (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -189,3 +206,16 @@ ON DUPLICATE KEY UPDATE
     role = VALUES(role),
     status = VALUES(status),
     updated_at = NOW();
+-- Quick-experience companion profile. This is inserted only when missing so it does not overwrite local edits.
+INSERT INTO companion_profile(
+    user_id, real_name, avatar, introduction, service_area, service_types,
+    experience_years, rating, completed_count, audit_status, created_at, updated_at
+)
+SELECT
+    u.id, 'Li Peizhen', NULL,
+    'Experienced companion for outpatient visits, inpatient care, and examinations.',
+    'Beijing Chaoyang District', 'Outpatient,Inpatient,Examination',
+    5, 4.80, 12, 1, NOW(), NOW()
+FROM sys_user u
+WHERE u.username = 'companion1'
+ON DUPLICATE KEY UPDATE id = id;

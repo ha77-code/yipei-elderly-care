@@ -16,11 +16,14 @@ import java.util.List;
 public class ServiceRequestService {
     private final ServiceRequestMapper serviceRequestMapper;
     private final SysUserMapper sysUserMapper;
+    private final AiSummaryService aiSummaryService;
 
     public ServiceRequestService(ServiceRequestMapper serviceRequestMapper,
-                                 SysUserMapper sysUserMapper) {
+                                 SysUserMapper sysUserMapper,
+                                 AiSummaryService aiSummaryService) {
         this.serviceRequestMapper = serviceRequestMapper;
         this.sysUserMapper = sysUserMapper;
+        this.aiSummaryService = aiSummaryService;
     }
 
     /** 发布服务需求 */
@@ -40,12 +43,29 @@ public class ServiceRequestService {
         sr.setDepartment(request.getDepartment());
         sr.setRequirement(request.getRequirement());
         sr.setSpecialNotes(request.getSpecialNotes());
+        sr.setAiSummary(normalizeAiSummary(request.getAiSummary()));
+        sr.setPreferredTraits(request.getPreferredTraits());
+        sr.setNeedPickup(request.getNeedPickup());
         sr.setContactName(request.getContactName());
         sr.setContactPhone(request.getContactPhone());
         sr.setBudget(request.getBudget());
         sr.setStatus("PENDING");
         serviceRequestMapper.insert(sr);
+        if (sr.getAiSummary() == null) {
+            aiSummaryService.generate(sr).ifPresent(summary -> {
+                sr.setAiSummary(summary);
+                serviceRequestMapper.updateAiSummary(sr.getId(), summary);
+            });
+        }
         return sr;
+    }
+
+    private String normalizeAiSummary(String summary) {
+        if (summary == null || summary.isBlank()) {
+            return null;
+        }
+        String normalized = summary.replaceAll("\\s+", " ").trim();
+        return normalized.length() > 800 ? normalized.substring(0, 800) : normalized;
     }
 
     /** 查看我发布的需求列表 */

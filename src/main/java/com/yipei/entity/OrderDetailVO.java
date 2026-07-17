@@ -26,6 +26,7 @@ public class OrderDetailVO {
     private String hospitalName;
     private String department;
     private LocalDateTime serviceDate;
+    private String aiSummary;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

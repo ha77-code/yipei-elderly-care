@@ -17,6 +17,7 @@ public class CompanionVO {
     private BigDecimal rating;
     private Integer completedCount;
     private Integer auditStatus;
+    private String traits;
     private String nickname;
     private String phone;
     private LocalDateTime createdAt;
