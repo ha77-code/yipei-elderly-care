@@ -20,6 +20,8 @@ public class CompanionApplyRequest {
     @NotBlank(message = "服务类型不能为空")
     private String serviceTypes;
 
+    private String traits;
+
     @NotNull(message = "经验年限不能为空")
     private Integer experienceYears;
 }

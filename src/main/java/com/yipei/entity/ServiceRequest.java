@@ -15,6 +15,7 @@ public class ServiceRequest {
     private String requirement;
     private String specialNotes;
     private String aiSummary;
+    private String preferredTraits;
     private String contactName;
     private String contactPhone;
     private BigDecimal budget;

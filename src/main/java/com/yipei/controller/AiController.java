@@ -63,4 +63,30 @@ public class AiController {
         List<String> tags = List.of(types.split("[,，]"));
         return ApiResponse.success(Map.of("tags", tags));
     }
+
+    /** AI 性格匹配：根据偏好推荐陪诊师标签，或根据陪诊师标签推荐匹配订单 */
+    @PostMapping("/match")
+    public ApiResponse<Map<String, Object>> match(@RequestBody Map<String, String> body) {
+        if (!aiProperties.isConfigured()) {
+            return ApiResponse.error(503, "AI 功能未接入");
+        }
+        String direction = body.getOrDefault("direction", "companion");
+        String input = body.getOrDefault("input", "");
+        if (input.isBlank()) {
+            return ApiResponse.error(400, "输入文本不能为空");
+        }
+
+        String prompt;
+        if ("order".equals(direction)) {
+            String myTraits = body.getOrDefault("myTraits", "");
+            prompt = "你是一个陪诊师，你的性格标签是：" + myTraits + "。下面是一些服务需求列表，请根据你的性格选出最适合你接单的需求，给出最多3个推荐。\n\n" + input;
+        } else {
+            String traitsList = body.getOrDefault("traitsList", "");
+            prompt = "根据用户偏好：「" + input + "」，从以下陪诊师性格标签中推荐最匹配的标签：\n" + traitsList + "\n\n只输出推荐标签名，逗号分隔。";
+        }
+
+        Optional<String> result = aiSummaryService.callAi(prompt);
+        return result.map(r -> ApiResponse.success(Map.of("result", (Object) r.trim(), "source", "ai")))
+                .orElseGet(() -> ApiResponse.error(500, "AI 调用失败"));
+    }
 }

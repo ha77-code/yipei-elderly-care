@@ -44,16 +44,27 @@ public class AiSummaryService {
         if (!aiProperties.isConfigured()) {
             return Optional.empty();
         }
+        return callChatCompletions(SYSTEM_PROMPT, buildUserPrompt(serviceRequest));
+    }
 
+    /** 通用 AI 调用，自定义 system prompt 和 user prompt */
+    public Optional<String> callAi(String userPrompt) {
+        if (!aiProperties.isConfigured()) {
+            return Optional.empty();
+        }
+        return callChatCompletions("You are a helpful assistant. Reply in Simplified Chinese only.", userPrompt);
+    }
+
+    private Optional<String> callChatCompletions(String systemPrompt, String userPrompt) {
         try {
             ObjectNode body = objectMapper.createObjectNode();
             body.put("model", aiProperties.getModel());
-            body.put("temperature", 0.2);
-            body.put("max_tokens", Math.max(32, aiProperties.getMaxTokens()));
+            body.put("temperature", 0.3);
+            body.put("max_tokens", Math.max(64, aiProperties.getMaxTokens()));
 
             ArrayNode messages = body.putArray("messages");
-            messages.addObject().put("role", "system").put("content", SYSTEM_PROMPT);
-            messages.addObject().put("role", "user").put("content", buildUserPrompt(serviceRequest));
+            messages.addObject().put("role", "system").put("content", systemPrompt);
+            messages.addObject().put("role", "user").put("content", userPrompt);
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(chatCompletionsUrl()))
@@ -64,7 +75,7 @@ public class AiSummaryService {
                     .build();
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                log.warn("AI summary request failed with HTTP status {}", response.statusCode());
+                log.warn("AI request failed with HTTP status {}", response.statusCode());
                 return Optional.empty();
             }
 
@@ -73,14 +84,14 @@ public class AiSummaryService {
                     .path(0)
                     .path("message")
                     .path("content");
-            String summary = normalize(content.asText());
-            return summary.isBlank() ? Optional.empty() : Optional.of(summary);
+            String text = normalize(content.asText());
+            return text.isBlank() ? Optional.empty() : Optional.of(text);
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
-            log.warn("AI summary request was interrupted");
+            log.warn("AI request was interrupted");
             return Optional.empty();
         } catch (IOException | RuntimeException exception) {
-            log.warn("AI summary request failed: {}", exception.getMessage());
+            log.warn("AI request failed: {}", exception.getMessage());
             return Optional.empty();
         }
     }
