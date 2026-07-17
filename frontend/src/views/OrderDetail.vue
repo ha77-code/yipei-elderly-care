@@ -52,6 +52,11 @@
           </el-descriptions>
         </el-card>
 
+        <el-card shadow="never" class="info-card" v-if="role === 'COMPANION' && order.aiSummary">
+          <div slot="header"><span>AI需求摘要</span></div>
+          <div class="ai-summary">{{ order.aiSummary }}</div>
+        </el-card>
+
         <!-- 服务记录 -->
         <el-card shadow="never" class="info-card" v-if="serviceRecord">
           <div slot="header"><span>服务记录</span></div>
@@ -165,22 +170,30 @@ export default {
   computed: {
     role() { return getUserRole() },
     userId() { const u = getUser(); return u ? u.id : null },
+    isCompanionOrder() {
+      return this.role === 'COMPANION' &&
+        String(this.order.companionUserId) === String(this.userId)
+    },
+    isCustomerOrder() {
+      return this.role === 'CUSTOMER' &&
+        String(this.order.customerId) === String(this.userId)
+    },
     actions() {
-      const s = this.order.status; const r = this.role
+      const s = this.order.status
       const acts = []
-      if (r === 'COMPANION' && s === 'PENDING_ACCEPT') {
+      if (this.isCompanionOrder && s === 'PENDING_ACCEPT') {
         acts.push({ key: 'accept', label: '接单', type: 'primary', action: 'accept' })
         acts.push({ key: 'reject', label: '拒单', type: 'danger', action: 'reject', class: 'plain' })
       }
-      if (r === 'COMPANION' && s === 'ACCEPTED')
+      if (this.isCompanionOrder && s === 'ACCEPTED')
         acts.push({ key: 'start', label: '开始服务', type: 'primary', action: 'start' })
-      if (r === 'COMPANION' && s === 'IN_SERVICE')
+      if (this.isCompanionOrder && s === 'IN_SERVICE')
         acts.push({ key: 'complete', label: '完成服务', type: 'success', action: 'complete' })
-      if (r === 'CUSTOMER' && (s === 'PENDING_ACCEPT' || s === 'ACCEPTED'))
+      if (this.isCustomerOrder && (s === 'PENDING_ACCEPT' || s === 'ACCEPTED'))
         acts.push({ key: 'cancel', label: '取消订单', type: 'danger', action: 'cancel', class: 'plain' })
-      if (s === 'COMPLETED' && (r === 'CUSTOMER' || r === 'COMPANION'))
+      if (s === 'COMPLETED' && (this.isCustomerOrder || this.isCompanionOrder))
         acts.push({ key: 'evaluate', label: '评价', type: 'warning', action: 'evaluate' })
-      if (r === 'CUSTOMER' || r === 'COMPANION')
+      if (this.isCustomerOrder || this.isCompanionOrder)
         acts.push({ key: 'report', label: '投诉', type: 'danger', action: 'report', class: 'plain' })
       return acts
     }
@@ -282,6 +295,7 @@ export default {
 
 /* 服务记录 */
 .record-content { font-size: 14px; color: #333; line-height: 1.8; white-space: pre-wrap; }
+.ai-summary { font-size: 14px; color: #4A5E4D; line-height: 1.8; white-space: pre-wrap; padding: 10px 12px; background: #F3F7F1; border-left: 3px solid #7A9A7E; border-radius: 4px; }
 .record-notes { margin-top: 12px; padding: 10px 12px; background: #FFF8E1; border-radius: 6px; font-size: 13px; color: #8B7355; }
 .notes-label { font-weight: 600; }
 

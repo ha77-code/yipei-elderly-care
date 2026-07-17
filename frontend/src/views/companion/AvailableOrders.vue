@@ -11,6 +11,10 @@
           <div class="oc-body">
             <div class="oc-row"><i class="el-icon-office-building"></i> {{ item.hospitalName || '-' }} · {{ item.department || '-' }}</div>
             <div class="oc-row"><i class="el-icon-date"></i> {{ fmt(item.serviceDate) }}</div>
+            <div v-if="item.aiSummary" class="ai-summary">
+              <div class="ai-summary-title"><i class="el-icon-magic-stick"></i> AI需求摘要</div>
+              <p>{{ item.aiSummary }}</p>
+            </div>
             <div class="oc-row"><i class="el-icon-document"></i> {{ item.requirement || '暂无需求描述' }}</div>
           </div>
           <div class="oc-footer">
@@ -74,6 +78,10 @@ export default {
 .oc-body { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
 .oc-row { font-size: 14px; color: var(--color-text-secondary); display: flex; align-items: center; gap: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .oc-row i { color: var(--color-primary); font-size: 15px; flex-shrink: 0; opacity: 0.7; }
+.ai-summary { padding: 10px 12px; border-left: 3px solid var(--color-primary); background: var(--color-bg-page); color: var(--color-text-secondary); border-radius: var(--radius-sm); }
+.ai-summary-title { display: flex; align-items: center; gap: 6px; color: var(--color-primary-dark); font-size: 12px; font-weight: 600; }
+.ai-summary-title i { color: var(--color-primary); }
+.ai-summary p { margin: 6px 0 0; line-height: 1.55; font-size: 13px; white-space: normal; }
 .oc-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 14px; border-top: 1px solid rgba(0,0,0,0.03); }
 
 .empty-state { grid-column: 1 / -1; text-align: center; padding: 80px 0; color: var(--color-text-placeholder); }

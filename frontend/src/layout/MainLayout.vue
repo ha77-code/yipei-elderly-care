@@ -7,7 +7,7 @@
       </div>
       <nav class="top-bar-center">
         <router-link to="/" class="nav-link" exact-active-class="nav-link--active">首页</router-link>
-        <router-link to="/customer/companions" class="nav-link">陪护人员</router-link>
+        <router-link v-if="userRole === 'CUSTOMER'" to="/customer/companions" class="nav-link">陪护人员</router-link>
         <router-link v-if="userRole === 'CUSTOMER'" to="/customer/requests" class="nav-link">我的需求</router-link>
         <router-link v-if="userRole === 'COMPANION'" to="/companion/available-orders" class="nav-link">可接订单</router-link>
         <router-link v-if="userRole === 'ADMIN'" to="/admin/statistics" class="nav-link">平台管理</router-link>

@@ -23,6 +23,9 @@
         <el-table-column label="服务时间" min-width="150">
           <template slot-scope="{ row }">{{ serviceTime(row) }}</template>
         </el-table-column>
+        <el-table-column v-if="isCompanion" label="AI需求摘要" min-width="240" show-overflow-tooltip>
+          <template slot-scope="{ row }">{{ row.aiSummary || '-' }}</template>
+        </el-table-column>
         <el-table-column label="陪诊师" min-width="110">
           <template slot-scope="{ row }">{{ row.companionName || row.companion_name || '-' }}</template>
         </el-table-column>

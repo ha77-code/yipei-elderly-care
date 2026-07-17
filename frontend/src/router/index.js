@@ -1,6 +1,5 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import { Message } from 'element-ui'
 import { getUser, ROLES } from '@/utils/auth'
 
 Vue.use(VueRouter)
@@ -89,13 +88,6 @@ const routes = [
         meta: { title: '服务记录' }
       },
 
-      /* ---------- 陪诊师详情（所有角色可查看） ---------- */
-      {
-        path: 'companion/:id',
-        name: 'CompanionDetail',
-        component: CompanionDetail,
-        meta: { title: '陪诊师详情' }
-      },
 
       /* ---------- 客户端 CUSTOMER ---------- */
       {
@@ -191,7 +183,15 @@ const routes = [
         name: 'AdminStatistics',
         component: AdminStatistics,
         meta: { title: '平台统计', role: ROLES.ADMIN }
-      }
+      },
+
+      /* ---------- 陪诊师详情（所有角色可查看；必须放在固定陪诊师路由之后） ---------- */
+      {
+        path: 'companion/:id',
+        name: 'CompanionDetail',
+        component: CompanionDetail,
+        meta: { title: '陪诊师详情' }
+      },
     ]
   },
 
@@ -209,6 +209,12 @@ const router = new VueRouter({
   base: '/',
   routes
 })
+
+const roleHome = {
+  [ROLES.CUSTOMER]: '/customer/companions',
+  [ROLES.COMPANION]: '/companion/available-orders',
+  [ROLES.ADMIN]: '/admin/dashboard'
+}
 
 /* ===== 全局路由守卫 ===== */
 router.beforeEach((to, from, next) => {
@@ -229,14 +235,22 @@ router.beforeEach((to, from, next) => {
     return next()
   }
 
-  // ② 需登录的页面：未登录
+  // ② 未登录：首页 → 落地页，角色页面 → 登录
   if (!loggedIn) {
-    return next({ path: '/login', query: { redirect: to.fullPath } })
+    if (to.path === '/') {
+      window.location.href = '/landing.html'
+      return
+    }
   }
 
-  // ③ 角色权限检查
+  // ③ 需要特定角色的页面
   const requiredRole = deepMeta.role
   if (requiredRole) {
+    // 未登录 → 去登录
+    if (!loggedIn) {
+      return next({ path: '/login', query: { redirect: to.fullPath } })
+    }
+
     const userRole = user.role
 
     // ADMIN 可访问所有页面
@@ -245,10 +259,7 @@ router.beforeEach((to, from, next) => {
     }
 
     // 角色不匹配
-    if (userRole !== requiredRole) {
-      Message.warning('无权限访问该页面')
-      return next('/')
-    }
+    if (userRole !== requiredRole) return next(roleHome[userRole] || '/')
   }
 
   next()

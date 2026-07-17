@@ -36,3 +36,10 @@ mybatis:
 # 文件上传本地存储路径（相对于项目根目录）
 yipei:
   upload-dir: uploads
+  ai:
+    enabled: false
+    base-url: https://api.openai.com/v1
+    api-key: ${YIPEI_AI_API_KEY:}
+    model: gpt-4o-mini
+    timeout-seconds: 20
+    max-tokens: 180

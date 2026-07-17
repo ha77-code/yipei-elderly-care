@@ -63,8 +63,10 @@ public class OrderController {
 
     /** 订单详情 */
     @GetMapping("/{id}")
-    public ApiResponse<OrderDetailVO> detail(@PathVariable Long id) {
-        return ApiResponse.success(orderService.getDetail(id));
+    public ApiResponse<OrderDetailVO> detail(
+            @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long userId) {
+        return ApiResponse.success(orderService.getDetail(id, userId));
     }
 
     /** 接单 */
@@ -125,7 +127,9 @@ public class OrderController {
 
     /** 订单状态变更记录 */
     @GetMapping("/{id}/status-log")
-    public ApiResponse<List<OrderStatusLog>> statusLog(@PathVariable Long id) {
-        return ApiResponse.success(orderService.getStatusLogs(id));
+    public ApiResponse<List<OrderStatusLog>> statusLog(
+            @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long userId) {
+        return ApiResponse.success(orderService.getStatusLogs(id, userId));
     }
 }

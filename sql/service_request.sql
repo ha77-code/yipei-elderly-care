@@ -9,6 +9,7 @@ CREATE TABLE service_request (
     department VARCHAR(100),
     requirement VARCHAR(2000) NOT NULL,
     special_notes VARCHAR(1000),
+    ai_summary VARCHAR(1000),
     contact_name VARCHAR(100) NOT NULL,
     contact_phone VARCHAR(20) NOT NULL,
     budget DECIMAL(10,2),
