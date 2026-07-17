@@ -218,4 +218,4 @@ SELECT
     5, 4.80, 12, 1, NOW(), NOW()
 FROM sys_user u
 WHERE u.username = 'companion1'
-ON DUPLICATE KEY UPDATE id = id;
+ON DUPLICATE KEY UPDATE user_id = companion_profile.user_id;
