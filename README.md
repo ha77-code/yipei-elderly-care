@@ -1,4 +1,4 @@
-﻿# “医陪”——银发人群陪诊与生活陪伴服务平台
+# “医陪”——银发人群陪诊与生活陪伴服务平台
 
 > YiPei — Elderly Medical Escort and Daily Companionship Service Platform
 
