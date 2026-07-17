@@ -16,6 +16,7 @@ public class ServiceRequest {
     private String specialNotes;
     private String aiSummary;
     private String preferredTraits;
+    private Boolean needPickup;
     private String contactName;
     private String contactPhone;
     private BigDecimal budget;

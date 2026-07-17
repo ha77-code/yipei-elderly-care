@@ -29,6 +29,8 @@ public class ServiceRequestCreateRequest {
 
     private String preferredTraits;
 
+    private Boolean needPickup;
+
     @NotBlank(message = "联系人不能为空")
     private String contactName;
 

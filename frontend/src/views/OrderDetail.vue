@@ -2,7 +2,7 @@
   <div class="page-wrap" v-loading="loading">
     <div class="page-head">
       <div>
-        <h2 class="page-title">订单详情 #{{ order.id }}</h2>
+        <h2 class="page-title">订单详情 #{{ order.id }} <TtsPlayer :text="ttsText" /></h2>
         <p class="page-subtitle">
           <span :class="['status-tag', statusClass(order.status)]">{{ statusMap[order.status] || order.status }}</span>
           <span class="muted">创建于 {{ fmt(order.createdAt) }}</span>
@@ -150,6 +150,7 @@ import { getServiceRecordByOrder } from '@/api/serviceRecord'
 import { getEvaluationByOrder, submitEvaluation } from '@/api/evaluation'
 import { submitReport } from '@/api/report'
 import { getUserRole, getUser } from '@/utils/auth'
+import TtsPlayer from '@/components/TtsPlayer.vue'
 
 const STATUS_MAP = {
   PENDING_ACCEPT: '待接单', ACCEPTED: '已接单', IN_SERVICE: '服务中',
@@ -159,6 +160,7 @@ const STATUS_MAP = {
 
 export default {
   name: 'OrderDetail',
+  components: { TtsPlayer },
   data() {
     return {
       loading: false, acting: null, order: {}, serviceRecord: null,
@@ -196,6 +198,21 @@ export default {
       if (this.isCustomerOrder || this.isCompanionOrder)
         acts.push({ key: 'report', label: '投诉', type: 'danger', action: 'report', class: 'plain' })
       return acts
+    },
+    ttsText() {
+      const o = this.order
+      if (!o.id) return ''
+      let text = '订单编号' + o.id + ' '
+      text += '状态' + (STATUS_MAP[o.status] || '未知') + ' '
+      if (o.customerName) text += '客户' + o.customerName + ' '
+      if (o.companionName) text += '陪诊师' + o.companionName + ' '
+      if (o.serviceType) text += '服务类型' + o.serviceType + ' '
+      if (o.hospitalName) text += '医院' + o.hospitalName + ' '
+      if (o.department) text += '科室' + o.department + ' '
+      if (o.serviceDate) text += '服务时间' + this.fmt(o.serviceDate) + ' '
+      if (o.servicePrice) text += '价格' + o.servicePrice + '元 '
+      if (o.aiSummary) text += 'AI摘要 ' + o.aiSummary + ' '
+      return text
     }
   },
   created() { this.fetchAll() },

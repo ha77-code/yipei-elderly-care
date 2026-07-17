@@ -10,7 +10,9 @@
         <div class="detail-header">
           <el-avatar :size="80" :src="profile.avatar" icon="el-icon-user-solid" />
           <div class="header-info">
-            <h2 class="header-name">{{ profile.realName }}</h2>
+            <h2 class="header-name">{{ profile.realName }}
+              <TtsPlayer :text="ttsText" />
+            </h2>
             <div class="header-rating">
               <i class="el-icon-star-on"></i>
               <span>{{ profile.rating || '0.0' }} 分</span>
@@ -79,9 +81,11 @@
 <script>
 import { getCompanionDetail } from '@/api/companion'
 import { getUserRole, ROLES } from '@/utils/auth'
+import TtsPlayer from '@/components/TtsPlayer.vue'
 
 export default {
   name: 'CompanionDetail',
+  components: { TtsPlayer },
   data() {
     return {
       profile: null,
@@ -97,6 +101,19 @@ export default {
     },
     canCreateOrder() {
       return getUserRole() === ROLES.CUSTOMER
+    },
+    ttsText() {
+      if (!this.profile) return ''
+      const p = this.profile
+      const types = this.serviceTypeList.join(' ')
+      let text = p.realName + ' '
+      text += '服务区域' + (p.serviceArea || '未设置') + ' '
+      text += '经验' + (p.experienceYears || 0) + '年 '
+      text += '擅长' + (types || '未设置') + ' '
+      if (p.introduction) {
+        text += '个人介绍 ' + p.introduction
+      }
+      return text
     }
   },
   created() {

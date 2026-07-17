@@ -69,6 +69,10 @@
           </el-col>
         </el-row>
 
+        <el-form-item label="需要接送">
+          <el-switch v-model="form.needPickup" active-text="需要陪诊师上门接送" inactive-text="自己前往医院" />
+        </el-form-item>
+
         <el-form-item label="预算（元）" prop="budget">
           <el-input-number
             v-model="form.budget"
@@ -149,7 +153,8 @@ export default {
         budget: undefined,
         requirement: '',
         specialNotes: '',
-        aiSummary: ''
+        aiSummary: '',
+        needPickup: false
       },
       rules: {
         serviceType: [
