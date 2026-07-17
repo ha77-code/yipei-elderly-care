@@ -45,7 +45,7 @@ export default {
 
 <style scoped>
 .page-wrap { padding: 24px 32px; }
-.page-title { font-family: var(--font-family); font-size: 20px; font-weight: 700; color: var(--color-text-primary); margin: 0 0 20px; }
+.page-title { font-family: var(--font-family); font-size: 20px; font-weight: 700; color: var(--brand-cream-100); margin: 0 0 20px; }
 .content-card { background: #FFF; border: 1px solid var(--color-border-light); border-radius: var(--radius-md); padding: 8px; box-shadow: var(--shadow-sm); }
 .warm-table { width: 100%; }
 .warm-table::v-deep th { background: var(--color-bg-page); color: var(--color-text-regular); font-weight: 600; font-size: 13px; }

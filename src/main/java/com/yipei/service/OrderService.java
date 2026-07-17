@@ -146,7 +146,7 @@ public class OrderService {
             throw new ForbiddenException("当前状态不允许拒绝");
         }
         serviceOrderMapper.updateStatus(orderId, "REJECTED", reason);
-        serviceRequestMapper.updateStatus(order.getRequestId(), "CANCELLED");
+        serviceRequestMapper.updateStatus(order.getRequestId(), "PENDING");
 
         OrderStatusLog log = new OrderStatusLog();
         log.setOrderId(orderId);

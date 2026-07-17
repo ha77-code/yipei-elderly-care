@@ -235,12 +235,13 @@ router.beforeEach((to, from, next) => {
     return next()
   }
 
-  // ② 未登录：首页 → 落地页，角色页面 → 登录
+  // ② 未登录 → 跳转登录页或落地页
   if (!loggedIn) {
     if (to.path === '/') {
       window.location.href = '/landing.html'
       return
     }
+    return next({ path: '/login', query: { redirect: to.fullPath } })
   }
 
   // ③ 需要特定角色的页面

@@ -1,6 +1,8 @@
 <template>
   <div id="app">
-    <router-view />
+    <transition name="page-fade" mode="out-in">
+      <router-view :key="$route.path" />
+    </transition>
   </div>
 </template>
 
@@ -120,11 +122,12 @@ a { color: inherit; }
   color: #162414;
   transition: all 0.24s var(--ease-standard);
 }
+.el-form-item__label { color: #1a1a1a !important; font-weight: 600; }
 .el-input__inner:hover, .el-textarea__inner:hover { border-color: rgba(225, 195, 160, 0.55); }
 .el-input__inner:focus, .el-input.is-focus .el-input__inner, .el-textarea__inner:focus { border-color: rgba(225, 195, 160, 0.84); box-shadow: 0 0 0 4px rgba(225, 195, 160, 0.15); }
 
 .el-card, .el-table, .el-dialog {
-  border: 1px solid rgba(230, 200, 160, 0.18);
+  border: 1px solid rgba(230, 200, 160, 0.08);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-card);
 }
@@ -139,4 +142,14 @@ a { color: inherit; }
 .el-tag { border-radius: 8px; }
 .el-pagination .el-pager li.active { background: var(--brand-forest-680); color: #fff; }
 .el-loading-spinner .path { stroke: var(--brand-gold-500); }
+
+/* ===== 页面切换过渡 ===== */
+.page-fade-enter-active { animation: page-in 0.35s var(--ease-smooth) both; }
+.page-fade-leave-active { animation: page-out 0.2s ease both; }
+@keyframes page-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes page-out { from { opacity: 1; } to { opacity: 0; } }
+
+/* ===== 通用入场动画 ===== */
+@keyframes reveal-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes reveal-scale { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
 </style>

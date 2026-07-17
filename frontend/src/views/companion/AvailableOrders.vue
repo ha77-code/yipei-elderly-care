@@ -55,7 +55,7 @@ export default {
 
 <style scoped>
 .page-wrap { padding: 28px 36px; }
-.page-title { font-size: 20px; font-weight: 700; color: var(--color-text-primary); margin: 0 0 20px; }
+.page-title { font-size: 20px; font-weight: 700; color: var(--brand-cream-100); margin: 0 0 20px; }
 .order-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 16px; min-height: 150px; }
 
 .order-card {

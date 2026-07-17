@@ -14,11 +14,10 @@ export function createRequest(data) {
 }
 
 /** 获取我的需求列表 */
-export function getMyRequests(params) {
+export function getMyRequests() {
   return request({
     url: '/api/service-request/list',
-    method: 'get',
-    params
+    method: 'get'
   })
 }
 

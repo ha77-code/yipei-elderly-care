@@ -173,7 +173,35 @@ body{
   font-style:italic;
 }
 
+/* ── 右侧悬浮朗读按钮 ── */
+.floating-speaker{
+  position:fixed;right:24px;top:50%;transform:translateY(-50%);z-index:200;
+  width:52px;height:52px;border-radius:50%;
+  background:rgba(0,0,0,0.32);
+  backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);
+  border:1px solid rgba(255,255,255,0.12);
+  color:rgba(255,248,238,0.7);cursor:none;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 28px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.06);
+  transition:all 0.4s cubic-bezier(0.22,0.61,0.36,1);
+}
+.floating-speaker:hover{
+  box-shadow:0 0 40px rgba(255,190,110,0.18),0 4px 28px rgba(0,0,0,0.2);
+  border-color:rgba(255,255,255,0.2);color:#fff;
+}
+.floating-speaker svg{width:22px;height:22px}
+.floating-speaker.playing{
+  background:rgba(255,190,110,0.15);color:rgba(255,210,140,1);
+  border-color:rgba(255,200,130,0.3);
+  box-shadow:0 0 40px rgba(255,180,100,0.25);
+}
+.floating-speaker.playing svg{animation:spk-pulse 1.2s ease-in-out infinite}
+@keyframes spk-pulse{
+  0%,100%{transform:scale(1);opacity:1}
+  50%{transform:scale(1.1);opacity:0.7}
+}
 @media(max-width:768px){
+  .floating-speaker{right:12px}
   .sidebar{display:none}
   .content-area{margin-left:0;padding:40px 24px}
   .trust-cards{grid-template-columns:1fr}
@@ -307,6 +335,14 @@ body{
   </main>
 </div>
 
+<!-- 右侧悬浮朗读按钮 -->
+<button class="floating-speaker" id="speakerBtn" title="朗读页面">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+    <path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/>
+  </svg>
+</button>
+
 <script>
 /* ── 光标 ── */
 const dot=document.getElementById('cursorDot'),ring=document.getElementById('cursorRing')
@@ -371,6 +407,32 @@ document.querySelectorAll('.sidebar-link').forEach(link=>{
     if(target)target.scrollIntoView({behavior:'smooth',block:'start'})
   })
 })
+
+/* ── 朗读按钮 ── */
+const speakerBtn=document.getElementById('speakerBtn')
+let speaking=false,tts=null
+speakerBtn.addEventListener('click',()=>{
+  if(speaking){stopSpeak();return}
+  const text='益陪养老是一个帮家里老人找陪诊师的小帮手。有老人的家庭，爸妈要去医院你没法每次都请假，用益陪找人替你陪着。老人自己去医院心里没底，叫个陪诊师全程有人陪。在异地的子女，老人一个人在老家看病没人管，打开益陪帮老人发个需求，陪诊师上门接老人去医院。想做陪诊师的人，你有时间有耐心熟悉医院流程，可以申请成为陪诊师接单获得收入。服务类型包括门诊陪诊、住院陪护、检查陪同、取药送药、夜间陪护。订单流程：发需求、选陪诊师、下订单、陪诊师接单、开始服务、完成服务、你确认、互相评价。每一步都能看到谁在什么时候做了什么。陪诊师需要提交真实身份资料，管理员审核通过才能接单。服务完成后双方互评，有好评有差的都看得到，有投诉入口管理员会处理。陪诊师不是医生，不看病不开药不做治疗，他们只做一件事：陪着老人让老人不孤单不慌张。益陪养老，用陪伴守护每一段金色年华。'
+  if(window.speechSynthesis){
+    tts=new SpeechSynthesisUtterance(text)
+    tts.lang='zh-CN';tts.rate=0.9;tts.pitch=1
+    tts.onend=stopSpeak;tts.onerror=stopSpeak
+    speaking=true;speakerBtn.classList.add('playing')
+    window.speechSynthesis.speak(tts)
+  }else{
+    fetch('/api/tts/speak',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})})
+    .then(r=>r.blob()).then(blob=>{
+      tts=new Audio(URL.createObjectURL(blob));tts.onended=stopSpeak;tts.play()
+      speaking=true;speakerBtn.classList.add('playing')
+    }).catch(stopSpeak)
+  }
+})
+function stopSpeak(){
+  speaking=false;speakerBtn.classList.remove('playing')
+  if(tts){try{if(tts.stop)tts.stop()}catch(e){}tts=null}
+  window.speechSynthesis&&window.speechSynthesis.cancel()
+}
 </script>
 </body>
 </html>

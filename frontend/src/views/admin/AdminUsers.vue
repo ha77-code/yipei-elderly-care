@@ -81,7 +81,7 @@ export default {
 
 <style scoped>
 .page-wrap { padding: 28px 36px; }
-.page-title { font-size: 20px; font-weight: 700; color: var(--color-text-primary); margin: 0 0 20px; }
+.page-title { font-size: 20px; font-weight: 700; margin: 0 0 20px; }
 .filter-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding: 16px 20px; background: #fff; border: 1px solid rgba(0,0,0,0.04); border-radius: var(--radius-md); box-shadow: var(--shadow-xs); }
 .filter-left { display: flex; gap: 12px; }
 .content-card { background: #fff; border: 1px solid rgba(0,0,0,0.04); border-radius: var(--radius-md); padding: 4px; box-shadow: var(--shadow-xs); }

@@ -40,9 +40,9 @@ public class OrderController {
     /** 订单列表 */
     @GetMapping("/list")
     public ApiResponse<List<OrderDetailVO>> list(
-            @RequestParam("userId") Long userId,
-            @RequestParam("role") String role) {
-        return ApiResponse.success(orderService.listByRole(userId, role));
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestParam(required = false) String role) {
+        return ApiResponse.success(orderService.listByRole(userId, role != null ? role : ""));
     }
 
     /** 当前登录用户的订单 */

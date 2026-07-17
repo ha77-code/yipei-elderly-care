@@ -150,7 +150,7 @@ export default {
       }).then(() => {
         clearUser()
         this.$message.success(T.logoutDone)
-        this.$router.push('/login')
+        window.location.href = '/landing.html'
       }).catch(() => {})
     }
   }
@@ -195,7 +195,7 @@ export default {
   gap: 24px;
   padding: 0 28px;
   background: rgba(7, 16, 7, 0.78);
-  border-bottom: 1px solid rgba(230, 200, 160, 0.14);
+  border-bottom: 1px solid rgba(230, 200, 160, 0.06);
   backdrop-filter: blur(20px) saturate(1.24);
   position: sticky;
   top: 0;
@@ -223,14 +223,7 @@ export default {
 .side-menu ::v-deep .el-menu-item:hover { background: rgba(225, 195, 160, 0.08); color: var(--brand-cream-100) !important; }
 .side-menu ::v-deep .el-menu-item.is-active { background: rgba(225, 195, 160, 0.14); color: var(--brand-gold-420) !important; box-shadow: inset 3px 0 0 rgba(240, 210, 175, 0.72); }
 .main-content { flex: 1; min-width: 0; overflow-y: auto; background: rgba(245, 240, 232, 0.04); backdrop-filter: blur(2px); }
-.main-content ::v-deep .page-container,
-.main-content ::v-deep .companions-page,
-.main-content ::v-deep .requests-page,
-.main-content ::v-deep .order-list,
-.main-content ::v-deep .admin-page,
-.main-content ::v-deep .profile-page,
-.main-content ::v-deep .service-record-page { color: #172615; }
-.main-content ::v-deep .page-header,
+.main-content ::v-deep .page-header { border: none !important; background: transparent !important; box-shadow: none !important; }
 .main-content ::v-deep .filter-card,
 .main-content ::v-deep .list-card,
 .main-content ::v-deep .form-card,
@@ -243,22 +236,23 @@ export default {
 .main-content ::v-deep .stat-card,
 .main-content ::v-deep .el-card {
   background: rgba(255, 248, 238, 0.94) !important;
-  border: 1px solid rgba(230, 200, 160, 0.22) !important;
+  border: 1px solid rgba(230, 200, 160, 0.08) !important;
   border-radius: 10px !important;
   box-shadow: 0 16px 40px rgba(7, 16, 7, 0.16) !important;
 }
 .main-content ::v-deep .page-title,
-.main-content ::v-deep h1,
+.main-content ::v-deep h1 { color: var(--brand-cream-100) !important; }
 .main-content ::v-deep h2,
-.main-content ::v-deep h3 { color: #172615; }
+.main-content ::v-deep h3 { color: #1a1a1a !important; }
 .main-content ::v-deep .page-subtitle,
 .main-content ::v-deep .desc,
 .main-content ::v-deep .meta,
-.main-content ::v-deep p { color: rgba(23, 38, 21, 0.66); }
+.main-content ::v-deep p { color: #3d3d3d; }
 .main-content ::v-deep .el-table,
 .main-content ::v-deep .el-table__expanded-cell { background: rgba(255, 248, 238, 0.96) !important; }
 .main-content ::v-deep .el-table th { background: rgba(239, 230, 214, 0.88) !important; color: #42513d !important; }
-.main-content ::v-deep .el-table td { color: #243421 !important; }
+.main-content ::v-deep .el-table td { color: #1a1a1a !important; }
+.main-content ::v-deep .el-table__empty-text { color: rgba(0, 0, 0, 0.45); }
 .main-content ::v-deep .el-input__inner,
 .main-content ::v-deep .el-textarea__inner,
 .main-content ::v-deep .el-select .el-input__inner { background: rgba(255, 255, 255, 0.92) !important; border-color: rgba(210, 195, 175, 0.48) !important; color: #172615 !important; }
@@ -266,7 +260,7 @@ export default {
 .main-content ::v-deep .el-textarea__inner:focus { border-color: rgba(225, 195, 160, 0.92) !important; box-shadow: 0 0 0 4px rgba(225, 195, 160, 0.16) !important; }
 .main-content ::v-deep .el-form-item__label,
 .main-content ::v-deep .el-radio__label,
-.main-content ::v-deep .el-checkbox__label { color: rgba(23, 38, 21, 0.74) !important; }
+.main-content ::v-deep .el-checkbox__label { color: #1a1a1a !important; }
 .main-content ::v-deep .el-pagination.is-background .el-pager li:not(.disabled).active { background: #2d5a3a !important; }
 @media (max-width: 860px) {
   .top-bar { padding: 0 14px; gap: 12px; }

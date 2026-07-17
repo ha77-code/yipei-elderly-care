@@ -123,7 +123,7 @@
         </div>
 
         <!-- 开发环境：快速测试入口 -->
-        <div class="dev-quick-login">
+        <div class="dev-quick-login" v-if="isDev">
           <div class="dev-divider">
             <span class="dev-divider-text">快速体验</span>
           </div>
@@ -159,6 +159,7 @@ export default {
   name: 'Login',
   data() {
     return {
+      isDev: process.env.NODE_ENV !== 'production',
       testAccounts: getTestAccounts(),
       form: { username: '', password: '' },
       rules: {

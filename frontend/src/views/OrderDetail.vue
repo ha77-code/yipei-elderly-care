@@ -145,7 +145,7 @@
 </template>
 
 <script>
-import { getOrderDetail, acceptOrder, rejectOrder, startService, completeService, cancelOrder } from '@/api/order'
+import { getOrderDetail, acceptOrder, rejectOrder, startService, completeService, confirmOrder, cancelOrder } from '@/api/order'
 import { getServiceRecordByOrder } from '@/api/serviceRecord'
 import { getEvaluationByOrder, submitEvaluation } from '@/api/evaluation'
 import { submitReport } from '@/api/report'
@@ -191,11 +191,13 @@ export default {
         acts.push({ key: 'start', label: '开始服务', type: 'primary', action: 'start' })
       if (this.isCompanionOrder && s === 'IN_SERVICE')
         acts.push({ key: 'complete', label: '完成服务', type: 'success', action: 'complete' })
+      if (this.isCustomerOrder && s === 'PENDING_CONFIRM')
+        acts.push({ key: 'confirm', label: '确认完成', type: 'success', action: 'confirm' })
       if (this.isCustomerOrder && (s === 'PENDING_ACCEPT' || s === 'ACCEPTED'))
         acts.push({ key: 'cancel', label: '取消订单', type: 'danger', action: 'cancel', class: 'plain' })
       if (s === 'COMPLETED' && (this.isCustomerOrder || this.isCompanionOrder))
         acts.push({ key: 'evaluate', label: '评价', type: 'warning', action: 'evaluate' })
-      if (this.isCustomerOrder || this.isCompanionOrder)
+      if ((this.isCustomerOrder || this.isCompanionOrder) && s !== 'CANCELLED' && s !== 'REJECTED')
         acts.push({ key: 'report', label: '投诉', type: 'danger', action: 'report', class: 'plain' })
       return acts
     },
@@ -259,6 +261,7 @@ export default {
         if (act.action === 'accept') await acceptOrder(orderId)
         else if (act.action === 'start') await startService(orderId)
         else if (act.action === 'complete') await completeService(orderId)
+        else if (act.action === 'confirm') await confirmOrder(orderId)
         this.$message.success('操作成功')
         this.fetchAll()
       } catch { /* error handled */ } finally { this.acting = null }
@@ -294,7 +297,7 @@ export default {
 <style scoped>
 .page-wrap { padding: 24px 32px; max-width: 1100px; }
 .page-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
-.page-title { font-size: 20px; font-weight: 700; color: #2C2418; margin: 0; }
+.page-title { font-size: 20px; font-weight: 700; color: var(--brand-cream-100); margin: 0; }
 .page-subtitle { margin: 6px 0 0; font-size: 13px; color: #999; display: flex; align-items: center; gap: 10px; }
 .muted { color: #999; font-size: 12px; }
 
@@ -311,7 +314,7 @@ export default {
 .info-card .el-card__body { padding: 0 16px 16px; }
 
 /* 服务记录 */
-.record-content { font-size: 14px; color: #333; line-height: 1.8; white-space: pre-wrap; }
+.record-content { font-size: 14px; color: var(--brand-cream-100); line-height: 1.8; white-space: pre-wrap; }
 .ai-summary { font-size: 14px; color: #4A5E4D; line-height: 1.8; white-space: pre-wrap; padding: 10px 12px; background: #F3F7F1; border-left: 3px solid #7A9A7E; border-radius: 4px; }
 .record-notes { margin-top: 12px; padding: 10px 12px; background: #FFF8E1; border-radius: 6px; font-size: 13px; color: #8B7355; }
 .notes-label { font-weight: 600; }
@@ -329,7 +332,7 @@ export default {
 /* 时间线 */
 .timeline-card .el-card__body { padding: 8px 16px 16px; }
 .tl-content p { margin: 0; }
-.tl-status { font-size: 13px; font-weight: 600; color: #333; }
+.tl-status { font-size: 13px; font-weight: 600; color: var(--brand-cream-100); }
 .tl-remark { font-size: 12px; color: #666; margin-top: 2px; }
 .tl-operator { font-size: 11px; color: #aaa; margin-top: 2px; }
 

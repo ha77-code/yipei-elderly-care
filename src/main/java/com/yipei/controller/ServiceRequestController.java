@@ -37,8 +37,8 @@ public class ServiceRequestController {
     /** 查看我发布的需求列表 */
     @GetMapping("/list")
     public ApiResponse<List<ServiceRequest>> list(
-            @RequestParam("customerId") Long customerId) {
-        return ApiResponse.success(serviceRequestService.listByCustomerId(customerId));
+            @RequestHeader("X-User-Id") Long userId) {
+        return ApiResponse.success(serviceRequestService.listByCustomerId(userId));
     }
 
     /** 查看需求详情 */

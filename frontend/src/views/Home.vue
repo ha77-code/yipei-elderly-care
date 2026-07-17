@@ -35,6 +35,8 @@
 
 <script>
 import { getUser, ROLES } from '@/utils/auth'
+import { getStatistics } from '@/api/admin'
+import { getMyOrders } from '@/api/order'
 
 const T = {
   user: '\u7528\u6237',
@@ -108,7 +110,7 @@ export default {
       userNickname: user.nickname || user.username || T.user,
       userRole: user.role || ROLES.CUSTOMER,
       greeting: this.getGreeting(),
-      stats: { orders: 128, companions: 86, families: 12000 }
+      stats: { orders: '-', companions: '-', families: '-' }
     }
   },
   computed: {
@@ -123,7 +125,29 @@ export default {
       ]
     }
   },
+  created() { this.fetchStats() },
   methods: {
+    async fetchStats() {
+      try {
+        if (this.userRole === ROLES.ADMIN) {
+          const res = await getStatistics()
+          const d = res.data || res
+          this.stats = {
+            orders: d.totalOrders || 0,
+            companions: d.totalCompanions || 0,
+            families: d.totalUsers || 0
+          }
+        } else {
+          const res = await getMyOrders()
+          const list = res.data || res || []
+          this.stats = {
+            orders: Array.isArray(list) ? list.length : 0,
+            companions: '-',
+            families: '-'
+          }
+        }
+      } catch { /* keep defaults */ }
+    },
     getGreeting() {
       const hour = new Date().getHours()
       if (hour < 6) return T.night
@@ -141,16 +165,17 @@ export default {
 
 <style scoped>
 .home-page { width: min(1180px, 100%); padding: 32px; color: var(--brand-cream-100); animation: reveal-up 0.7s var(--ease-smooth) both; }
-.hero-section { min-height: 260px; display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 36px; padding: 42px; border: 1px solid rgba(230, 200, 160, 0.16); border-radius: 14px; background: linear-gradient(90deg, rgba(6, 10, 4, 0.74), rgba(13, 26, 12, 0.42)), radial-gradient(ellipse at 20% 18%, rgba(225, 195, 160, 0.18), transparent 38%), rgba(10, 20, 8, 0.68); box-shadow: 0 20px 70px rgba(0, 0, 0, 0.24); position: relative; overflow: hidden; }
-.hero-section::after { content: ''; position: absolute; inset: 0; background: linear-gradient(92deg, transparent 0 18%, rgba(255, 248, 238, 0.05) 18.1% 18.25%, transparent 18.6% 42%, rgba(255, 248, 238, 0.035) 42.1% 42.25%, transparent 42.6%); pointer-events: none; }
-.hero-copy, .hero-stats { position: relative; z-index: 1; }
-.eyebrow { color: var(--brand-gold-420); font-size: 13px; font-weight: 800; margin-bottom: 10px; }
-.hero-copy h1 { max-width: 720px; font-family: var(--font-serif); font-size: 42px; line-height: 1.18; margin-bottom: 14px; color: var(--brand-cream-100); }
-.hero-copy p:last-child { max-width: 620px; color: var(--text-secondary); font-size: 16px; line-height: 1.85; }
-.hero-stats { display: grid; grid-template-columns: repeat(3, 118px); gap: 12px; }
-.stat-card { min-height: 104px; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 1px solid rgba(230, 200, 160, 0.16); border-radius: 10px; background: rgba(18, 34, 16, 0.54); backdrop-filter: blur(14px); }
-.stat-value { color: var(--brand-gold-420); font-size: 28px; font-weight: 800; }
-.stat-label { color: rgba(245, 240, 232, 0.62); font-size: 13px; margin-top: 4px; }
+.hero-section { display: flex; justify-content: space-between; align-items: center; background: rgba(255, 248, 238, 0.94); border: 1px solid rgba(230, 200, 160, 0.1); border-radius: 14px; padding: 40px 48px; margin-bottom: 32px; box-shadow: 0 16px 40px rgba(7, 16, 7, 0.16); position: relative; overflow: hidden; }
+.hero-section::after { content: ''; position: absolute; right: -60px; top: -60px; width: 240px; height: 240px; background: radial-gradient(circle, rgba(122, 154, 126, 0.06) 0%, transparent 70%); border-radius: 50%; pointer-events: none; }
+.hero-copy { position: relative; z-index: 1; }
+.eyebrow { color: #7a9a7e; font-size: 13px; font-weight: 650; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.08em; }
+.hero-copy h1 { font-size: 30px; font-weight: 700; color: #1a1a1a; margin: 0 0 8px; font-family: var(--font-sans); }
+.hero-copy p:last-child { font-size: 15px; color: #6b6b6b; }
+.hero-stats { display: flex; gap: 40px; position: relative; z-index: 1; }
+.stat-card { text-align: center; padding: 0 24px; border-right: 1px solid rgba(0,0,0,0.08); }
+.stat-card:last-child { border-right: none; }
+.stat-value { display: block; font-size: 28px; font-weight: 700; color: #5c7a60; letter-spacing: -0.02em; }
+.stat-label { display: block; font-size: 13px; color: #888; margin-top: 4px; }
 .quick-section { margin-top: 30px; }
 .section-head { margin-bottom: 16px; }
 .section-head p { color: rgba(210, 190, 160, 0.56); font-size: 12px; font-weight: 800; margin-bottom: 4px; }
@@ -163,9 +188,9 @@ export default {
 .tone-gold { background: rgba(225, 195, 160, 0.24); color: #7c5c38; }
 .quick-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .quick-info strong { color: #172615; font-size: 15px; }
-.quick-info small { color: rgba(23, 38, 21, 0.58); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.quick-info small { color: #555; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .quick-arrow { color: rgba(23, 38, 21, 0.28); transition: transform 0.22s var(--ease-standard), color 0.22s var(--ease-standard); }
 .quick-card:hover .quick-arrow { color: #7c5c38; transform: translateX(3px); }
-@media (max-width: 920px) { .home-page { padding: 18px; } .hero-section { grid-template-columns: 1fr; padding: 28px; } .hero-copy h1 { font-size: 32px; } .hero-stats { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 560px) { .hero-stats { grid-template-columns: 1fr; } .quick-grid { grid-template-columns: 1fr; } }
+@media (max-width: 920px) { .home-page { padding: 18px; } .hero-section { flex-direction: column; text-align: center; gap: 28px; padding: 32px 24px; } .hero-copy h1 { font-size: 26px; } .hero-stats { gap: 20px; } .stat-card { padding: 0 14px; } }
+@media (max-width: 560px) { .hero-stats { flex-direction: column; } .stat-card { border-right: none; border-bottom: 1px solid rgba(0,0,0,0.08); padding: 12px 0; } .stat-card:last-child { border-bottom: none; } .quick-grid { grid-template-columns: 1fr; } }
 </style>

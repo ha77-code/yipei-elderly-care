@@ -45,7 +45,7 @@ public class UserController {
 
     /** 获取当前登录用户信息 */
     @GetMapping("/info")
-    public ApiResponse<UserVO> getCurrentUser(@RequestParam("id") Long userId) {
+    public ApiResponse<UserVO> getCurrentUser(@RequestHeader("X-User-Id") Long userId) {
         return ApiResponse.success(userService.getCurrentUser(userId));
     }
 

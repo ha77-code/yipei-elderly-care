@@ -106,7 +106,7 @@ export default {
 <style scoped>
 .page-wrap { padding: 24px 32px; }
 .page-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
-.page-title { font-family: var(--font-family); font-size: 20px; font-weight: 700; color: var(--color-text-primary); margin: 0; }
+.page-title { font-family: var(--font-family); font-size: 20px; font-weight: 700; color: var(--brand-cream-100); margin: 0; }
 .page-subtitle { margin: 6px 0 0; font-size: 13px; color: var(--color-text-secondary); }
 .stat-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(185px, 1fr)); gap: 12px; margin-bottom: 32px; }
 .stat-card {
@@ -122,12 +122,12 @@ export default {
 .sc-icon--blue { background: rgba(100,130,180,.08); color: #5577AA; }
 .sc-icon--red { background: rgba(212,120,110,.08); color: #C05050; }
 .sc-body { display: flex; flex-direction: column; min-width: 0; }
-.sc-value { font-size: 20px; font-weight: 700; color: var(--color-text-primary); letter-spacing: -0.02em; }
+.sc-value { font-size: 20px; font-weight: 700; color: var(--brand-cream-100); letter-spacing: -0.02em; }
 .sc-label { font-size: 12px; color: var(--color-text-placeholder); margin-top: 2px; font-weight: 500; }
 .section { margin-top: 8px; }
-.section-title { font-family: var(--font-family); font-size: 16px; font-weight: 600; color: var(--color-text-primary); margin: 0 0 14px; }
+.section-title { font-family: var(--font-family); font-size: 16px; font-weight: 600; color: var(--brand-cream-100); margin: 0 0 14px; }
 .quick-links { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
-.ql-card { display: flex; align-items: center; gap: 10px; padding: 14px 18px; background: #FFF; border: 1px solid var(--color-border-light); border-radius: var(--radius-md); cursor: pointer; transition: all .2s; font-size: 14px; font-weight: 500; color: var(--color-text-primary); box-shadow: var(--shadow-sm); }
+.ql-card { display: flex; align-items: center; gap: 10px; padding: 14px 18px; background: #FFF; border: 1px solid var(--color-border-light); border-radius: var(--radius-md); cursor: pointer; transition: all .2s; font-size: 14px; font-weight: 500; color: var(--brand-cream-100); box-shadow: var(--shadow-sm); }
 .ql-card:hover { border-color: var(--color-primary-light); transform: translateY(-2px); box-shadow: var(--shadow-md); }
 .ql-card i { font-size: 18px; color: var(--color-primary); }
 </style>

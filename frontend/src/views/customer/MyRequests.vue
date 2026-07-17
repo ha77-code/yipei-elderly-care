@@ -138,7 +138,6 @@
 
 <script>
 import { getMyRequests, cancelRequest } from '@/api/serviceRequest'
-import { getUser } from '@/utils/auth'
 
 const STATUS_MAP = {
   PENDING: '待处理',
@@ -168,10 +167,7 @@ export default {
     async fetchList() {
       this.loading = true
       try {
-        const user = getUser()
-        const res = await getMyRequests({
-          customerId: user?.id
-        })
+        const res = await getMyRequests()
         const data = res.data || res
         this.list = data.records || data.list || data || []
         this.total = data.total || this.list.length
