@@ -27,7 +27,7 @@
     <div class="layout-body">
       <aside class="side-bar">
         <div class="side-title">{{ text.workbench }}</div>
-        <el-menu :default-active="activeMenu" :router="true" :unique-opened="true" background-color="transparent" text-color="rgba(245,240,232,0.68)" active-text-color="#f0d2af" class="side-menu">
+        <el-menu :default-active="activeMenu" :router="true" :unique-opened="true" background-color="transparent" text-color="rgba(245,240,232,0.82)" active-text-color="#f0d2af" class="side-menu">
           <el-menu-item v-for="item in sideItems" :key="item.path" :index="item.path">
             <i :class="item.icon"></i><span>{{ item.label }}</span>
           </el-menu-item>
@@ -171,9 +171,9 @@ export default {
   position: fixed;
   inset: -24px;
   background:
-    linear-gradient(150deg, rgba(6, 10, 4, 0.76), rgba(13, 26, 12, 0.7) 48%, rgba(6, 10, 4, 0.86)),
+    linear-gradient(150deg, rgba(10, 18, 8, 0.6), rgba(18, 32, 15, 0.58) 48%, rgba(10, 18, 8, 0.74)),
     url('../../public/img/bg-bamboo.jpg') center/cover no-repeat;
-  filter: blur(10px) saturate(0.92) brightness(0.72);
+  filter: blur(10px) saturate(0.92) brightness(0.88);
   transform: scale(1.03);
   z-index: 0;
 }
@@ -205,7 +205,7 @@ export default {
 .brand-symbol { width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid rgba(240, 210, 175, 0.36); color: var(--brand-gold-420); font-family: var(--font-serif); font-size: 20px; font-weight: 800; background: rgba(18, 34, 16, 0.74); }
 .brand-text { color: var(--brand-cream-100); font-family: var(--font-serif); font-size: 18px; font-weight: 800; }
 .top-nav { flex: 1; display: flex; justify-content: center; gap: 6px; }
-.nav-link { height: 38px; display: inline-flex; align-items: center; padding: 0 16px; border-radius: 999px; color: rgba(245, 240, 232, 0.68); text-decoration: none; font-size: 14px; font-weight: 700; transition: all 0.22s var(--ease-standard); }
+.nav-link { height: 38px; display: inline-flex; align-items: center; padding: 0 16px; border-radius: 999px; color: rgba(250, 247, 242, 0.82); text-decoration: none; font-size: 14px; font-weight: 700; transition: all 0.22s var(--ease-standard); }
 .nav-link:hover, .nav-link--active { color: var(--brand-gold-420); background: rgba(225, 195, 160, 0.1); }
 .user-chip { display: flex; align-items: center; gap: 10px; padding: 6px 10px 6px 6px; border: 1px solid rgba(230, 200, 160, 0.16); border-radius: 999px; color: rgba(245, 240, 232, 0.86); background: rgba(18, 34, 16, 0.62); cursor: pointer; }
 .user-avatar { background: rgba(225, 195, 160, 0.22); color: var(--brand-gold-420); }
@@ -216,7 +216,7 @@ export default {
 .role-tag--admin { background: rgba(245, 240, 232, 0.12); color: rgba(245, 240, 232, 0.82); }
 .layout-body { flex: 1; display: flex; min-height: 0; position: relative; z-index: 1; }
 .side-bar { width: 236px; flex: 0 0 236px; padding: 22px 12px; border-right: 1px solid rgba(230, 200, 160, 0.12); background: rgba(7, 16, 7, 0.48); backdrop-filter: blur(16px); overflow-y: auto; }
-.side-title { padding: 0 14px 12px; color: rgba(210, 190, 160, 0.48); font-size: 12px; font-weight: 800; }
+.side-title { padding: 0 14px 12px; color: rgba(225, 205, 175, 0.62); font-size: 12px; font-weight: 800; }
 .side-menu { border: 0; }
 .side-menu ::v-deep .el-menu-item { height: 44px; line-height: 44px; margin-bottom: 6px; border-radius: 10px; font-size: 14px; font-weight: 700; transition: all 0.22s var(--ease-standard); }
 .side-menu ::v-deep .el-menu-item i { color: inherit; margin-right: 8px; }

@@ -10,20 +10,20 @@ export default { name: 'App' }
 
 <style>
 :root {
-  --brand-forest-950: #071007;
-  --brand-forest-900: #0d1a0c;
-  --brand-forest-820: #132412;
-  --brand-forest-760: #1c321b;
-  --brand-forest-680: #2d4a2a;
+  --brand-forest-950: #0e180d;
+  --brand-forest-900: #152413;
+  --brand-forest-820: #1b2e18;
+  --brand-forest-760: #243a20;
+  --brand-forest-680: #35542e;
   --brand-gold-500: #e1c3a0;
   --brand-gold-420: #f0d2af;
   --brand-gold-300: #ffd28c;
   --brand-cream-100: #fff8ee;
   --brand-cream-180: #f5f0e8;
-  --text-primary: #f5f0e8;
-  --text-regular: rgba(245, 240, 232, 0.82);
-  --text-secondary: rgba(240, 225, 200, 0.68);
-  --text-muted: rgba(210, 190, 160, 0.5);
+  --text-primary: #faf7f2;
+  --text-regular: rgba(250, 247, 242, 0.94);
+  --text-secondary: rgba(245, 238, 225, 0.84);
+  --text-muted: rgba(220, 200, 170, 0.65);
   --panel-dark: rgba(10, 20, 8, 0.82);
   --panel-soft: rgba(18, 34, 16, 0.72);
   --panel-card: rgba(255, 248, 238, 0.94);
@@ -84,10 +84,10 @@ body::before {
   z-index: -2;
   background:
     linear-gradient(90deg, transparent 0 11%, rgba(255, 210, 140, 0.04) 11.2% 11.4%, transparent 11.7% 25%, rgba(255, 210, 140, 0.035) 25.2% 25.4%, transparent 25.8% 43%, rgba(255, 210, 140, 0.03) 43.2% 43.35%, transparent 43.7%),
-    linear-gradient(160deg, rgba(6, 10, 4, 0.68), rgba(13, 26, 12, 0.92) 48%, rgba(6, 10, 4, 0.98)),
-    radial-gradient(ellipse at 18% 12%, rgba(240, 210, 175, 0.16), transparent 38%),
-    radial-gradient(ellipse at 85% 18%, rgba(45, 74, 42, 0.42), transparent 46%),
-    #071007;
+    linear-gradient(160deg, rgba(10, 18, 8, 0.55), rgba(18, 32, 15, 0.82) 48%, rgba(10, 18, 8, 0.92)),
+    radial-gradient(ellipse at 18% 12%, rgba(240, 210, 175, 0.22), transparent 38%),
+    radial-gradient(ellipse at 85% 18%, rgba(55, 90, 48, 0.48), transparent 46%),
+    #0e180d;
 }
 
 body::after {
