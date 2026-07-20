@@ -3,24 +3,45 @@
 -- ============================================================================
 -- 前置条件：已执行 sql/init.sql 创建数据库和表
 -- 所有测试账号密码均为：123456
--- 安全运行：可重复执行，使用 ON DUPLICATE KEY UPDATE 避免重复插入
+-- 安全运行：开头先清空所有业务表（TRUNCATE），因此可反复执行、每次结果一致。
+--          注意：这会清除库中现有业务数据，仅用于演示/测试环境。
 -- ============================================================================
 -- 数据概览：
 --   用户：13 CUSTOMER + 8 COMPANION + 3 ADMIN = 24 个用户
 --   陪诊师资料：8 条（含1条待审核、1条审核拒绝）
 --   服务需求：21 条（9 PENDING + 5 MATCHED + 1 CANCELLED + 6 CLOSED）
+--     └ 审核：待匹配需求中3条 audit_status=0（供管理员审核演示），其余全部 audit_status=1
 --   服务订单：14 个（5 COMPLETED + 2 IN_SERVICE + 3 ACCEPTED + 2 CANCELLED + 1 REJECTED + 1 COMPLAINT）
 --   服务记录：6 条（含1条进行中记录）
 --   评价记录：13 条（双向评价 + 投诉差评 + 拒绝场景评价）
 --   状态记录：26 条（覆盖完整生命周期）
 --   审核记录：9 条（7通过 + 1拒绝 + 1待处理）
 --   投诉记录：6 条（2 PENDING + 2 PROCESSING + 1 RESOLVED + 1 REJECTED）
+--   聊天消息：若干条（进行中/已完成订单的演示对话）
 -- ============================================================================
 
 USE yipei;
 
 -- 设置客户端字符集为 utf8mb4，避免中文乱码和数据插入报错
 SET NAMES utf8mb4;
+
+-- ============================================================================
+-- 第零部分：清空业务数据，保证脚本可重复执行、结果一致
+-- （service_request 无业务唯一键，ON DUPLICATE KEY 无法去重，故统一先清空）
+-- ============================================================================
+SET FOREIGN_KEY_CHECKS = 0;
+TRUNCATE TABLE chat_message;
+TRUNCATE TABLE service_application;
+TRUNCATE TABLE report_record;
+TRUNCATE TABLE audit_record;
+TRUNCATE TABLE order_status_log;
+TRUNCATE TABLE evaluation;
+TRUNCATE TABLE service_record;
+TRUNCATE TABLE service_order;
+TRUNCATE TABLE service_request;
+TRUNCATE TABLE companion_profile;
+TRUNCATE TABLE sys_user;
+SET FOREIGN_KEY_CHECKS = 1;
 
 -- 通用密码哈希（密码均为 123456）
 SET @pwd = 'eWlwZWktY3VzdG9tZXItMQ==:eJtfcMKaWA9YU1earQo/dYCpEXeKwJRa2zONf8N8pa8=';
@@ -887,3 +908,52 @@ SELECT
     '约定取药后1小时内送到，实际用了2个半小时。虽然最终药品没问题，但老人等着用药非常着急。希望陪诊师以后能更准时，或者提前告知延迟原因。',
     'PENDING', '2026-07-26 16:00:00'
 ON DUPLICATE KEY UPDATE reason=VALUES(reason), content=VALUES(content);
+
+
+-- ============================================================================
+-- 第十九部分：修正需求审核状态（关键！否则陪诊师需求广场为空）
+-- 说明：需求广场只展示 audit_status=1（审核通过）且 status='PENDING' 的需求；
+--       待审核需求(audit_status=0)只在管理员「需求审核」页出现。
+-- ============================================================================
+
+-- 已进入后续流程的需求（已匹配/已完成/已取消）视为早已审核通过
+UPDATE service_request SET audit_status = 1 WHERE status IN ('MATCHED', 'CLOSED', 'CANCELLED');
+
+-- 待匹配需求：默认全部通过审核，进入陪诊师需求广场
+UPDATE service_request SET audit_status = 1 WHERE status = 'PENDING';
+
+-- 保留最新的 3 条待匹配需求为「待审核」，用于演示管理员审核流程
+UPDATE service_request SET audit_status = 0
+WHERE status = 'PENDING'
+ORDER BY id DESC
+LIMIT 3;
+
+
+-- ============================================================================
+-- 第二十部分：聊天消息演示数据
+-- 绑定到「进行中」和「已完成」订单，展示聊天中心的会话列表与聊天记录。
+-- 用 SELECT ... WHERE @var IS NOT NULL 方式插入，订单不存在时自动跳过、不报错。
+-- ============================================================================
+
+-- 进行中订单（IN_SERVICE）：客户与陪诊师的实时沟通，末尾留一条未读
+SET @o_in := (SELECT id FROM service_order WHERE status='IN_SERVICE' ORDER BY id LIMIT 1);
+SET @cust_in := (SELECT customer_id FROM service_order WHERE id=@o_in);
+SET @comp_in := (SELECT cp.user_id FROM companion_profile cp JOIN service_order o ON cp.id=o.companion_id WHERE o.id=@o_in);
+
+INSERT INTO chat_message(order_id, from_user_id, to_user_id, content, is_read, created_at)
+SELECT @o_in, @cust_in, @comp_in, '您好，我是今天的客户家属，请问您大概几点能到医院？', 1, '2026-08-01 07:30:00' WHERE @o_in IS NOT NULL
+UNION ALL SELECT @o_in, @comp_in, @cust_in, '您好！我8:50左右到内分泌科门诊，请让老人先别吃早饭，今天要空腹抽血。', 1, '2026-08-01 07:35:00' WHERE @o_in IS NOT NULL
+UNION ALL SELECT @o_in, @cust_in, @comp_in, '好的，老人已经准备好了，医保卡和之前的化验单都带着。', 1, '2026-08-01 07:40:00' WHERE @o_in IS NOT NULL
+UNION ALL SELECT @o_in, @comp_in, @cust_in, '我已到门诊并取了号，前面还有几位患者，已完成空腹抽血，血糖结果约1小时后出。', 1, '2026-08-01 09:20:00' WHERE @o_in IS NOT NULL
+UNION ALL SELECT @o_in, @cust_in, @comp_in, '辛苦您了！麻烦帮忙记一下医生对用药的调整。', 0, '2026-08-01 09:45:00' WHERE @o_in IS NOT NULL;
+
+-- 已完成订单（COMPLETED）：服务结束后的历史记录（只读）
+SET @o_done := (SELECT id FROM service_order WHERE status='COMPLETED' ORDER BY id LIMIT 1);
+SET @cust_done := (SELECT customer_id FROM service_order WHERE id=@o_done);
+SET @comp_done := (SELECT cp.user_id FROM companion_profile cp JOIN service_order o ON cp.id=o.companion_id WHERE o.id=@o_done);
+
+INSERT INTO chat_message(order_id, from_user_id, to_user_id, content, is_read, created_at)
+SELECT @o_done, @cust_done, @comp_done, '您好，麻烦今天多照顾一下老人，谢谢！', 1, '2026-07-01 09:00:00' WHERE @o_done IS NOT NULL
+UNION ALL SELECT @o_done, @comp_done, @cust_done, '放心，住院手续我来办，有情况随时同步给您。', 1, '2026-07-01 09:05:00' WHERE @o_done IS NOT NULL
+UNION ALL SELECT @o_done, @comp_done, @cust_done, '住院手续已办好，老人已入住病房，押金收据我拍照发您。', 1, '2026-07-01 14:00:00' WHERE @o_done IS NOT NULL
+UNION ALL SELECT @o_done, @cust_done, @comp_done, '太感谢了，辛苦您！', 1, '2026-07-01 14:10:00' WHERE @o_done IS NOT NULL;

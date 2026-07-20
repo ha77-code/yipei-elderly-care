@@ -48,6 +48,21 @@ mysql -u root -p < sql/init.sql
 
 > MySQL 密码不是 `123456` 的话，先改 `src/main/resources/application.yaml` 里的 `spring.datasource.password`。
 
+### 想要完整演示数据（推荐）
+
+`init.sql` 只建库建表 + 3 个基础账号。要体验完整流程（需求广场、需求审核、订单全生命周期、评价、投诉、聊天等），再执行一次演示数据脚本：
+
+```bash
+mysql -u root -p < sql/init.sql            # 先建库建表
+mysql -u root -p < sql/demo_test_data.sql  # 再灌入演示数据
+```
+
+`demo_test_data.sql` 会灌入 24 个用户、8 个陪诊师、21 条需求、14 个订单以及聊天等数据，所有账号密码均为 `123456`（如 `customer1`~`customer10`、`companion1`~`companion8`、`admin1`~`admin3`）。
+
+> ⚠️ 该脚本开头会 `TRUNCATE` 清空所有业务表以保证可重复执行、结果一致，**仅用于演示/测试环境，勿在生产库运行**。
+>
+> 已有旧库升级：若之前建过库、缺少撮合与聊天相关字段/表，先执行 `sql/migrations/20260721_add_matching_and_chat.sql` 补齐结构（可重复执行，不动数据），无需重跑 `init.sql`。
+
 ---
 
 ## 项目简介
