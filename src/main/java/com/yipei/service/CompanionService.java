@@ -47,7 +47,21 @@ public class CompanionService {
         }
         CompanionProfile exist = companionProfileMapper.selectByUserId(userId);
         if (exist != null) {
-            throw new ForbiddenException("您已提交过入驻资料，请前往修改");
+            if (exist.getAuditStatus() != null && exist.getAuditStatus() == 2) {
+                // 被拒绝后允许重新提交：更新已有资料并重置为待审核
+                companionProfileMapper.update(exist.getId(),
+                        request.getRealName(), request.getAvatar(), request.getIntroduction(),
+                        request.getServiceArea(), request.getServiceTypes(), request.getTraits(),
+                        request.getExperienceYears());
+                CompanionProfile updated = companionProfileMapper.selectById(exist.getId());
+                notificationService.sendToRole(RoleConstants.ADMIN, "COMPANION_AUDIT_PENDING", "有陪诊师资料待重新审核",
+                        (request.getRealName() == null ? "一位陪诊师" : request.getRealName()) + "重新提交了入驻资料，请及时审核。", updated.getId());
+                return updated;
+            }
+            if (exist.getAuditStatus() != null && exist.getAuditStatus() == 1) {
+                throw new ForbiddenException("您的入驻资料已通过审核，如需修改请前往资料管理");
+            }
+            throw new ForbiddenException("您已提交过入驻资料，请等待审核");
         }
         CompanionProfile profile = new CompanionProfile();
         profile.setUserId(userId);
