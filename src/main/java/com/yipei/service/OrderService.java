@@ -30,6 +30,7 @@ public class OrderService {
     private final OrderStatusLogMapper orderStatusLogMapper;
     private final CompanionProfileMapper companionProfileMapper;
     private final SubmitLock submitLock;
+    private final UserNotificationService notificationService;
 
     private static final BigDecimal PLATFORM_RATE = new BigDecimal("0.1");
 
@@ -38,13 +39,15 @@ public class OrderService {
                         SysUserMapper sysUserMapper,
                         OrderStatusLogMapper orderStatusLogMapper,
                         CompanionProfileMapper companionProfileMapper,
-                        SubmitLock submitLock) {
+                        SubmitLock submitLock,
+                        UserNotificationService notificationService) {
         this.serviceOrderMapper = serviceOrderMapper;
         this.serviceRequestMapper = serviceRequestMapper;
         this.sysUserMapper = sysUserMapper;
         this.orderStatusLogMapper = orderStatusLogMapper;
         this.companionProfileMapper = companionProfileMapper;
         this.submitLock = submitLock;
+        this.notificationService = notificationService;
     }
 
     /** 创建订单 */
@@ -202,6 +205,9 @@ public class OrderService {
         log.setOperatorId(userId);
         log.setRemark("陪诊师接单");
         orderStatusLogMapper.insert(log);
+        notificationService.send(order.getCustomerId(), "ORDER_ACCEPTED", "\u966a\u8bca\u5e08\u5df2\u63a5\u5355",
+                "\u60a8\u6307\u5b9a\u7684\u966a\u8bca\u5e08\u5df2\u63a5\u5355\uff0c\u8bf7\u5728\u8ba2\u5355\u4e2d\u67e5\u770b\u670d\u52a1\u5b89\u6392\u3002", orderId);
+
     }
 
     /** 拒绝订单 */

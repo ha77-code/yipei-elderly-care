@@ -45,6 +45,7 @@
 <script>
 import { getUser, clearUser, ROLES, ROLE_LABELS } from '@/utils/auth'
 import { getUnreadTotal } from '@/api/chat'
+import { getNotificationUnread } from '@/api/notification'
 
 const T = {
   brandSymbol: '\u76ca',
@@ -171,9 +172,11 @@ export default {
   methods: {
     async refreshUnread() {
       try {
-        const res = await getUnreadTotal()
-        this.unreadTotal = res.data != null ? res.data : (res || 0)
-      } catch { /* 忽略，红点非关键 */ }
+        const [chatRes, notificationRes] = await Promise.all([getUnreadTotal(), getNotificationUnread()])
+        const chatUnread = chatRes.data != null ? chatRes.data : (chatRes || 0)
+        const notificationUnread = notificationRes.data != null ? notificationRes.data : (notificationRes || 0)
+        this.unreadTotal = chatUnread + notificationUnread
+      } catch { /* ignore notification polling failures */ }
     },
     handleUserCommand(command) {
       if (command === 'profile') this.$router.push('/profile')
@@ -250,7 +253,7 @@ export default {
 .brand-symbol { width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid rgba(240, 210, 175, 0.36); color: var(--brand-gold-420); font-family: var(--font-serif); font-size: 20px; font-weight: 800; background: rgba(18, 34, 16, 0.74); }
 .brand-text { color: var(--brand-cream-100); font-family: var(--font-serif); font-size: 18px; font-weight: 800; }
 .top-nav { flex: 1; display: flex; justify-content: center; gap: 6px; }
-.nav-link { height: 38px; display: inline-flex; align-items: center; padding: 0 16px; border-radius: 999px; color: rgba(250, 247, 242, 0.82); text-decoration: none; font-size: 14px; font-weight: 700; transition: all 0.22s var(--ease-standard); }
+.nav-link { height: 44px; display: inline-flex; align-items: center; padding: 0 16px; border-radius: 999px; color: rgba(250, 247, 242, 0.82); text-decoration: none; font-size: 16px; font-weight: 700; transition: all 0.22s var(--ease-standard); }
 .nav-link:hover, .nav-link--active { color: var(--brand-gold-420); background: rgba(225, 195, 160, 0.1); }
 .user-chip { display: flex; align-items: center; gap: 10px; padding: 6px 10px 6px 6px; border: 1px solid rgba(230, 200, 160, 0.16); border-radius: 999px; color: rgba(245, 240, 232, 0.86); background: rgba(18, 34, 16, 0.62); cursor: pointer; }
 .user-avatar { background: rgba(225, 195, 160, 0.22); color: var(--brand-gold-420); }
@@ -263,7 +266,7 @@ export default {
 .side-bar { width: 236px; flex: 0 0 236px; padding: 22px 12px; border-right: 1px solid rgba(230, 200, 160, 0.12); background: rgba(7, 16, 7, 0.48); backdrop-filter: blur(16px); overflow-y: auto; }
 .side-title { padding: 0 14px 12px; color: rgba(225, 205, 175, 0.62); font-size: 12px; font-weight: 800; }
 .side-menu { border: 0; }
-.side-menu ::v-deep .el-menu-item { height: 44px; line-height: 44px; margin-bottom: 6px; border-radius: 10px; font-size: 14px; font-weight: 700; transition: all 0.22s var(--ease-standard); }
+.side-menu ::v-deep .el-menu-item { height: 52px; line-height: 52px; margin-bottom: 6px; border-radius: 10px; font-size: 16px; font-weight: 700; transition: all 0.22s var(--ease-standard); }
 .side-menu ::v-deep .el-menu-item i { color: inherit; margin-right: 8px; }
 .side-menu ::v-deep .el-menu-item:hover { background: rgba(225, 195, 160, 0.08); color: var(--brand-cream-100) !important; }
 .side-menu ::v-deep .el-menu-item.is-active { background: rgba(225, 195, 160, 0.14); color: var(--brand-gold-420) !important; box-shadow: inset 3px 0 0 rgba(240, 210, 175, 0.72); }

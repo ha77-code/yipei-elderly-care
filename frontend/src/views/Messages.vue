@@ -1,6 +1,22 @@
 <template>
   <div class="page-wrap">
     <h2 class="page-title">我的消息</h2>
+    <div class="notification-panel" v-loading="notificationLoading">
+      <div class="notification-head">
+        <div>
+          <h3>系统通知</h3>
+          <span>{{ notifications.length ? `共 ${notifications.length} 条` : '暂无通知' }}</span>
+        </div>
+        <el-button v-if="notificationUnread" type="text" @click="markAllRead">全部标记已读</el-button>
+      </div>
+      <div v-if="!notifications.length && !notificationLoading" class="notification-empty">暂无新通知</div>
+      <button v-for="n in notifications" :key="n.id" :class="['notification-item', { unread: !n.isRead }]" @click="readNotification(n)">
+        <span class="notification-dot"></span>
+        <span class="notification-body"><strong>{{ n.title }}</strong><small>{{ n.content }}</small></span>
+        <time>{{ fmt(n.createdAt) }}</time>
+      </button>
+    </div>
+
     <div class="chat-center">
       <!-- 左侧：会话列表 -->
       <div class="conv-list" v-loading="convLoading">
@@ -81,6 +97,7 @@
 
 <script>
 import { getConversations, getChatMessages, sendChatMessage } from '@/api/chat'
+import { getNotifications, markNotificationRead, markAllNotificationsRead } from '@/api/notification'
 import { getUser } from '@/utils/auth'
 
 export default {
@@ -91,14 +108,32 @@ export default {
       myId: u.id,
       conversations: [], convLoading: false,
       current: null, messages: [], msgLoading: false,
-      draft: '', sending: false, timer: null
+      draft: '', sending: false, timer: null,
+      notifications: [], notificationLoading: false, notificationUnread: 0
     }
   },
   created() {
     const pre = this.$route.query.orderId
     this.fetchConversations(pre ? Number(pre) : null)
+    this.fetchNotifications()
   },
   methods: {
+    async fetchNotifications() {
+      this.notificationLoading = true
+      try {
+        const res = await getNotifications()
+        this.notifications = res.data || res || []
+        this.notificationUnread = this.notifications.filter(n => !n.isRead).length
+      } catch { this.notifications = [] } finally { this.notificationLoading = false }
+    },
+    async readNotification(n) {
+      if (!n.isRead) {
+        try { await markNotificationRead(n.id); n.isRead = 1; this.notificationUnread = Math.max(0, this.notificationUnread - 1) } catch {}
+      }
+    },
+    async markAllRead() {
+      try { await markAllNotificationsRead(); this.notifications.forEach(n => { n.isRead = 1 }); this.notificationUnread = 0 } catch {}
+    },
     async fetchConversations(autoSelectOrderId) {
       this.convLoading = true
       try {
@@ -155,6 +190,21 @@ export default {
 <style scoped>
 .page-wrap { padding: 28px 36px; }
 .page-title { font-size: 20px; font-weight: 700; color: var(--brand-cream-100); margin: 0 0 16px; }
+
+.notification-panel { margin-bottom: 18px; padding: 18px 22px; background: #fff; border: 1px solid var(--color-border-light); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
+.notification-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.notification-head h3 { margin: 0; color: var(--color-text-primary); font-size: 18px; }
+.notification-head span { color: var(--color-text-secondary); font-size: 14px; }
+.notification-item { width: 100%; display: flex; align-items: flex-start; gap: 12px; padding: 13px 4px; border: 0; border-top: 1px solid var(--color-border-light); background: transparent; color: var(--color-text-primary); text-align: left; cursor: pointer; font: inherit; }
+.notification-item:hover { background: #faf8f3; }
+.notification-item time { margin-left: auto; color: var(--color-text-placeholder); font-size: 13px; white-space: nowrap; }
+.notification-dot { width: 9px; height: 9px; margin-top: 7px; border-radius: 50%; background: transparent; flex: 0 0 9px; }
+.notification-item.unread .notification-dot { background: #c68b45; }
+.notification-body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.notification-body strong { font-size: 15px; }
+.notification-body small { color: var(--color-text-secondary); font-size: 14px; line-height: 1.5; }
+.notification-empty { padding: 12px 0 4px; color: var(--color-text-placeholder); font-size: 14px; }
+
 .chat-center { display: flex; height: calc(100vh - 180px); min-height: 420px; background: #fff; border: 1px solid rgba(0,0,0,0.05); border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-sm); }
 /* 左侧列表 */
 .conv-list { width: 300px; flex-shrink: 0; border-right: 1px solid var(--color-border-light); overflow-y: auto; background: var(--color-bg-page); }

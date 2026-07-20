@@ -69,8 +69,8 @@ export default { name: 'App' }
 html, body, #app { min-height: 100%; }
 html, body {
   font-family: var(--font-sans);
-  font-size: 15px;
-  line-height: 1.65;
+  font-size: 16px;
+  line-height: 1.7;
   color: var(--text-primary);
   background: var(--brand-forest-950);
   -webkit-font-smoothing: antialiased;
@@ -106,7 +106,7 @@ body::after {
 button, input, textarea, select { font-family: inherit; }
 a { color: inherit; }
 
-.el-button { border-radius: var(--radius-sm); font-weight: 600; letter-spacing: 0; transition: all 0.24s var(--ease-standard); }
+.el-button { min-height: 42px; padding-left: 18px; padding-right: 18px; border-radius: var(--radius-sm); font-weight: 600; letter-spacing: 0; transition: all 0.24s var(--ease-standard); }
 .el-button--primary { background: rgba(225, 195, 160, 0.92); border-color: rgba(225, 195, 160, 0.92); color: #0e0c06; }
 .el-button--primary:hover, .el-button--primary:focus { background: rgba(240, 210, 175, 0.96); border-color: rgba(240, 210, 175, 0.96); color: #0e0c06; box-shadow: 0 0 0 4px rgba(255, 210, 140, 0.14); }
 .el-button--success { background: #2d5a3a; border-color: #2d5a3a; }
@@ -114,13 +114,15 @@ a { color: inherit; }
 .el-button--danger { background: #b86658; border-color: #b86658; }
 
 .el-input__inner, .el-textarea__inner {
+  font-size: 16px;
+  min-height: 44px;
   border-radius: var(--radius-sm);
   border-color: rgba(210, 195, 175, 0.24);
   background: rgba(255, 255, 255, 0.96);
   color: #162414;
   transition: all 0.24s var(--ease-standard);
 }
-.el-form-item__label { color: #1a1a1a !important; font-weight: 600; }
+.el-form-item__label { font-size: 16px; color: #1a1a1a !important; font-weight: 600; }
 .el-input__inner:hover, .el-textarea__inner:hover { border-color: rgba(225, 195, 160, 0.55); }
 .el-input__inner:focus, .el-input.is-focus .el-input__inner, .el-textarea__inner:focus { border-color: rgba(225, 195, 160, 0.84); box-shadow: 0 0 0 4px rgba(225, 195, 160, 0.15); }
 

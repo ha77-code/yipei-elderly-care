@@ -28,19 +28,22 @@ public class ApplicationService {
     private final SysUserMapper sysUserMapper;
     private final OrderService orderService;
     private final SubmitLock submitLock;
+    private final UserNotificationService notificationService;
 
     public ApplicationService(ServiceApplicationMapper applicationMapper,
                               ServiceRequestMapper serviceRequestMapper,
                               CompanionProfileMapper companionProfileMapper,
                               SysUserMapper sysUserMapper,
                               OrderService orderService,
-                              SubmitLock submitLock) {
+                              SubmitLock submitLock,
+                              UserNotificationService notificationService) {
         this.applicationMapper = applicationMapper;
         this.serviceRequestMapper = serviceRequestMapper;
         this.companionProfileMapper = companionProfileMapper;
         this.sysUserMapper = sysUserMapper;
         this.orderService = orderService;
         this.submitLock = submitLock;
+        this.notificationService = notificationService;
     }
 
     /** 解析当前登录陪诊师的、已通过审核的资料 */
@@ -95,7 +98,15 @@ public class ApplicationService {
         application.setMessage(message);
         application.setStatus("PENDING");
         applicationMapper.insert(application);
+        String companionName = profileName(profile.getUserId());
+        notificationService.send(sr.getCustomerId(), "APPLICATION", "\u6536\u5230\u65b0\u7684\u966a\u8bca\u7533\u8bf7",
+                (companionName == null ? "\u4e00\u4f4d\u966a\u8bca\u5e08" : companionName) + "\u7533\u8bf7\u4e86\u60a8\u7684\u966a\u8bca\u9700\u6c42\uff0c\u8bf7\u53ca\u65f6\u67e5\u770b\u3002", application.getId());
         return application;
+    }
+
+    private String profileName(Long userId) {
+        SysUser user = sysUserMapper.selectById(userId);
+        return user == null ? null : user.getNickname();
     }
 
     /** 陪诊师撤回申请 */
@@ -150,6 +161,11 @@ public class ApplicationService {
                     userId, application.getRequestId(), application.getCompanionId(), servicePrice);
             applicationMapper.updateStatus(applicationId, "ACCEPTED");
             applicationMapper.rejectOthers(application.getRequestId(), applicationId);
+            CompanionProfile profile = companionProfileMapper.selectById(application.getCompanionId());
+            if (profile != null) {
+                notificationService.send(profile.getUserId(), "APPLICATION_ACCEPTED", "\u7533\u8bf7\u5df2\u88ab\u60a3\u8005\u63a5\u53d7",
+                        "\u60a3\u8005\u5df2\u63a5\u53d7\u60a8\u7684\u966a\u8bca\u7533\u8bf7\uff0c\u8ba2\u5355\u5df2\u751f\u6210\uff0c\u8bf7\u53ca\u65f6\u67e5\u770b\u8ba2\u5355\u3002", order.getId());
+            }
             return order;
         } finally {
             submitLock.unlock("application_accept", userId);

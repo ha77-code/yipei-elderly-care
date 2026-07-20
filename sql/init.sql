@@ -232,6 +232,19 @@ CREATE TABLE IF NOT EXISTS chat_message (
 
 -- Password for all seed users: 123456
 -- Format matches com.yipei.util.PasswordUtil: base64(salt):base64(sha256(salt + rawPassword)).
+CREATE TABLE IF NOT EXISTS user_notification (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    type VARCHAR(30) NOT NULL,
+    title VARCHAR(100) NOT NULL,
+    content VARCHAR(500) NOT NULL,
+    related_id BIGINT,
+    is_read TINYINT NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_notification_user FOREIGN KEY (user_id) REFERENCES sys_user (id),
+    INDEX idx_notification_user_read (user_id, is_read, created_at)
+);
+
 INSERT INTO sys_user(username, password, nickname, phone, role, status, created_at, updated_at)
 VALUES
     ('customer1', 'eWlwZWktY3VzdG9tZXItMQ==:eJtfcMKaWA9YU1earQo/dYCpEXeKwJRa2zONf8N8pa8=', 'Zhang San', '13800000001', 'CUSTOMER', 1, NOW(), NOW()),
