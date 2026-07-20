@@ -100,6 +100,9 @@ public class CompanionService {
         if (profile == null) {
             throw new NotFoundException("陪诊师资料不存在，ID: " + id);
         }
+        if (profile.getAuditStatus() == null || profile.getAuditStatus() != 0) {
+            throw new ForbiddenException("该资料当前不在待审核状态，无法审核");
+        }
         if (auditStatus != 1 && auditStatus != 2) {
             throw new ForbiddenException("审核状态只能为 1（通过）或 2（拒绝）");
         }
