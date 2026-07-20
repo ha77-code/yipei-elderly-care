@@ -17,6 +17,7 @@ const Home = () => import('@/views/Home.vue')
 const Profile = () => import('@/views/Profile.vue')
 const OrderList = () => import('@/views/OrderList.vue')
 const OrderDetail = () => import('@/views/OrderDetail.vue')
+const Messages = () => import('@/views/Messages.vue')
 
 /* ===== 懒加载：客户端 ===== */
 const Companions = () => import('@/views/customer/Companions.vue')
@@ -118,6 +119,12 @@ const routes = [
         component: OrderList,
         meta: { title: '我的订单', role: ROLES.CUSTOMER }
       },
+      {
+        path: 'customer/messages',
+        name: 'CustomerMessages',
+        component: Messages,
+        meta: { title: '我的消息', role: ROLES.CUSTOMER }
+      },
 
       /* ---------- 陪诊师端 COMPANION ---------- */
       {
@@ -137,6 +144,12 @@ const routes = [
         name: 'CompanionOrders',
         component: OrderList,
         meta: { title: '我的订单', role: ROLES.COMPANION }
+      },
+      {
+        path: 'companion/messages',
+        name: 'CompanionMessages',
+        component: Messages,
+        meta: { title: '我的消息', role: ROLES.COMPANION }
       },
       {
         path: 'companion/service-records',

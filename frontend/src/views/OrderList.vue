@@ -37,7 +37,7 @@
             <span :class="['status-tag', statusClass(row.status)]">{{ statusMap[row.status] || row.status || '-' }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="260" align="center" fixed="right">
+        <el-table-column label="操作" width="320" align="center" fixed="right">
           <template slot-scope="{ row }">
             <el-button type="text" size="small" @click="goDetail(row)">详情</el-button>
             <el-button v-if="row.status === 'PENDING_CONFIRM' && isCustomer" type="text" size="small" @click="handleConfirm(row)">确认完成</el-button>

@@ -1,6 +1,7 @@
 package com.yipei.service;
 
 import com.yipei.constant.RoleConstants;
+import com.yipei.entity.ChatConversationVO;
 import com.yipei.entity.ChatMessage;
 import com.yipei.entity.ChatMessageVO;
 import com.yipei.entity.CompanionProfile;
@@ -133,5 +134,14 @@ public class ChatService {
     /** 总未读数（用于导航红点） */
     public int unreadTotal(Long userId) {
         return chatMessageMapper.countUnreadTotal(userId);
+    }
+
+    /** 当前用户的会话列表（聊天中心用），并标注每条会话聊天是否仍开启 */
+    public List<ChatConversationVO> listConversations(Long userId) {
+        List<ChatConversationVO> list = chatMessageMapper.selectConversations(userId);
+        for (ChatConversationVO vo : list) {
+            vo.setChatOpen(OPEN_STATUSES.contains(vo.getOrderStatus()));
+        }
+        return list;
     }
 }

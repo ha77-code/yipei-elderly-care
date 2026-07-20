@@ -1,6 +1,7 @@
 package com.yipei.controller;
 
 import com.yipei.entity.ApiResponse;
+import com.yipei.entity.ChatConversationVO;
 import com.yipei.entity.ChatMessageVO;
 import com.yipei.service.ChatService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -53,5 +54,12 @@ public class ChatController {
     public ApiResponse<Integer> unread(
             @RequestHeader("X-User-Id") Long userId) {
         return ApiResponse.success(chatService.unreadTotal(userId));
+    }
+
+    /** 当前用户的会话列表（聊天中心） */
+    @GetMapping("/conversations")
+    public ApiResponse<List<ChatConversationVO>> conversations(
+            @RequestHeader("X-User-Id") Long userId) {
+        return ApiResponse.success(chatService.listConversations(userId));
     }
 }

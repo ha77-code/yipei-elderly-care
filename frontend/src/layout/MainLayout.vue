@@ -30,6 +30,7 @@
         <el-menu :default-active="activeMenu" :router="true" :unique-opened="true" background-color="transparent" text-color="rgba(245,240,232,0.82)" active-text-color="#f0d2af" class="side-menu">
           <el-menu-item v-for="item in sideItems" :key="item.path" :index="item.path">
             <i :class="item.icon"></i><span>{{ item.label }}</span>
+            <el-badge v-if="item.badge && unreadTotal > 0" :value="unreadTotal" class="menu-badge" />
           </el-menu-item>
         </el-menu>
       </aside>
@@ -43,6 +44,7 @@
 
 <script>
 import { getUser, clearUser, ROLES, ROLE_LABELS } from '@/utils/auth'
+import { getUnreadTotal } from '@/api/chat'
 
 const T = {
   brandSymbol: '\u76ca',
@@ -64,6 +66,7 @@ const T = {
   companionList: '\u966a\u8bca\u5e08\u5217\u8868',
   createRequest: '\u53d1\u5e03\u9700\u6c42',
   myOrders: '\u6211\u7684\u8ba2\u5355',
+  messages: '\u804a\u5929',
   companionProfile: '\u5165\u9a7b\u8d44\u6599',
   serviceRecords: '\u670d\u52a1\u8bb0\u5f55',
   myEvaluations: '\u6211\u7684\u8bc4\u4ef7',
@@ -99,12 +102,14 @@ const SIDE_MAP = {
     { label: T.companionList, path: '/customer/companions', icon: 'el-icon-s-custom' },
     { label: T.createRequest, path: '/customer/request/create', icon: 'el-icon-edit-outline' },
     { label: T.myRequests, path: '/customer/requests', icon: 'el-icon-document' },
-    { label: T.myOrders, path: '/customer/orders', icon: 'el-icon-s-order' }
+    { label: T.myOrders, path: '/customer/orders', icon: 'el-icon-s-order' },
+    { label: T.messages, path: '/customer/messages', icon: 'el-icon-chat-dot-round', badge: true }
   ],
   COMPANION: [
     { label: T.companionProfile, path: '/companion/profile', icon: 'el-icon-postcard' },
     { label: T.availableOrders, path: '/companion/available-orders', icon: 'el-icon-s-claim' },
     { label: T.myOrders, path: '/companion/orders', icon: 'el-icon-s-order' },
+    { label: T.messages, path: '/companion/messages', icon: 'el-icon-message', badge: true },
     { label: T.serviceRecords, path: '/companion/service-records', icon: 'el-icon-tickets' },
     { label: T.myEvaluations, path: '/companion/evaluations', icon: 'el-icon-chat-dot-round' },
     { label: T.incomeStats, path: '/companion/income', icon: 'el-icon-coin' }
@@ -128,7 +133,9 @@ export default {
     return {
       text: T,
       userNickname: user.nickname || user.username || T.fallbackUser,
-      userRole: user.role || ROLES.CUSTOMER
+      userRole: user.role || ROLES.CUSTOMER,
+      unreadTotal: 0,
+      unreadTimer: null
     }
   },
   computed: {
@@ -145,7 +152,29 @@ export default {
       return SIDE_MAP[this.userRole] || SIDE_MAP.CUSTOMER
     }
   },
+  created() {
+    // 管理员无聊天，不轮询未读
+    if (this.userRole !== ROLES.ADMIN) {
+      this.refreshUnread()
+      this.unreadTimer = setInterval(this.refreshUnread, 15000)
+    }
+  },
+  beforeDestroy() {
+    if (this.unreadTimer) clearInterval(this.unreadTimer)
+  },
+  watch: {
+    // 进入/离开消息页时刷新红点
+    '$route.path'() {
+      if (this.userRole !== ROLES.ADMIN) this.refreshUnread()
+    }
+  },
   methods: {
+    async refreshUnread() {
+      try {
+        const res = await getUnreadTotal()
+        this.unreadTotal = res.data != null ? res.data : (res || 0)
+      } catch { /* 忽略，红点非关键 */ }
+    },
     handleUserCommand(command) {
       if (command === 'profile') this.$router.push('/profile')
       if (command === 'logout') this.doLogout()
@@ -166,6 +195,14 @@ export default {
 </script>
 
 <style scoped>
+.menu-badge {
+  margin-left: 8px;
+  vertical-align: middle;
+}
+.menu-badge::v-deep .el-badge__content {
+  border: none;
+}
+
 .main-layout {
   min-height: 100vh;
   display: flex;

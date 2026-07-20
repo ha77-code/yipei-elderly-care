@@ -22,3 +22,8 @@ export function getChatOpen(orderId) {
 export function getUnreadTotal() {
   return request({ url: '/api/chat/unread', method: 'get' })
 }
+
+/** 当前用户的会话列表 */
+export function getConversations() {
+  return request({ url: '/api/chat/conversations', method: 'get' })
+}
