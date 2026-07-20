@@ -98,7 +98,7 @@ export default {
   created() { this.fetchUserInfo() },
   methods: {
     async fetchUserInfo() {
-      try { const res = await getUserInfo(this.user.id); const d = res.data || res; this.user = { ...d }; setUser(d) } catch {}
+      try { const res = await getUserInfo(); const d = res.data || res; this.user = { ...d }; setUser(d) } catch {}
     },
     startEdit() { this.editForm.nickname = this.user.nickname || ''; this.editForm.phone = this.user.phone || ''; this.editing = true },
     cancelEdit() { this.editing = false },
@@ -128,7 +128,7 @@ export default {
 
 <style scoped>
 .profile-page { padding: 36px 40px; max-width: 680px; }
-.page-title { font-size: 22px; font-weight: 700; color: var(--color-text-primary); margin: 0 0 28px; }
+.page-title { font-size: 22px; font-weight: 700; color: var(--brand-cream-100); margin: 0 0 28px; }
 
 .profile-card { background: #fff; border: 1px solid rgba(0,0,0,0.04); border-radius: var(--radius-lg); padding: 48px; box-shadow: var(--shadow-sm); }
 
@@ -148,13 +148,13 @@ export default {
 .info-cell:nth-child(even) { border-right: none; }
 .info-cell:nth-last-child(-n+2) { border-bottom: none; }
 .info-label { font-size: 12px; color: var(--color-text-placeholder); font-weight: 550; text-transform: uppercase; letter-spacing: 0.04em; display: block; margin-bottom: 4px; }
-.info-value { font-size: 15px; color: var(--color-text-primary); font-weight: 550; }
+.info-value { font-size: 15px; color: var(--brand-cream-100); font-weight: 550; }
 
 .profile-actions { text-align: center; display: flex; gap: 12px; justify-content: center; }
 
 /* Edit Mode */
 .edit-header { margin-bottom: 28px; }
-.edit-title { font-size: 18px; font-weight: 650; color: var(--color-text-primary); margin: 0 0 4px; }
+.edit-title { font-size: 18px; font-weight: 650; color: var(--brand-cream-100); margin: 0 0 4px; }
 .edit-hint { font-size: 13px; color: var(--color-text-placeholder); }
 .profile-form { max-width: 440px; }
 

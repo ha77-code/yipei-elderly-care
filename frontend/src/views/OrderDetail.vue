@@ -2,7 +2,7 @@
   <div class="page-wrap" v-loading="loading">
     <div class="page-head">
       <div>
-        <h2 class="page-title">订单详情 #{{ order.id }}</h2>
+        <h2 class="page-title">订单详情 #{{ order.id }} <TtsPlayer :text="ttsText" /></h2>
         <p class="page-subtitle">
           <span :class="['status-tag', statusClass(order.status)]">{{ statusMap[order.status] || order.status }}</span>
           <span class="muted">创建于 {{ fmt(order.createdAt) }}</span>
@@ -105,7 +105,7 @@
     </div>
 
     <!-- 评价弹窗 -->
-    <el-dialog title="评价" :visible.sync="evalVisible" width="420px" :close-on-click-modal="false">
+    <el-dialog title="评价" :visible.sync="evalVisible" width="420px" :close-on-click-modal="false" append-to-body destroy-on-close>
       <el-form label-width="70px" size="small">
         <el-form-item label="评分">
           <el-rate v-model="evalForm.score" :max="5" show-score />
@@ -121,7 +121,7 @@
     </el-dialog>
 
     <!-- 投诉弹窗 -->
-    <el-dialog title="投诉" :visible.sync="reportVisible" width="420px" :close-on-click-modal="false">
+    <el-dialog title="投诉" :visible.sync="reportVisible" width="420px" :close-on-click-modal="false" append-to-body destroy-on-close>
       <el-form label-width="70px" size="small">
         <el-form-item label="原因">
           <el-select v-model="reportForm.reason" placeholder="请选择投诉原因" style="width:100%">
@@ -145,11 +145,12 @@
 </template>
 
 <script>
-import { getOrderDetail, acceptOrder, rejectOrder, startService, completeService, cancelOrder } from '@/api/order'
+import { getOrderDetail, acceptOrder, rejectOrder, startService, completeService, confirmOrder, cancelOrder } from '@/api/order'
 import { getServiceRecordByOrder } from '@/api/serviceRecord'
 import { getEvaluationByOrder, submitEvaluation } from '@/api/evaluation'
 import { submitReport } from '@/api/report'
 import { getUserRole, getUser } from '@/utils/auth'
+import TtsPlayer from '@/components/TtsPlayer.vue'
 
 const STATUS_MAP = {
   PENDING_ACCEPT: '待接单', ACCEPTED: '已接单', IN_SERVICE: '服务中',
@@ -159,6 +160,7 @@ const STATUS_MAP = {
 
 export default {
   name: 'OrderDetail',
+  components: { TtsPlayer },
   data() {
     return {
       loading: false, acting: null, order: {}, serviceRecord: null,
@@ -189,13 +191,30 @@ export default {
         acts.push({ key: 'start', label: '开始服务', type: 'primary', action: 'start' })
       if (this.isCompanionOrder && s === 'IN_SERVICE')
         acts.push({ key: 'complete', label: '完成服务', type: 'success', action: 'complete' })
+      if (this.isCustomerOrder && s === 'PENDING_CONFIRM')
+        acts.push({ key: 'confirm', label: '确认完成', type: 'success', action: 'confirm' })
       if (this.isCustomerOrder && (s === 'PENDING_ACCEPT' || s === 'ACCEPTED'))
         acts.push({ key: 'cancel', label: '取消订单', type: 'danger', action: 'cancel', class: 'plain' })
       if (s === 'COMPLETED' && (this.isCustomerOrder || this.isCompanionOrder))
         acts.push({ key: 'evaluate', label: '评价', type: 'warning', action: 'evaluate' })
-      if (this.isCustomerOrder || this.isCompanionOrder)
+      if ((this.isCustomerOrder || this.isCompanionOrder) && s !== 'CANCELLED' && s !== 'REJECTED')
         acts.push({ key: 'report', label: '投诉', type: 'danger', action: 'report', class: 'plain' })
       return acts
+    },
+    ttsText() {
+      const o = this.order
+      if (!o.id) return ''
+      let text = '订单编号' + o.id + ' '
+      text += '状态' + (STATUS_MAP[o.status] || '未知') + ' '
+      if (o.customerName) text += '客户' + o.customerName + ' '
+      if (o.companionName) text += '陪诊师' + o.companionName + ' '
+      if (o.serviceType) text += '服务类型' + o.serviceType + ' '
+      if (o.hospitalName) text += '医院' + o.hospitalName + ' '
+      if (o.department) text += '科室' + o.department + ' '
+      if (o.serviceDate) text += '服务时间' + this.fmt(o.serviceDate) + ' '
+      if (o.servicePrice) text += '价格' + o.servicePrice + '元 '
+      if (o.aiSummary) text += 'AI摘要 ' + o.aiSummary + ' '
+      return text
     }
   },
   created() { this.fetchAll() },
@@ -242,6 +261,7 @@ export default {
         if (act.action === 'accept') await acceptOrder(orderId)
         else if (act.action === 'start') await startService(orderId)
         else if (act.action === 'complete') await completeService(orderId)
+        else if (act.action === 'confirm') await confirmOrder(orderId)
         this.$message.success('操作成功')
         this.fetchAll()
       } catch { /* error handled */ } finally { this.acting = null }
@@ -277,7 +297,7 @@ export default {
 <style scoped>
 .page-wrap { padding: 24px 32px; max-width: 1100px; }
 .page-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
-.page-title { font-size: 20px; font-weight: 700; color: #2C2418; margin: 0; }
+.page-title { font-size: 20px; font-weight: 700; color: var(--brand-cream-100); margin: 0; }
 .page-subtitle { margin: 6px 0 0; font-size: 13px; color: #999; display: flex; align-items: center; gap: 10px; }
 .muted { color: #999; font-size: 12px; }
 
@@ -294,7 +314,7 @@ export default {
 .info-card .el-card__body { padding: 0 16px 16px; }
 
 /* 服务记录 */
-.record-content { font-size: 14px; color: #333; line-height: 1.8; white-space: pre-wrap; }
+.record-content { font-size: 14px; color: var(--brand-cream-100); line-height: 1.8; white-space: pre-wrap; }
 .ai-summary { font-size: 14px; color: #4A5E4D; line-height: 1.8; white-space: pre-wrap; padding: 10px 12px; background: #F3F7F1; border-left: 3px solid #7A9A7E; border-radius: 4px; }
 .record-notes { margin-top: 12px; padding: 10px 12px; background: #FFF8E1; border-radius: 6px; font-size: 13px; color: #8B7355; }
 .notes-label { font-weight: 600; }
@@ -312,7 +332,7 @@ export default {
 /* 时间线 */
 .timeline-card .el-card__body { padding: 8px 16px 16px; }
 .tl-content p { margin: 0; }
-.tl-status { font-size: 13px; font-weight: 600; color: #333; }
+.tl-status { font-size: 13px; font-weight: 600; color: var(--brand-cream-100); }
 .tl-remark { font-size: 12px; color: #666; margin-top: 2px; }
 .tl-operator { font-size: 11px; color: #aaa; margin-top: 2px; }
 

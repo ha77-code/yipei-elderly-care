@@ -82,7 +82,7 @@ export default {
 
 <style scoped>
 .page-wrap { padding: 28px 36px; }
-.page-title { font-size: 20px; font-weight: 700; color: var(--color-text-primary); margin: 0 0 20px; }
+.page-title { font-size: 20px; font-weight: 700; color: var(--brand-cream-100); margin: 0 0 20px; }
 .filter-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding: 16px 20px; background: #fff; border: 1px solid rgba(0,0,0,0.04); border-radius: var(--radius-md); box-shadow: var(--shadow-xs); }
 .filter-left { display: flex; gap: 12px; }
 .content-card { background: #fff; border: 1px solid rgba(0,0,0,0.04); border-radius: var(--radius-md); padding: 4px; box-shadow: var(--shadow-xs); }
@@ -98,6 +98,6 @@ export default {
 .d-item { display: flex; flex-direction: column; gap: 4px; }
 .d-full { grid-column: 1 / -1; }
 .d-label { font-size: 13px; color: var(--color-text-placeholder); font-weight: 500; }
-.d-val { font-size: 15px; color: var(--color-text-primary); }
+.d-val { font-size: 15px; color: var(--brand-cream-100); }
 .d-content { background: var(--color-bg-page); padding: 12px 16px; border-radius: var(--radius-sm); line-height: 1.6; }
 </style>

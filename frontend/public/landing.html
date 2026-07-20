@@ -455,6 +455,144 @@ body{
   z-index:100;transition:width 0.1s linear;
 }
 
+/* ===== Top Nav — 毛玻璃悬浮栏 ===== */
+.top-nav{
+  position:fixed;top:24px;right:32px;z-index:200;
+  display:flex;align-items:center;gap:6px;
+  padding:8px 10px;
+  background:rgba(0,0,0,0.28);
+  backdrop-filter:blur(20px) saturate(1.4);
+  -webkit-backdrop-filter:blur(20px) saturate(1.4);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:50px;
+  box-shadow:0 4px 24px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.06);
+  transition:all 0.5s cubic-bezier(0.22,0.61,0.36,1);
+}
+/* 悬浮栏整体 — 光标靠近时外发光 */
+.top-nav.nav-glow{
+  box-shadow:
+    0 0 40px rgba(255,190,110,0.18),
+    0 0 80px rgba(255,170,90,0.08),
+    0 4px 24px rgba(0,0,0,0.2),
+    inset 0 1px 0 rgba(255,255,255,0.1);
+  border-color:rgba(255,255,255,0.18);
+  transform:scale(1.02);
+}
+.nav-item{
+  display:flex;align-items:center;gap:6px;
+  padding:10px 18px;
+  font-size:14px;font-weight:480;
+  color:rgba(255,248,238,0.82);
+  text-decoration:none;
+  border-radius:40px;
+  cursor:none;
+  transition:all 0.35s cubic-bezier(0.22,0.61,0.36,1);
+  white-space:nowrap;
+  letter-spacing:0.03em;
+  background:transparent;
+  border:none;
+  font-family:inherit;
+  position:relative;
+}
+.nav-item:hover{
+  background:rgba(255,255,255,0.08);
+  color:#FFF;
+  box-shadow:0 0 20px rgba(255,190,110,0.12);
+}
+/* 用户头像按钮 */
+.nav-user{
+  position:relative;padding:4px 6px 4px 4px;
+}
+.nav-avatar{
+  width:36px;height:36px;border-radius:50%;
+  background:rgba(255,255,255,0.08);
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;font-weight:600;
+  color:rgba(255,248,238,0.8);
+  transition:all 0.35s ease;
+  flex-shrink:0;
+}
+.nav-user:hover .nav-avatar{
+  background:rgba(255,255,255,0.14);
+  box-shadow:0 0 20px rgba(255,190,110,0.2);
+}
+.nav-avatar svg{width:18px;height:18px}
+/* 下拉菜单 */
+.nav-dropdown{
+  position:absolute;top:calc(100% + 10px);right:0;
+  min-width:160px;
+  background:rgba(20,28,18,0.92);
+  backdrop-filter:blur(24px) saturate(1.6);
+  -webkit-backdrop-filter:blur(24px) saturate(1.6);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:14px;
+  padding:6px;
+  opacity:0;visibility:hidden;
+  transform:translateY(-8px);
+  transition:all 0.3s cubic-bezier(0.22,0.61,0.36,1);
+  box-shadow:0 12px 40px rgba(0,0,0,0.35);
+}
+.nav-dropdown.show{opacity:1;visibility:visible;transform:translateY(0)}
+.nav-dropdown-item{
+  display:flex;align-items:center;gap:10px;
+  padding:11px 16px;
+  font-size:13px;color:rgba(255,248,238,0.75);
+  border-radius:10px;
+  cursor:none;
+  transition:all 0.25s ease;
+  white-space:nowrap;
+  border:none;background:transparent;
+  font-family:inherit;width:100%;text-align:left;
+}
+.nav-dropdown-item:hover{
+  background:rgba(255,255,255,0.06);
+  color:#FFF;
+}
+.nav-dropdown-item.danger{color:rgba(255,180,160,0.75)}
+.nav-dropdown-item.danger:hover{background:rgba(255,100,80,0.12);color:rgba(255,200,180,0.9)}
+.nav-dropdown-divider{
+  height:1px;background:rgba(255,255,255,0.06);margin:4px 8px;
+}
+
+/* 详情介绍弹窗 */
+.about-overlay{
+  position:fixed;inset:0;z-index:300;
+  background:rgba(0,0,0,0.6);
+  backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;visibility:hidden;
+  transition:all 0.4s ease;
+}
+.about-overlay.show{opacity:1;visibility:visible}
+.about-modal{
+  max-width:580px;width:90%;max-height:80vh;overflow-y:auto;
+  background:rgba(24,32,20,0.94);
+  backdrop-filter:blur(30px);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:20px;
+  padding:44px 40px;
+  position:relative;
+  transform:translateY(20px);
+  transition:transform 0.4s cubic-bezier(0.22,0.61,0.36,1);
+}
+.about-overlay.show .about-modal{transform:translateY(0)}
+.about-modal h2{
+  font-family:'Noto Serif SC',serif;
+  font-size:28px;color:#F5F0E8;margin:0 0 20px;
+}
+.about-modal p{
+  font-size:15px;color:rgba(255,248,238,0.65);line-height:1.85;margin:0 0 16px;
+}
+.about-modal-close{
+  position:absolute;top:16px;right:20px;
+  width:36px;height:36px;border-radius:50%;
+  background:rgba(255,255,255,0.05);border:none;
+  color:rgba(255,248,238,0.6);font-size:18px;
+  cursor:none;transition:all 0.3s ease;
+  display:flex;align-items:center;justify-content:center;
+}
+.about-modal-close:hover{background:rgba(255,255,255,0.1);color:#FFF}
+
 /* ===== Responsive ===== */
 @media(max-width:900px){
   .hero-grid{
@@ -498,6 +636,32 @@ body{
 
 <!-- 滚动进度条 -->
 <div class="scroll-progress" id="scrollProgress"></div>
+
+<!-- ═══ 右上毛玻璃悬浮导航 ═══ -->
+<nav class="top-nav" id="topNav">
+  <a class="nav-item" href="about.html">详情介绍</a>
+  <a class="nav-item" href="/login">开始体验</a>
+  <div class="nav-item nav-user" id="navUser">
+    <div class="nav-avatar" id="navAvatar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="nav-dropdown" id="navDropdown"></div>
+  </div>
+</nav>
+
+<!-- ═══ 详情介绍弹窗 ═══ -->
+<div class="about-overlay" id="aboutOverlay">
+  <div class="about-modal">
+    <button class="about-modal-close" id="aboutClose">✕</button>
+    <h2>关于益陪养老</h2>
+    <p>「益陪养老」是一个面向老年人及其子女的陪诊与生活陪伴服务平台，连接专业陪诊师与需要关怀的老人，让每一次就医都有温暖陪伴。</p>
+    <p>家属可以代替老人发布陪诊需求，浏览经过平台审核的陪诊师资料，创建服务订单并查看服务状态。陪诊师可以提交入驻申请、管理订单和填写服务记录。管理员负责审核陪诊师、管理订单和处理投诉。</p>
+    <p>平台不提供医疗诊断和治疗服务，陪诊师只负责陪同、路线引导、手续协助、信息记录和生活陪伴。</p>
+    <p style="color:rgba(255,210,150,0.7);margin-top:24px">— 用陪伴，守护每一段金色年华</p>
+  </div>
+</div>
 
 <!-- ===== 主内容 ===== -->
 <div class="main-scroll">
@@ -812,6 +976,99 @@ const observer=new IntersectionObserver(entries=>{
   entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('is-visible')})
 },{threshold:0.18,rootMargin:'0px 0px -30px 0px'})
 revealEls.forEach(el=>observer.observe(el))
+
+/* ===== 导航栏逻辑 ===== */
+const navAvatar=document.getElementById('navAvatar')
+const navDropdown=document.getElementById('navDropdown')
+const navUser=document.getElementById('navUser')
+let dropdownOpen=false
+
+// 从 localStorage 读取登录状态（与 Vue 共享 yipei_user key）
+function getLoginUser(){
+  try{const u=JSON.parse(localStorage.getItem('yipei_user'));return u&&u.username?u:null}catch(e){return null}
+}
+function isLoggedIn(){return !!getLoginUser()}
+
+// 渲染下拉菜单
+function renderDropdown(){
+  const user=getLoginUser()
+  if(user){
+    // 已登录：显示昵称首字
+    const initial=(user.nickname||user.username||'用')[0]
+    navAvatar.innerHTML=initial
+    navAvatar.style.fontSize='16px'
+    navDropdown.innerHTML=`
+      <div class="nav-dropdown-item" style="color:rgba(255,210,150,0.8);font-weight:500">
+        ${user.nickname||user.username}
+      </div>
+      <div class="nav-dropdown-divider"></div>
+      <button class="nav-dropdown-item" data-action="profile">查看个人资料</button>
+      <button class="nav-dropdown-item" data-action="switch">切换账户</button>
+      <div class="nav-dropdown-divider"></div>
+      <button class="nav-dropdown-item danger" data-action="logout">退出账户</button>
+    `
+  }else{
+    // 未登录：默认图标
+    navAvatar.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke-linecap="round"/></svg>`
+    navAvatar.style.fontSize=''
+    navDropdown.innerHTML=`
+      <button class="nav-dropdown-item" data-action="login">登录</button>
+      <button class="nav-dropdown-item" data-action="register">注册</button>
+    `
+  }
+  // 绑定下拉菜单点击事件
+  navDropdown.querySelectorAll('.nav-dropdown-item').forEach(item=>{
+    item.addEventListener('click',e=>{
+      e.stopPropagation()
+      const action=item.dataset.action
+      if(action==='login') window.location.href='/login'
+      else if(action==='register') window.location.href='/register'
+      else if(action==='profile') window.location.href='/profile'
+      else if(action==='switch'){localStorage.removeItem('yipei_user');window.location.href='/login'}
+      else if(action==='logout'){
+        localStorage.removeItem('yipei_user')
+        renderDropdown()
+        closeDropdown()
+      }
+    })
+  })
+}
+
+// 下拉菜单开关
+function toggleDropdown(e){
+  e.stopPropagation()
+  dropdownOpen=!dropdownOpen
+  navDropdown.classList.toggle('show',dropdownOpen)
+}
+function closeDropdown(){
+  dropdownOpen=false
+  navDropdown.classList.remove('show')
+}
+
+navUser.addEventListener('click',toggleDropdown)
+document.addEventListener('click',(e)=>{
+  if(dropdownOpen&&!navUser.contains(e.target))closeDropdown()
+})
+
+
+// 导航项也参与光标交互
+const navItems=document.querySelectorAll('.nav-item,.nav-dropdown-item,.about-modal-close')
+navItems.forEach(el=>{
+  el.addEventListener('mouseenter',()=>{dot.classList.add('hover-text');ring.classList.add('hover-text')})
+  el.addEventListener('mouseleave',()=>{dot.classList.remove('hover-text');ring.classList.remove('hover-text')})
+})
+
+// 悬浮栏整体 — 光标靠近时外发光（与内部按键hover区分）
+const topNav=document.getElementById('topNav')
+document.addEventListener('mousemove',e=>{
+  const rect=topNav.getBoundingClientRect()
+  // 扩大感应范围到栏外40px
+  const near=e.clientX>rect.left-40&&e.clientX<rect.right+40&&e.clientY>rect.top-40&&e.clientY<rect.bottom+40
+  topNav.classList.toggle('nav-glow',near)
+})
+
+// 初始化
+renderDropdown()
 </script>
 </body>
 </html>

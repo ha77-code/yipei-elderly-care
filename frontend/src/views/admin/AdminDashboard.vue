@@ -110,7 +110,7 @@ export default {
 <style scoped>
 .dashboard-page { padding: 32px 36px; max-width: 1100px; }
 .page-head { margin-bottom: 28px; }
-.page-title { font-size: 22px; font-weight: 700; color: var(--color-text-primary); margin: 0; }
+.page-title { font-size: 22px; font-weight: 700; color: var(--brand-cream-100); margin: 0; }
 .page-subtitle { margin: 4px 0 0; font-size: 13px; color: var(--color-text-secondary); }
 
 .stat-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 12px; margin-bottom: 36px; min-height: 60px; }
@@ -120,10 +120,10 @@ export default {
   transition: all 0.25s cubic-bezier(0.4,0,0.2,1); cursor: default;
 }
 .mini-stat:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: rgba(122,154,126,0.12); }
-.mini-value { display: block; font-size: 24px; font-weight: 700; color: var(--color-text-primary); letter-spacing: -0.02em; }
+.mini-value { display: block; font-size: 24px; font-weight: 700; color: var(--brand-cream-100); letter-spacing: -0.02em; }
 .mini-label { display: block; font-size: 12px; color: var(--color-text-placeholder); margin-top: 6px; font-weight: 500; }
 
-.section-title { font-size: 17px; font-weight: 650; color: var(--color-text-primary); margin: 0 0 14px; }
+.section-title { font-size: 17px; font-weight: 650; color: var(--brand-cream-100); margin: 0 0 14px; }
 .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
 .menu-card { display: flex; align-items: center; gap: 16px; background: #FFF; border: 1px solid var(--color-border-light); border-radius: var(--radius-md); padding: 20px 24px; cursor: pointer; transition: all .2s; box-shadow: var(--shadow-sm); }
 .menu-card:hover { border-color: var(--color-primary-light); transform: translateY(-2px); box-shadow: var(--shadow-md); }
@@ -133,7 +133,7 @@ export default {
 .mc-icon--blue { background: rgba(100,130,180,.10); color: #5577AA; }
 .mc-icon--red { background: rgba(224,96,96,.08); color: #C05050; }
 .mc-body { flex: 1; min-width: 0; }
-.mc-body h4 { font-family: var(--font-family); font-size: 15px; font-weight: 600; color: var(--color-text-primary); margin: 0 0 4px; }
+.mc-body h4 { font-family: var(--font-family); font-size: 15px; font-weight: 600; color: var(--brand-cream-100); margin: 0 0 4px; }
 .mc-body p { font-size: 13px; color: var(--color-text-placeholder); margin: 0; }
 .mc-arrow { font-size: 16px; color: var(--color-border); flex-shrink: 0; }
 .menu-card:hover .mc-arrow { color: var(--color-primary); }

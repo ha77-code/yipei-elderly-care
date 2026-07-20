@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>关于益陪养老</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;scrollbar-width:none}
+html::-webkit-scrollbar{display:none}
+body{
+  font-family:'PingFang SC','Noto Serif SC','Microsoft YaHei',-apple-system,sans-serif;
+  color:#F5F0E8;background:#0D1A0C;overflow-x:hidden;cursor:none;
+}
+
+/* ── 光标 ── */
+.cursor-dot{
+  position:fixed;width:10px;height:10px;
+  background:rgba(255,210,140,0.95);border-radius:50%;
+  pointer-events:none;z-index:9999;transform:translate(-50%,-50%);
+  box-shadow:0 0 20px rgba(255,200,120,0.7),0 0 50px rgba(255,180,100,0.4),0 0 90px rgba(255,160,80,0.2);
+  transition:width .15s,height .15s,background .15s;
+}
+.cursor-ring{
+  position:fixed;width:50px;height:50px;
+  border:2px solid rgba(255,200,130,0.4);border-radius:50%;
+  pointer-events:none;z-index:9998;transform:translate(-50%,-50%);
+  box-shadow:0 0 30px rgba(255,190,110,0.2);
+  transition:width .3s,height .3s,border-color .3s;
+}
+.trail-particle{
+  position:fixed;pointer-events:none;z-index:9997;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,200,120,0.8),rgba(255,170,90,0.3),transparent);
+  transform:translate(-50%,-50%);
+  transition:left 0.08s linear,top 0.08s linear,opacity 0.6s ease;
+}
+
+/* ── 背景 ── */
+.bg-layer{
+  position:fixed;inset:0;z-index:0;
+  background:url('img/bg-bamboo.jpg') center 0/cover no-repeat;
+  will-change:background-position;
+}
+.bg-layer::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(160deg,rgba(6,10,4,0.42) 0%,rgba(8,14,6,0.3) 35%,rgba(10,16,8,0.35) 65%,rgba(6,10,4,0.5) 100%);
+}
+.spotlight-overlay{
+  position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:rgba(8,14,6,0.3);
+  mask-image:radial-gradient(circle 420px at 50% 50%,transparent 0%,transparent 20%,rgba(0,0,0,0.25) 55%,black 100%);
+  -webkit-mask-image:radial-gradient(circle 420px at 50% 50%,transparent 0%,transparent 20%,rgba(0,0,0,0.25) 55%,black 100%);
+}
+
+/* ── 主布局 ── */
+.page-layout{position:relative;z-index:2;display:flex;min-height:100vh}
+
+/* ── 左侧大纲 ── */
+.sidebar{
+  position:fixed;top:0;left:0;width:260px;height:100vh;
+  padding:80px 28px 40px;
+  display:flex;flex-direction:column;
+  background:rgba(0,0,0,0.18);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border-right:1px solid rgba(255,255,255,0.06);
+  z-index:10;overflow-y:auto;
+}
+.sidebar-back{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:13px;color:rgba(255,210,150,0.7);
+  text-decoration:none;margin-bottom:36px;
+  transition:color 0.3s;cursor:none;
+}
+.sidebar-back:hover{color:rgba(255,230,180,0.9)}
+.sidebar-back svg{width:16px;height:16px}
+.sidebar-title{
+  font-family:'Noto Serif SC',serif;
+  font-size:18px;font-weight:600;color:#F5F0E8;
+  margin-bottom:28px;letter-spacing:0.04em;
+}
+.sidebar-nav{display:flex;flex-direction:column;gap:2px;flex:1}
+.sidebar-link{
+  display:block;padding:10px 14px;
+  font-size:13px;color:rgba(255,248,238,0.55);
+  text-decoration:none;border-radius:8px;
+  cursor:none;transition:all 0.3s ease;
+  letter-spacing:0.03em;
+}
+.sidebar-link:hover{color:rgba(255,248,238,0.9);background:rgba(255,255,255,0.04)}
+.sidebar-link.active{color:rgba(255,210,150,0.9);background:rgba(255,200,130,0.06);font-weight:500}
+.sidebar-link.sub{padding-left:28px;font-size:12px}
+
+/* ── 右侧内容 ── */
+.content-area{
+  margin-left:260px;flex:1;padding:80px 60px 80px 48px;
+  max-width:900px;
+}
+.content-section{margin-bottom:60px}
+.content-section h2{
+  font-family:'Noto Serif SC',serif;
+  font-size:28px;font-weight:600;color:#F5F0E8;
+  margin:0 0 16px;letter-spacing:0.03em;
+  scroll-margin-top:40px;
+}
+.content-section h3{
+  font-size:18px;font-weight:600;color:rgba(255,210,150,0.8);
+  margin:28px 0 10px;letter-spacing:0.03em;
+  scroll-margin-top:40px;
+}
+.content-section p{
+  font-size:15px;line-height:1.9;color:rgba(255,248,238,0.65);
+  margin:0 0 12px;
+}
+.content-section ul{
+  list-style:none;padding:0;margin:0 0 16px;
+}
+.content-section ul li{
+  position:relative;padding:4px 0 4px 20px;
+  font-size:15px;line-height:1.8;color:rgba(255,248,238,0.6);
+}
+.content-section ul li::before{
+  content:'';position:absolute;left:0;top:14px;
+  width:5px;height:5px;border-radius:50%;
+  background:rgba(255,200,130,0.4);
+}
+
+/* 服务类型表格 */
+.service-table{
+  width:100%;border-collapse:collapse;margin:16px 0 24px;
+  font-size:14px;
+}
+.service-table th{
+  text-align:left;padding:12px 16px;
+  background:rgba(255,255,255,0.03);
+  color:rgba(255,210,150,0.8);font-weight:500;
+  border-bottom:1px solid rgba(255,255,255,0.08);
+  font-size:13px;letter-spacing:0.05em;
+}
+.service-table td{
+  padding:12px 16px;color:rgba(255,248,238,0.6);
+  border-bottom:1px solid rgba(255,255,255,0.04);
+}
+
+/* 订单流程 */
+.flow-steps{
+  display:flex;flex-wrap:wrap;align-items:center;gap:8px;
+  margin:20px 0;font-size:13px;
+}
+.flow-step{
+  padding:8px 16px;border-radius:20px;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.06);
+  color:rgba(255,248,238,0.7);
+}
+.flow-arrow{color:rgba(255,200,130,0.4);font-size:16px}
+
+/* 放心使用卡片 */
+.trust-cards{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:20px 0}
+.trust-card{
+  padding:20px 22px;border-radius:14px;
+  background:rgba(0,0,0,0.18);border:1px solid rgba(255,255,255,0.05);
+  backdrop-filter:blur(8px);
+}
+.trust-card h4{font-size:15px;font-weight:600;color:#F5F0E8;margin:0 0 6px}
+.trust-card p{font-size:13px;color:rgba(255,248,238,0.5);margin:0;line-height:1.6}
+
+/* 底部 */
+.content-footer{
+  margin-top:40px;padding-top:28px;
+  border-top:1px solid rgba(255,255,255,0.05);
+  font-family:'Noto Serif SC',serif;
+  font-size:16px;color:rgba(255,210,150,0.6);
+  font-style:italic;
+}
+
+/* ── 右侧悬浮朗读按钮 ── */
+.floating-speaker{
+  position:fixed;right:24px;top:50%;transform:translateY(-50%);z-index:200;
+  width:52px;height:52px;border-radius:50%;
+  background:rgba(0,0,0,0.32);
+  backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);
+  border:1px solid rgba(255,255,255,0.12);
+  color:rgba(255,248,238,0.7);cursor:none;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 28px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.06);
+  transition:all 0.4s cubic-bezier(0.22,0.61,0.36,1);
+}
+.floating-speaker:hover{
+  box-shadow:0 0 40px rgba(255,190,110,0.18),0 4px 28px rgba(0,0,0,0.2);
+  border-color:rgba(255,255,255,0.2);color:#fff;
+}
+.floating-speaker svg{width:22px;height:22px}
+.floating-speaker.playing{
+  background:rgba(255,190,110,0.15);color:rgba(255,210,140,1);
+  border-color:rgba(255,200,130,0.3);
+  box-shadow:0 0 40px rgba(255,180,100,0.25);
+}
+.floating-speaker.playing svg{animation:spk-pulse 1.2s ease-in-out infinite}
+@keyframes spk-pulse{
+  0%,100%{transform:scale(1);opacity:1}
+  50%{transform:scale(1.1);opacity:0.7}
+}
+@media(max-width:768px){
+  .floating-speaker{right:12px}
+  .sidebar{display:none}
+  .content-area{margin-left:0;padding:40px 24px}
+  .trust-cards{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="cursor-dot" id="cursorDot"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+<div class="trail-particle" id="trail1" style="width:18px;height:18px"></div>
+<div class="trail-particle" id="trail2" style="width:14px;height:14px"></div>
+<div class="trail-particle" id="trail3" style="width:10px;height:10px"></div>
+<div class="trail-particle" id="trail4" style="width:7px;height:7px"></div>
+<div class="trail-particle" id="trail5" style="width:5px;height:5px"></div>
+<div class="bg-layer"></div>
+<div class="spotlight-overlay" id="spotlight"></div>
+
+<div class="page-layout">
+  <!-- ═══ 左侧大纲 ═══ -->
+  <aside class="sidebar" id="sidebar">
+    <a href="landing.html" class="sidebar-back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7" stroke-linecap="round"/></svg>
+      返回首页
+    </a>
+    <div class="sidebar-title">关于益陪养老</div>
+    <nav class="sidebar-nav">
+      <a href="#what" class="sidebar-link active" data-section="what">这是什么？</a>
+      <a href="#who" class="sidebar-link" data-section="who">适合谁用</a>
+      <a href="#who-family" class="sidebar-link sub" data-section="who-family">有老人的家庭</a>
+      <a href="#who-elderly" class="sidebar-link sub" data-section="who-elderly">老人自己</a>
+      <a href="#who-remote" class="sidebar-link sub" data-section="who-remote">在异地的子女</a>
+      <a href="#who-companion" class="sidebar-link sub" data-section="who-companion">想做陪诊师的人</a>
+      <a href="#features" class="sidebar-link" data-section="features">能做什么</a>
+      <a href="#feat-customer" class="sidebar-link sub" data-section="feat-customer">找陪诊师</a>
+      <a href="#feat-companion" class="sidebar-link sub" data-section="feat-companion">接单服务</a>
+      <a href="#feat-admin" class="sidebar-link sub" data-section="feat-admin">管理平台</a>
+      <a href="#services" class="sidebar-link" data-section="services">服务类型</a>
+      <a href="#flow" class="sidebar-link" data-section="flow">订单流程</a>
+      <a href="#trust" class="sidebar-link" data-section="trust">放心使用</a>
+      <a href="#notice" class="sidebar-link" data-section="notice">重要说明</a>
+    </nav>
+  </aside>
+
+  <!-- ═══ 右侧内容 ═══ -->
+  <main class="content-area">
+    <section class="content-section" id="what">
+      <h2>这是什么？</h2>
+      <p>「医陪」是一个帮家里老人找陪诊师的小帮手。</p>
+      <p>老人去医院看病，子女不一定每次都能请假陪着。医院里挂号、排队、找科室、取药，对老人来说处处都是坎。有了「医陪」，你只需要在平台上发布一个需求，就有专业的陪诊师接单，全程陪着老人走完就医流程。老人不慌了，子女也安心了。</p>
+    </section>
+
+    <section class="content-section" id="who">
+      <h2>适合谁用</h2>
+      <h3 id="who-family">有老人的家庭</h3>
+      <p>爸妈要去医院，你没法每次都请假。用「医陪」找人替你陪着，专业的人办专业的事。</p>
+      <h3 id="who-elderly">老人自己</h3>
+      <p>去医院心里没底，叫个陪诊师，全程有人陪、有人帮，心里踏实。</p>
+      <h3 id="who-remote">在异地的子女</h3>
+      <p>老人一个人在老家，看病没人管。打开「医陪」，帮老人发个需求，陪诊师上门接老人去医院。</p>
+      <h3 id="who-companion">想做陪诊师的人</h3>
+      <p>你有时间、有耐心、熟悉医院流程，可以申请成为陪诊师，接单获得收入，帮助有需要的老人。</p>
+    </section>
+
+    <section class="content-section" id="features">
+      <h2>能做什么</h2>
+      <h3 id="feat-customer">找陪诊师 — 给家属和老人</h3>
+      <p>看看平台上有哪些陪诊师，每个人都能看到他们的<strong style="color:rgba(255,210,150,0.8)">评分、服务区域、擅长类型、完成订单数、经验年限</strong>。</p>
+      <p>按区域搜，按服务类型筛，评分高的排前面，一眼就找到合适的人。</p>
+      <p>觉得合适了，发一个需求，填上<strong style="color:rgba(255,210,150,0.8)">去哪个医院、哪个科室、什么时间、具体要求</strong>，系统就帮你生成订单，陪诊师接单后按时去服务。</p>
+      <p>服务完了，你能看到陪诊师写的<strong style="color:rgba(255,210,150,0.8)">服务记录</strong>，知道当天发生了什么、医生说了什么、需要注意什么。</p>
+      <p>觉得好就给好评，不满意可以投诉。</p>
+
+      <h3 id="feat-companion">接单服务 — 给陪诊师</h3>
+      <p>提交你的资料，真实姓名、在哪里服务、擅长什么、做了多少年，等管理员审核通过就能开始接单。</p>
+      <p>你能看到家属发布的所有需求，看到<strong style="color:rgba(255,210,150,0.8)">服务时间、医院、科室、具体要求</strong>，合适的就接，不方便的就拒。</p>
+      <p>接单后按时去医院，开始服务，完成后填写服务记录，让家属知道过程。</p>
+      <p>好评越多，评分越高，以后越容易被家属选中。</p>
+
+      <h3 id="feat-admin">管理平台 — 给管理员</h3>
+      <p>审核陪诊师资料，确保每个人都是真实可信的。</p>
+      <p>查看所有的需求、订单、投诉，及时处理问题。</p>
+      <p>平台统计数据一目了然：有多少用户、多少陪诊师、多少订单、收入多少。</p>
+    </section>
+
+    <section class="content-section" id="services">
+      <h2>服务类型</h2>
+      <table class="service-table">
+        <thead><tr><th>服务</th><th>适合什么情况</th></tr></thead>
+        <tbody>
+          <tr><td>门诊陪诊</td><td>老人要去门诊看病，需要人陪着挂号、排队、找科室</td></tr>
+          <tr><td>住院陪护</td><td>老人住院期间需要人照顾，帮忙打水、取餐、陪聊</td></tr>
+          <tr><td>检查陪同</td><td>老人要做B超、CT、胃镜等检查，需要人陪着</td></tr>
+          <tr><td>取药送药</td><td>老人在家不方便出门，需要人帮忙去医院取药</td></tr>
+          <tr><td>夜间陪护</td><td>老人晚上需要人陪着，防止起夜出意外</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="content-section" id="flow">
+      <h2>订单流程</h2>
+      <div class="flow-steps">
+        <span class="flow-step">发需求</span><span class="flow-arrow">→</span>
+        <span class="flow-step">选陪诊师</span><span class="flow-arrow">→</span>
+        <span class="flow-step">下订单</span><span class="flow-arrow">→</span>
+        <span class="flow-step">陪诊师接单</span><span class="flow-arrow">→</span>
+        <span class="flow-step">开始服务</span><span class="flow-arrow">→</span>
+        <span class="flow-step">完成服务</span><span class="flow-arrow">→</span>
+        <span class="flow-step">你确认</span><span class="flow-arrow">→</span>
+        <span class="flow-step">互相评价</span>
+      </div>
+      <p>每一步都能看到，谁在什么时候做了什么，清清楚楚。</p>
+    </section>
+
+    <section class="content-section" id="trust">
+      <h2>放心使用</h2>
+      <div class="trust-cards">
+        <div class="trust-card"><h4>身份审核</h4><p>陪诊师需要提交真实身份资料，管理员审核通过才能接单</p></div>
+        <div class="trust-card"><h4>全程追溯</h4><p>每个订单的每一步都有时间记录，随时可查</p></div>
+        <div class="trust-card"><h4>公开评价</h4><p>服务完成后双方互评，好评差的都看得到</p></div>
+        <div class="trust-card"><h4>投诉保障</h4><p>有投诉入口，管理员会及时处理</p></div>
+      </div>
+    </section>
+
+    <section class="content-section" id="notice">
+      <h2>重要说明</h2>
+      <p>陪诊师不是医生，不看病、不开药、不做治疗。他们只做一件事：<strong style="color:rgba(255,210,150,0.85)">陪着老人，让老人不孤单、不慌张</strong>。</p>
+    </section>
+
+    <div class="content-footer">益陪养老，用陪伴守护每一段金色年华。</div>
+  </main>
+</div>
+
+<!-- 右侧悬浮朗读按钮 -->
+<button class="floating-speaker" id="speakerBtn" title="朗读页面">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+    <path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/>
+  </svg>
+</button>
+
+<script>
+/* ── 光标 ── */
+const dot=document.getElementById('cursorDot'),ring=document.getElementById('cursorRing')
+const spotlight=document.getElementById('spotlight'),bgLayer=document.querySelector('.bg-layer')
+let mx=window.innerWidth/2,my=window.innerHeight/2,dx=mx,dy=my
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY})
+function updateCursor(){
+  dx+=(mx-dx)*0.22;dy+=(my-dy)*0.22
+  dot.style.left=dx+'px';dot.style.top=dy+'px'
+  ring.style.left=mx+'px';ring.style.top=my+'px'
+  requestAnimationFrame(updateCursor)
+}
+updateCursor()
+
+/* ── 粒子拖尾 ── */
+const trails=[
+  {el:document.getElementById('trail1'),delay:0.06,x:mx,y:my},
+  {el:document.getElementById('trail2'),delay:0.12,x:mx,y:my},
+  {el:document.getElementById('trail3'),delay:0.18,x:mx,y:my},
+  {el:document.getElementById('trail4'),delay:0.25,x:mx,y:my},
+  {el:document.getElementById('trail5'),delay:0.33,x:mx,y:my},
+]
+function updateTrails(){
+  trails.forEach(t=>{
+    t.x+=(mx-t.x)*t.delay;t.y+=(my-t.y)*t.delay
+    t.el.style.left=t.x+'px';t.el.style.top=t.y+'px'
+    t.el.style.opacity=Math.max(0.15,1-Math.sqrt((mx-t.x)**2+(my-t.y)**2)/180)
+  })
+  requestAnimationFrame(updateTrails)
+}
+updateTrails()
+
+/* ── 聚光灯 ── */
+function updateSpotlight(){
+  spotlight.style.maskImage=`radial-gradient(circle 420px at ${mx}px ${my}px,transparent 0%,transparent 20%,rgba(0,0,0,0.25) 55%,black 100%)`
+  spotlight.style.webkitMaskImage=`radial-gradient(circle 420px at ${mx}px ${my}px,transparent 0%,transparent 20%,rgba(0,0,0,0.25) 55%,black 100%)`
+  requestAnimationFrame(updateSpotlight)
+}
+updateSpotlight()
+
+/* ── 视差 ── */
+window.addEventListener('scroll',()=>{
+  bgLayer.style.backgroundPositionY=`${-window.scrollY*0.15}px`
+  // 左侧大纲高亮当前章节
+  const sections=document.querySelectorAll('.content-section [id]')
+  let current='what'
+  sections.forEach(s=>{if(window.scrollY>=s.offsetTop-120)current=s.id})
+  document.querySelectorAll('.sidebar-link').forEach(l=>l.classList.toggle('active',l.dataset.section===current))
+})
+
+/* ── Hover ── */
+document.querySelectorAll('a,button').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{dot.style.width='40px';dot.style.height='40px';dot.style.background='rgba(255,220,160,0.3)';dot.style.mixBlendMode='overlay';ring.style.width='90px';ring.style.height='90px';ring.style.borderColor='rgba(255,210,140,0.6)'})
+  el.addEventListener('mouseleave',()=>{dot.style.width='';dot.style.height='';dot.style.background='';dot.style.mixBlendMode='';ring.style.width='';ring.style.height='';ring.style.borderColor=''})
+})
+
+/* ── 大纲点击平滑滚动 ── */
+document.querySelectorAll('.sidebar-link').forEach(link=>{
+  link.addEventListener('click',e=>{
+    e.preventDefault()
+    const target=document.getElementById(link.dataset.section)
+    if(target)target.scrollIntoView({behavior:'smooth',block:'start'})
+  })
+})
+
+/* ── 朗读按钮 ── */
+const speakerBtn=document.getElementById('speakerBtn')
+let speaking=false,tts=null
+speakerBtn.addEventListener('click',()=>{
+  if(speaking){stopSpeak();return}
+  const text='益陪养老是一个帮家里老人找陪诊师的小帮手。有老人的家庭，爸妈要去医院你没法每次都请假，用益陪找人替你陪着。老人自己去医院心里没底，叫个陪诊师全程有人陪。在异地的子女，老人一个人在老家看病没人管，打开益陪帮老人发个需求，陪诊师上门接老人去医院。想做陪诊师的人，你有时间有耐心熟悉医院流程，可以申请成为陪诊师接单获得收入。服务类型包括门诊陪诊、住院陪护、检查陪同、取药送药、夜间陪护。订单流程：发需求、选陪诊师、下订单、陪诊师接单、开始服务、完成服务、你确认、互相评价。每一步都能看到谁在什么时候做了什么。陪诊师需要提交真实身份资料，管理员审核通过才能接单。服务完成后双方互评，有好评有差的都看得到，有投诉入口管理员会处理。陪诊师不是医生，不看病不开药不做治疗，他们只做一件事：陪着老人让老人不孤单不慌张。益陪养老，用陪伴守护每一段金色年华。'
+  if(window.speechSynthesis){
+    tts=new SpeechSynthesisUtterance(text)
+    tts.lang='zh-CN';tts.rate=0.9;tts.pitch=1
+    tts.onend=stopSpeak;tts.onerror=stopSpeak
+    speaking=true;speakerBtn.classList.add('playing')
+    window.speechSynthesis.speak(tts)
+  }else{
+    fetch('/api/tts/speak',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})})
+    .then(r=>r.blob()).then(blob=>{
+      tts=new Audio(URL.createObjectURL(blob));tts.onended=stopSpeak;tts.play()
+      speaking=true;speakerBtn.classList.add('playing')
+    }).catch(stopSpeak)
+  }
+})
+function stopSpeak(){
+  speaking=false;speakerBtn.classList.remove('playing')
+  if(tts){try{if(tts.stop)tts.stop()}catch(e){}tts=null}
+  window.speechSynthesis&&window.speechSynthesis.cancel()
+}
+</script>
+</body>
+</html>

@@ -6,10 +6,10 @@ function normalizeRole(role) {
     CUSTOMER: 'CUSTOMER',
     COMPANION: 'COMPANION',
     ADMIN: 'ADMIN',
-    '陪诊师': 'COMPANION',
-    '陪护师': 'COMPANION',
-    '客户': 'CUSTOMER',
-    '管理员': 'ADMIN'
+    '\u5ba2\u6237': 'CUSTOMER',
+    '\u966a\u8bca\u5e08': 'COMPANION',
+    '\u966a\u62a4\u5e08': 'COMPANION',
+    '\u7ba1\u7406\u5458': 'ADMIN'
   }
   return aliases[value] || value
 }
@@ -20,11 +20,11 @@ function normalizeUser(user) {
 }
 
 export function setUser(user) {
-  localStorage.setItem(USER_KEY, JSON.stringify(normalizeUser(user)))
+  sessionStorage.setItem(USER_KEY, JSON.stringify(normalizeUser(user)))
 }
 
 export function getUser() {
-  const raw = localStorage.getItem(USER_KEY)
+  const raw = sessionStorage.getItem(USER_KEY)
   if (!raw) return null
   try {
     return normalizeUser(JSON.parse(raw))
@@ -34,7 +34,7 @@ export function getUser() {
 }
 
 export function clearUser() {
-  localStorage.removeItem(USER_KEY)
+  sessionStorage.removeItem(USER_KEY)
 }
 
 export function isLoggedIn() {
@@ -53,7 +53,7 @@ export const ROLES = {
 }
 
 export const ROLE_LABELS = {
-  CUSTOMER: '客户',
-  COMPANION: '陪诊师',
-  ADMIN: '管理员'
+  CUSTOMER: '\u5ba2\u6237',
+  COMPANION: '\u966a\u8bca\u5e08',
+  ADMIN: '\u7ba1\u7406\u5458'
 }

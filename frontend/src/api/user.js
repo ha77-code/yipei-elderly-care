@@ -22,12 +22,11 @@ export function login(data) {
   })
 }
 
-/** 获取用户信息，id 为当前登录用户 ID */
-export function getUserInfo(id) {
+/** 获取当前登录用户信息（通过 X-User-Id Header 识别） */
+export function getUserInfo() {
   return request({
     url: '/api/user/info',
-    method: 'get',
-    params: { id }
+    method: 'get'
   })
 }
 

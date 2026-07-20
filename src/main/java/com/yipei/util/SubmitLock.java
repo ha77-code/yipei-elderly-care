@@ -10,6 +10,8 @@ import java.util.concurrent.TimeUnit;
 public class SubmitLock {
     private final StringRedisTemplate redisTemplate;
     private volatile Boolean redisAvailable = null;
+    private volatile long lastCheckTime = 0;
+    private static final long RETRY_INTERVAL_MS = 60_000;
 
     public SubmitLock(StringRedisTemplate redisTemplate) {
         this.redisTemplate = redisTemplate;
@@ -23,6 +25,7 @@ public class SubmitLock {
             return Boolean.TRUE.equals(ok);
         } catch (Exception e) {
             redisAvailable = false;
+            lastCheckTime = System.currentTimeMillis();
             return true;
         }
     }
@@ -31,18 +34,26 @@ public class SubmitLock {
         if (!isRedisAvailable()) return;
         try {
             redisTemplate.delete("submit_lock:" + prefix + ":" + userId);
-        } catch (Exception ignored) { redisAvailable = false; }
+        } catch (Exception ignored) {
+            redisAvailable = false;
+            lastCheckTime = System.currentTimeMillis();
+        }
     }
 
     private boolean isRedisAvailable() {
-        if (redisAvailable == null) {
+        if (redisAvailable == null || (!redisAvailable && shouldRetry())) {
             try {
                 redisTemplate.getConnectionFactory().getConnection().ping();
                 redisAvailable = true;
             } catch (Exception e) {
                 redisAvailable = false;
+                lastCheckTime = System.currentTimeMillis();
             }
         }
         return redisAvailable;
+    }
+
+    private boolean shouldRetry() {
+        return System.currentTimeMillis() - lastCheckTime > RETRY_INTERVAL_MS;
     }
 }

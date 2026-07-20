@@ -7,8 +7,7 @@ import { setUser } from '@/utils/auth'
 
 const TEST_ACCOUNTS = [
   { role: 'CUSTOMER', label: '张三', roleName: '客户（家属）' },
-  { role: 'COMPANION', label: '李陪诊', roleName: '陪诊师' },
-  { role: 'ADMIN', label: '管理员', roleName: '平台管理员' }
+  { role: 'COMPANION', label: '李陪诊', roleName: '陪诊师' }
 ]
 
 /** 获取测试账号列表 */

@@ -19,7 +19,10 @@
           </div>
           <div class="oc-footer">
             <el-tag size="small">{{ item.serviceType }}</el-tag>
-            <el-button type="primary" size="small" round @click="handleAccept(item)">接单</el-button>
+            <div>
+              <el-button type="danger" size="small" round plain @click="handleReject(item)">拒绝</el-button>
+              <el-button type="primary" size="small" round @click="handleAccept(item)">接单</el-button>
+            </div>
           </div>
         </div>
         <div class="empty-state" v-if="!loading && list.length === 0">
@@ -34,7 +37,7 @@
 </template>
 
 <script>
-import { getAvailableOrders, acceptOrder } from '@/api/order'
+import { getAvailableOrders, acceptOrder, rejectOrder } from '@/api/order'
 
 export default {
   name: 'AvailableOrders',
@@ -48,6 +51,9 @@ export default {
     handleAccept(item) {
       this.$confirm(`确认接单 #${item.id}，服务金额 ¥${item.servicePrice}？`, '确认接单', { confirmButtonText: '确认接单', type: 'success' }).then(async () => { try { await acceptOrder(item.id); this.$message.success('接单成功'); this.fetchList() } catch {} }).catch(() => {})
     },
+    handleReject(item) {
+      this.$prompt('请输入拒绝原因（可选）', '拒绝订单', { confirmButtonText: '确认拒绝', cancelButtonText: '取消', type: 'warning', inputPlaceholder: '如：时间冲突、不在服务区域等' }).then(async ({ value }) => { try { await rejectOrder(item.id, { reason: value || '陪诊师拒绝' }); this.$message.success('已拒绝'); this.fetchList() } catch {} }).catch(() => {})
+    },
     fmt(d) { if (!d) return '-'; return d.replace('T', ' ').substring(0, 16) }
   }
 }
@@ -55,7 +61,7 @@ export default {
 
 <style scoped>
 .page-wrap { padding: 28px 36px; }
-.page-title { font-size: 20px; font-weight: 700; color: var(--color-text-primary); margin: 0 0 20px; }
+.page-title { font-size: 20px; font-weight: 700; color: var(--brand-cream-100); margin: 0 0 20px; }
 .order-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 16px; min-height: 150px; }
 
 .order-card {

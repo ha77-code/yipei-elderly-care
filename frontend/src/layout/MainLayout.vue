@@ -1,121 +1,39 @@
 <template>
   <div class="main-layout">
-    <!-- ===== 顶部导航栏 ===== -->
     <header class="top-bar">
-      <div class="top-bar-left">
-        <span class="brand-logo">益陪养老</span>
+      <div class="brand-lockup" @click="$router.push('/')">
+        <span class="brand-symbol">{{ text.brandSymbol }}</span>
+        <span class="brand-text">{{ text.brandName }}</span>
       </div>
-      <nav class="top-bar-center">
-        <router-link to="/" class="nav-link" exact-active-class="nav-link--active">首页</router-link>
-        <router-link v-if="userRole === 'CUSTOMER'" to="/customer/companions" class="nav-link">陪护人员</router-link>
-        <router-link v-if="userRole === 'CUSTOMER'" to="/customer/requests" class="nav-link">我的需求</router-link>
-        <router-link v-if="userRole === 'COMPANION'" to="/companion/available-orders" class="nav-link">可接订单</router-link>
-        <router-link v-if="userRole === 'ADMIN'" to="/admin/statistics" class="nav-link">平台管理</router-link>
+
+      <nav class="top-nav">
+        <router-link v-for="item in topItems" :key="item.path" :to="item.path" class="nav-link" exact-active-class="nav-link--active">{{ item.label }}</router-link>
       </nav>
-      <div class="top-bar-right">
-        <el-dropdown trigger="click" @command="handleUserCommand">
-          <span class="user-info">
-            <el-avatar :size="32" icon="el-icon-user-solid" class="user-avatar"></el-avatar>
-            <span class="user-nickname">{{ userNickname }}</span>
-            <span :class="['role-tag', `role-tag--${userRole.toLowerCase()}`]">{{ roleLabel }}</span>
-            <i class="el-icon-arrow-down"></i>
-          </span>
-          <el-dropdown-menu slot="dropdown">
-            <el-dropdown-item command="profile">
-              <i class="el-icon-user"></i> 个人信息
-            </el-dropdown-item>
-            <el-dropdown-item command="logout" divided>
-              <i class="el-icon-switch-button"></i> 退出登录
-            </el-dropdown-item>
-          </el-dropdown-menu>
-        </el-dropdown>
-      </div>
+
+      <el-dropdown trigger="click" @command="handleUserCommand">
+        <span class="user-chip">
+          <el-avatar :size="32" icon="el-icon-user-solid" class="user-avatar"></el-avatar>
+          <span class="user-name">{{ userNickname }}</span>
+          <span :class="['role-tag', `role-tag--${userRole.toLowerCase()}`]">{{ roleLabel }}</span>
+          <i class="el-icon-arrow-down"></i>
+        </span>
+        <el-dropdown-menu slot="dropdown">
+          <el-dropdown-item command="profile"><i class="el-icon-user"></i> {{ text.profile }}</el-dropdown-item>
+          <el-dropdown-item command="logout" divided><i class="el-icon-switch-button"></i> {{ text.logout }}</el-dropdown-item>
+        </el-dropdown-menu>
+      </el-dropdown>
     </header>
 
-    <!-- ===== 主体区域 ===== -->
     <div class="layout-body">
-      <!-- 侧边栏 -->
       <aside class="side-bar">
-        <el-menu
-          :default-active="activeMenu"
-          :router="true"
-          :unique-opened="true"
-          background-color="transparent"
-          text-color="#333333"
-          active-text-color="#5C7A60"
-          class="side-menu"
-        >
-          <!-- ===== CUSTOMER 菜单 ===== -->
-          <template v-if="userRole === 'CUSTOMER'">
-            <el-menu-item index="/customer/companions">
-              <i class="el-icon-s-custom"></i>
-              <span>陪诊师列表</span>
-            </el-menu-item>
-            <el-menu-item index="/customer/request/create">
-              <i class="el-icon-edit-outline"></i>
-              <span>发布需求</span>
-            </el-menu-item>
-            <el-menu-item index="/customer/requests">
-              <i class="el-icon-document"></i>
-              <span>我的需求</span>
-            </el-menu-item>
-            <el-menu-item index="/customer/orders">
-              <i class="el-icon-s-order"></i>
-              <span>我的订单</span>
-            </el-menu-item>
-          </template>
-
-          <!-- ===== COMPANION 菜单 ===== -->
-          <template v-if="userRole === 'COMPANION'">
-            <el-menu-item index="/companion/profile">
-              <i class="el-icon-postcard"></i>
-              <span>入驻资料</span>
-            </el-menu-item>
-            <el-menu-item index="/companion/available-orders">
-              <i class="el-icon-s-claim"></i>
-              <span>可接订单</span>
-            </el-menu-item>
-            <el-menu-item index="/companion/orders">
-              <i class="el-icon-s-order"></i>
-              <span>我的订单</span>
-            </el-menu-item>
-            <el-menu-item index="/companion/service-records">
-              <i class="el-icon-tickets"></i>
-              <span>服务记录</span>
-            </el-menu-item>
-          </template>
-
-          <!-- ===== ADMIN 菜单 ===== -->
-          <template v-if="userRole === 'ADMIN'">
-            <el-menu-item index="/admin/users">
-              <i class="el-icon-user"></i>
-              <span>用户管理</span>
-            </el-menu-item>
-            <el-menu-item index="/admin/companion-review">
-              <i class="el-icon-finished"></i>
-              <span>陪诊师审核</span>
-            </el-menu-item>
-            <el-menu-item index="/admin/requests">
-              <i class="el-icon-document-copy"></i>
-              <span>需求管理</span>
-            </el-menu-item>
-            <el-menu-item index="/admin/orders">
-              <i class="el-icon-s-order"></i>
-              <span>订单管理</span>
-            </el-menu-item>
-            <el-menu-item index="/admin/reports">
-              <i class="el-icon-warning-outline"></i>
-              <span>投诉处理</span>
-            </el-menu-item>
-            <el-menu-item index="/admin/statistics">
-              <i class="el-icon-data-line"></i>
-              <span>平台统计</span>
-            </el-menu-item>
-          </template>
+        <div class="side-title">{{ text.workbench }}</div>
+        <el-menu :default-active="activeMenu" :router="true" :unique-opened="true" background-color="transparent" text-color="rgba(245,240,232,0.82)" active-text-color="#f0d2af" class="side-menu">
+          <el-menu-item v-for="item in sideItems" :key="item.path" :index="item.path">
+            <i :class="item.icon"></i><span>{{ item.label }}</span>
+          </el-menu-item>
         </el-menu>
       </aside>
 
-      <!-- 内容区 -->
       <main class="main-content">
         <router-view />
       </main>
@@ -126,40 +44,117 @@
 <script>
 import { getUser, clearUser, ROLES, ROLE_LABELS } from '@/utils/auth'
 
+const T = {
+  brandSymbol: '\u76ca',
+  brandName: '\u76ca\u966a\u517b\u8001',
+  workbench: '\u5de5\u4f5c\u53f0',
+  profile: '\u4e2a\u4eba\u4fe1\u606f',
+  logout: '\u9000\u51fa\u767b\u5f55',
+  confirmTitle: '\u63d0\u793a',
+  confirmLogout: '\u786e\u5b9a\u8981\u9000\u51fa\u767b\u5f55\u5417\uff1f',
+  confirm: '\u786e\u5b9a',
+  cancel: '\u53d6\u6d88',
+  logoutDone: '\u5df2\u9000\u51fa\u767b\u5f55',
+  fallbackUser: '\u7528\u6237',
+  home: '\u9996\u9875',
+  companions: '\u966a\u8bca\u5e08',
+  myRequests: '\u6211\u7684\u9700\u6c42',
+  availableOrders: '\u53ef\u63a5\u8ba2\u5355',
+  admin: '\u5e73\u53f0\u7ba1\u7406',
+  companionList: '\u966a\u8bca\u5e08\u5217\u8868',
+  createRequest: '\u53d1\u5e03\u9700\u6c42',
+  myOrders: '\u6211\u7684\u8ba2\u5355',
+  companionProfile: '\u5165\u9a7b\u8d44\u6599',
+  serviceRecords: '\u670d\u52a1\u8bb0\u5f55',
+  myEvaluations: '\u6211\u7684\u8bc4\u4ef7',
+  incomeStats: '\u6536\u5165\u7edf\u8ba1',
+  userManage: '\u7528\u6237\u7ba1\u7406',
+  companionReview: '\u966a\u8bca\u5e08\u5ba1\u6838',
+  requestManage: '\u9700\u6c42\u7ba1\u7406',
+  orderManage: '\u8ba2\u5355\u7ba1\u7406',
+  reportManage: '\u6295\u8bc9\u5904\u7406',
+  statistics: '\u5e73\u53f0\u7edf\u8ba1'
+}
+
+const TOP_MAP = {
+  CUSTOMER: [
+    { label: T.home, path: '/' },
+    { label: T.companions, path: '/customer/companions' },
+    { label: T.myRequests, path: '/customer/requests' }
+  ],
+  COMPANION: [
+    { label: T.home, path: '/' },
+    { label: T.availableOrders, path: '/companion/available-orders' }
+  ],
+  ADMIN: [
+    { label: T.home, path: '/' },
+    { label: T.admin, path: '/admin/statistics' }
+  ]
+}
+
+const SIDE_MAP = {
+  CUSTOMER: [
+    { label: T.companionList, path: '/customer/companions', icon: 'el-icon-s-custom' },
+    { label: T.createRequest, path: '/customer/request/create', icon: 'el-icon-edit-outline' },
+    { label: T.myRequests, path: '/customer/requests', icon: 'el-icon-document' },
+    { label: T.myOrders, path: '/customer/orders', icon: 'el-icon-s-order' }
+  ],
+  COMPANION: [
+    { label: T.companionProfile, path: '/companion/profile', icon: 'el-icon-postcard' },
+    { label: T.availableOrders, path: '/companion/available-orders', icon: 'el-icon-s-claim' },
+    { label: T.myOrders, path: '/companion/orders', icon: 'el-icon-s-order' },
+    { label: T.serviceRecords, path: '/companion/service-records', icon: 'el-icon-tickets' },
+    { label: T.myEvaluations, path: '/companion/evaluations', icon: 'el-icon-chat-dot-round' },
+    { label: T.incomeStats, path: '/companion/income', icon: 'el-icon-coin' }
+  ],
+  ADMIN: [
+    { label: T.userManage, path: '/admin/users', icon: 'el-icon-user' },
+    { label: T.companionReview, path: '/admin/companion-review', icon: 'el-icon-finished' },
+    { label: T.requestManage, path: '/admin/requests', icon: 'el-icon-document-copy' },
+    { label: T.orderManage, path: '/admin/orders', icon: 'el-icon-s-order' },
+    { label: T.reportManage, path: '/admin/reports', icon: 'el-icon-warning-outline' },
+    { label: T.statistics, path: '/admin/statistics', icon: 'el-icon-data-line' }
+  ]
+}
+
 export default {
   name: 'MainLayout',
   data() {
     const user = getUser() || {}
     return {
-      userNickname: user.nickname || user.username || '用户',
+      text: T,
+      userNickname: user.nickname || user.username || T.fallbackUser,
       userRole: user.role || ROLES.CUSTOMER
     }
   },
   computed: {
     roleLabel() {
-      return ROLE_LABELS[this.userRole] || '客户'
+      return ROLE_LABELS[this.userRole] || ROLE_LABELS.CUSTOMER
     },
     activeMenu() {
       return this.$route.path
+    },
+    topItems() {
+      return TOP_MAP[this.userRole] || TOP_MAP.CUSTOMER
+    },
+    sideItems() {
+      return SIDE_MAP[this.userRole] || SIDE_MAP.CUSTOMER
     }
   },
   methods: {
     handleUserCommand(command) {
-      if (command === 'profile') {
-        this.$router.push('/profile')
-      } else if (command === 'logout') {
-        this.doLogout()
-      }
+      if (command === 'profile') this.$router.push('/profile')
+      if (command === 'logout') this.doLogout()
     },
     doLogout() {
-      this.$confirm('确定要退出登录吗？', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
+      this.$confirm(T.confirmLogout, T.confirmTitle, {
+        confirmButtonText: T.confirm,
+        cancelButtonText: T.cancel,
         type: 'warning'
       }).then(() => {
         clearUser()
-        this.$message.success('已退出登录')
-        this.$router.push('/login')
+        this.$message.success(T.logoutDone)
+        window.location.href = '/landing.html'
       }).catch(() => {})
     }
   }
@@ -167,139 +162,116 @@ export default {
 </script>
 
 <style scoped>
-/* ===== Shell ===== */
 .main-layout {
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  background: var(--color-bg-page);
+  background: #071007;
+  position: relative;
+  overflow: hidden;
 }
-
-/* ===== Top Bar ===== */
+.main-layout::before {
+  content: '';
+  position: fixed;
+  inset: -24px;
+  background:
+    linear-gradient(150deg, rgba(10, 18, 8, 0.6), rgba(18, 32, 15, 0.58) 48%, rgba(10, 18, 8, 0.74)),
+    url('../../public/img/bg-bamboo.jpg') center/cover no-repeat;
+  filter: blur(10px) saturate(0.92) brightness(0.88);
+  transform: scale(1.03);
+  z-index: 0;
+}
+.main-layout::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    linear-gradient(90deg, transparent 0 16%, rgba(255, 210, 140, 0.035) 16.1% 16.25%, transparent 16.6% 36%, rgba(255, 210, 140, 0.028) 36.1% 36.25%, transparent 36.6%),
+    radial-gradient(ellipse at 24% 0%, rgba(225, 195, 160, 0.14), transparent 34%);
+  pointer-events: none;
+  z-index: 0;
+}
 .top-bar {
+  height: 66px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 64px;
-  padding: 0 36px;
-  background: rgba(255,255,255,0.82);
-  backdrop-filter: blur(16px) saturate(1.3);
-  -webkit-backdrop-filter: blur(16px) saturate(1.3);
-  border-bottom: 1px solid rgba(0,0,0,0.06);
-  flex-shrink: 0;
-  z-index: 100;
-  position: relative;
+  gap: 24px;
+  padding: 0 28px;
+  background: rgba(7, 16, 7, 0.78);
+  border-bottom: 1px solid rgba(230, 200, 160, 0.06);
+  backdrop-filter: blur(20px) saturate(1.24);
+  position: sticky;
+  top: 0;
+  z-index: 20;
 }
-
-.brand-logo {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--color-primary-dark);
-  letter-spacing: 0.03em;
+.brand-lockup { display: flex; align-items: center; gap: 12px; cursor: pointer; min-width: 170px; }
+.brand-symbol { width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border-radius: 10px; border: 1px solid rgba(240, 210, 175, 0.36); color: var(--brand-gold-420); font-family: var(--font-serif); font-size: 20px; font-weight: 800; background: rgba(18, 34, 16, 0.74); }
+.brand-text { color: var(--brand-cream-100); font-family: var(--font-serif); font-size: 18px; font-weight: 800; }
+.top-nav { flex: 1; display: flex; justify-content: center; gap: 6px; }
+.nav-link { height: 38px; display: inline-flex; align-items: center; padding: 0 16px; border-radius: 999px; color: rgba(250, 247, 242, 0.82); text-decoration: none; font-size: 14px; font-weight: 700; transition: all 0.22s var(--ease-standard); }
+.nav-link:hover, .nav-link--active { color: var(--brand-gold-420); background: rgba(225, 195, 160, 0.1); }
+.user-chip { display: flex; align-items: center; gap: 10px; padding: 6px 10px 6px 6px; border: 1px solid rgba(230, 200, 160, 0.16); border-radius: 999px; color: rgba(245, 240, 232, 0.86); background: rgba(18, 34, 16, 0.62); cursor: pointer; }
+.user-avatar { background: rgba(225, 195, 160, 0.22); color: var(--brand-gold-420); }
+.user-name { max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 700; }
+.role-tag { height: 22px; display: inline-flex; align-items: center; padding: 0 9px; border-radius: 999px; font-size: 12px; font-weight: 800; }
+.role-tag--customer { background: rgba(45, 90, 58, 0.34); color: #cfe4c7; }
+.role-tag--companion { background: rgba(225, 195, 160, 0.16); color: var(--brand-gold-420); }
+.role-tag--admin { background: rgba(245, 240, 232, 0.12); color: rgba(245, 240, 232, 0.82); }
+.layout-body { flex: 1; display: flex; min-height: 0; position: relative; z-index: 1; }
+.side-bar { width: 236px; flex: 0 0 236px; padding: 22px 12px; border-right: 1px solid rgba(230, 200, 160, 0.12); background: rgba(7, 16, 7, 0.48); backdrop-filter: blur(16px); overflow-y: auto; }
+.side-title { padding: 0 14px 12px; color: rgba(225, 205, 175, 0.62); font-size: 12px; font-weight: 800; }
+.side-menu { border: 0; }
+.side-menu ::v-deep .el-menu-item { height: 44px; line-height: 44px; margin-bottom: 6px; border-radius: 10px; font-size: 14px; font-weight: 700; transition: all 0.22s var(--ease-standard); }
+.side-menu ::v-deep .el-menu-item i { color: inherit; margin-right: 8px; }
+.side-menu ::v-deep .el-menu-item:hover { background: rgba(225, 195, 160, 0.08); color: var(--brand-cream-100) !important; }
+.side-menu ::v-deep .el-menu-item.is-active { background: rgba(225, 195, 160, 0.14); color: var(--brand-gold-420) !important; box-shadow: inset 3px 0 0 rgba(240, 210, 175, 0.72); }
+.main-content { flex: 1; min-width: 0; overflow-y: auto; background: rgba(245, 240, 232, 0.04); backdrop-filter: blur(2px); }
+.main-content ::v-deep .page-header { border: none !important; background: transparent !important; box-shadow: none !important; }
+.main-content ::v-deep .filter-card,
+.main-content ::v-deep .list-card,
+.main-content ::v-deep .form-card,
+.main-content ::v-deep .detail-card,
+.main-content ::v-deep .content-card,
+.main-content ::v-deep .profile-card,
+.main-content ::v-deep .companion-card,
+.main-content ::v-deep .request-card,
+.main-content ::v-deep .order-card,
+.main-content ::v-deep .stat-card,
+.main-content ::v-deep .el-card {
+  background: rgba(255, 248, 238, 0.94) !important;
+  border: 1px solid rgba(230, 200, 160, 0.08) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 16px 40px rgba(7, 16, 7, 0.16) !important;
 }
-
-.top-bar-center { display: flex; align-items: center; gap: 2px; }
-
-.nav-link {
-  position: relative;
-  padding: 8px 18px;
-  font-size: 14px;
-  font-weight: 450;
-  color: var(--color-text-secondary);
-  text-decoration: none;
-  border-radius: var(--radius-sm);
-  transition: color 0.2s ease;
-}
-.nav-link::after {
-  content: '';
-  position: absolute;
-  bottom: 2px; left: 50%; transform: translateX(-50%);
-  width: 0; height: 2px;
-  background: var(--color-primary-dark);
-  border-radius: 1px;
-  transition: width 0.25s cubic-bezier(0.4,0,0.2,1);
-}
-.nav-link:hover { color: var(--color-primary-dark); }
-.nav-link:hover::after { width: 60%; }
-.nav-link--active { color: var(--color-primary-dark); font-weight: 600; }
-.nav-link--active::after { width: 60%; }
-
-.top-bar-right { display: flex; align-items: center; }
-
-.user-info {
-  display: flex; align-items: center; gap: 10px;
-  cursor: pointer;
-  padding: 6px 12px 6px 6px;
-  border-radius: 50px;
-  background: transparent;
-  transition: background 0.2s ease;
-}
-.user-info:hover { background: var(--color-bg-hover); }
-
-.user-avatar { background: var(--color-primary-light); color: #fff; }
-
-.user-nickname { font-size: 14px; font-weight: 550; color: var(--color-text-primary); }
-
-.role-tag { padding: 2px 12px; border-radius: 20px; font-size: 11px; font-weight: 550; letter-spacing: 0.02em; }
-.role-tag--customer { background: var(--color-primary-dim); color: var(--color-primary-dark); }
-.role-tag--companion { background: var(--color-warm-dim); color: var(--color-warm-dark); }
-.role-tag--admin { background: rgba(0,0,0,0.05); color: var(--color-text-secondary); }
-
-/* ===== Body ===== */
-.layout-body { display: flex; flex: 1; overflow: hidden; }
-
-/* ===== Sidebar ===== */
-.side-bar {
-  width: 230px;
-  flex-shrink: 0;
-  padding: 20px 12px;
-  background: rgba(255,255,255,0.55);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-right: 1px solid rgba(0,0,0,0.04);
-  overflow-y: auto;
-}
-
-.side-menu { border: none; background: transparent; }
-
-.side-menu .el-menu-item {
-  height: 42px;
-  line-height: 42px;
-  margin-bottom: 2px;
-  padding-left: 16px !important;
-  border-radius: var(--radius-sm);
-  font-size: 14px;
-  font-weight: 450;
-  color: var(--color-text-secondary);
-  position: relative;
-  transition: all 0.2s ease;
-}
-.side-menu .el-menu-item::before {
-  content: '';
-  position: absolute;
-  left: 0; top: 50%; transform: translateY(-50%);
-  width: 3px; height: 0;
-  background: var(--color-primary-dark);
-  border-radius: 0 2px 2px 0;
-  transition: height 0.2s ease;
-}
-.side-menu .el-menu-item:hover { background: rgba(122,154,126,0.06); color: var(--color-text-primary); }
-.side-menu .el-menu-item.is-active {
-  background: rgba(122,154,126,0.1);
-  color: var(--color-primary-dark);
-  font-weight: 580;
-}
-.side-menu .el-menu-item.is-active::before { height: 18px; }
-.side-menu .el-menu-item i { color: var(--color-text-placeholder); margin-right: 4px; transition: color 0.2s ease; }
-.side-menu .el-menu-item:hover i { color: var(--color-text-secondary); }
-.side-menu .el-menu-item.is-active i { color: var(--color-primary-dark); }
-
-/* ===== Main Content ===== */
-.main-content {
-  flex: 1;
-  overflow-y: auto;
-  background:
-    radial-gradient(ellipse at 50% 0%, rgba(122,154,126,0.04) 0%, transparent 55%),
-    var(--color-bg-page);
+.main-content ::v-deep .page-title,
+.main-content ::v-deep h1 { color: var(--brand-cream-100) !important; }
+.main-content ::v-deep h2,
+.main-content ::v-deep h3 { color: #1a1a1a !important; }
+.main-content ::v-deep .page-subtitle,
+.main-content ::v-deep .desc,
+.main-content ::v-deep .meta,
+.main-content ::v-deep p { color: #3d3d3d; }
+.main-content ::v-deep .el-table,
+.main-content ::v-deep .el-table__expanded-cell { background: rgba(255, 248, 238, 0.96) !important; }
+.main-content ::v-deep .el-table th { background: rgba(239, 230, 214, 0.88) !important; color: #42513d !important; }
+.main-content ::v-deep .el-table td { color: #1a1a1a !important; }
+.main-content ::v-deep .el-table__empty-text { color: rgba(0, 0, 0, 0.45); }
+.main-content ::v-deep .el-input__inner,
+.main-content ::v-deep .el-textarea__inner,
+.main-content ::v-deep .el-select .el-input__inner { background: rgba(255, 255, 255, 0.92) !important; border-color: rgba(210, 195, 175, 0.48) !important; color: #172615 !important; }
+.main-content ::v-deep .el-input__inner:focus,
+.main-content ::v-deep .el-textarea__inner:focus { border-color: rgba(225, 195, 160, 0.92) !important; box-shadow: 0 0 0 4px rgba(225, 195, 160, 0.16) !important; }
+.main-content ::v-deep .el-form-item__label,
+.main-content ::v-deep .el-radio__label,
+.main-content ::v-deep .el-checkbox__label { color: #1a1a1a !important; }
+.main-content ::v-deep .el-pagination.is-background .el-pager li:not(.disabled).active { background: #2d5a3a !important; }
+@media (max-width: 860px) {
+  .top-bar { padding: 0 14px; gap: 12px; }
+  .brand-text, .top-nav { display: none; }
+  .side-bar { width: 72px; flex-basis: 72px; padding: 16px 8px; }
+  .side-title, .side-menu ::v-deep .el-menu-item span { display: none; }
+  .side-menu ::v-deep .el-menu-item { padding: 0 !important; display: flex; justify-content: center; }
+  .side-menu ::v-deep .el-menu-item i { margin: 0; }
 }
 </style>

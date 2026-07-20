@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS companion_profile (
     introduction VARCHAR(1000),
     service_area VARCHAR(100),
     service_types VARCHAR(255),
+    traits VARCHAR(255),
     experience_years INT NOT NULL DEFAULT 0,
     rating DECIMAL(3,2) NOT NULL DEFAULT 0.00,
     completed_count INT NOT NULL DEFAULT 0,
@@ -40,6 +41,19 @@ CREATE TABLE IF NOT EXISTS companion_profile (
     INDEX idx_companion_rating (rating)
 );
 
+
+SET @traits_column_exists = (
+    SELECT COUNT(*) FROM information_schema.columns
+    WHERE table_schema = DATABASE() AND table_name = 'companion_profile' AND column_name = 'traits'
+);
+SET @traits_migration_sql = IF(
+    @traits_column_exists = 0,
+    'ALTER TABLE companion_profile ADD COLUMN traits VARCHAR(255) AFTER service_types',
+    'SELECT 1'
+);
+PREPARE traits_migration_statement FROM @traits_migration_sql;
+EXECUTE traits_migration_statement;
+DEALLOCATE PREPARE traits_migration_statement;
 CREATE TABLE IF NOT EXISTS service_request (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     customer_id BIGINT NOT NULL,
@@ -50,6 +64,8 @@ CREATE TABLE IF NOT EXISTS service_request (
     requirement VARCHAR(2000) NOT NULL,
     special_notes VARCHAR(1000),
     ai_summary VARCHAR(1000),
+    preferred_traits VARCHAR(255),
+    need_pickup TINYINT NOT NULL DEFAULT 0,
     contact_name VARCHAR(100) NOT NULL,
     contact_phone VARCHAR(20) NOT NULL,
     budget DECIMAL(10,2),
@@ -78,6 +94,32 @@ SET @ai_summary_migration_sql = IF(
 PREPARE ai_summary_migration_statement FROM @ai_summary_migration_sql;
 EXECUTE ai_summary_migration_statement;
 DEALLOCATE PREPARE ai_summary_migration_statement;
+
+SET @preferred_traits_column_exists = (
+    SELECT COUNT(*) FROM information_schema.columns
+    WHERE table_schema = DATABASE() AND table_name = 'service_request' AND column_name = 'preferred_traits'
+);
+SET @preferred_traits_migration_sql = IF(
+    @preferred_traits_column_exists = 0,
+    'ALTER TABLE service_request ADD COLUMN preferred_traits VARCHAR(255) AFTER ai_summary',
+    'SELECT 1'
+);
+PREPARE preferred_traits_migration_statement FROM @preferred_traits_migration_sql;
+EXECUTE preferred_traits_migration_statement;
+DEALLOCATE PREPARE preferred_traits_migration_statement;
+
+SET @need_pickup_column_exists = (
+    SELECT COUNT(*) FROM information_schema.columns
+    WHERE table_schema = DATABASE() AND table_name = 'service_request' AND column_name = 'need_pickup'
+);
+SET @need_pickup_migration_sql = IF(
+    @need_pickup_column_exists = 0,
+    'ALTER TABLE service_request ADD COLUMN need_pickup TINYINT NOT NULL DEFAULT 0 AFTER preferred_traits',
+    'SELECT 1'
+);
+PREPARE need_pickup_migration_statement FROM @need_pickup_migration_sql;
+EXECUTE need_pickup_migration_statement;
+DEALLOCATE PREPARE need_pickup_migration_statement;
 
 CREATE TABLE IF NOT EXISTS service_order (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -208,14 +250,14 @@ ON DUPLICATE KEY UPDATE
     updated_at = NOW();
 -- Quick-experience companion profile. This is inserted only when missing so it does not overwrite local edits.
 INSERT INTO companion_profile(
-    user_id, real_name, avatar, introduction, service_area, service_types,
+    user_id, real_name, avatar, introduction, service_area, service_types, traits,
     experience_years, rating, completed_count, audit_status, created_at, updated_at
 )
 SELECT
     u.id, 'Li Peizhen', NULL,
     'Experienced companion for outpatient visits, inpatient care, and examinations.',
-    'Beijing Chaoyang District', 'Outpatient,Inpatient,Examination',
+    'Beijing Chaoyang District', 'Outpatient,Inpatient,Examination', 'patient,communicative,experienced',
     5, 4.80, 12, 1, NOW(), NOW()
 FROM sys_user u
 WHERE u.username = 'companion1'
-ON DUPLICATE KEY UPDATE id = id;
+ON DUPLICATE KEY UPDATE user_id = companion_profile.user_id;

@@ -45,7 +45,7 @@ public class UserController {
 
     /** 获取当前登录用户信息 */
     @GetMapping("/info")
-    public ApiResponse<UserVO> getCurrentUser(@RequestParam("id") Long userId) {
+    public ApiResponse<UserVO> getCurrentUser(@RequestHeader("X-User-Id") Long userId) {
         return ApiResponse.success(userService.getCurrentUser(userId));
     }
 
@@ -57,9 +57,12 @@ public class UserController {
         return ApiResponse.success(userService.getUserList());
     }
 
-    /** 获取用户详情 */
+    /** 获取用户详情（需登录） */
     @GetMapping("/{id}")
-    public ApiResponse<UserVO> detail(@PathVariable Long id) {
+    public ApiResponse<UserVO> detail(
+            @RequestHeader("X-User-Id") Long operatorId,
+            @PathVariable Long id) {
+        userService.requireLogin(operatorId);
         return ApiResponse.success(userService.getUserById(id));
     }
 

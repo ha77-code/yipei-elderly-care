@@ -48,6 +48,8 @@ public class CompanionProfile {
     private Integer auditStatus;
 
 
+    private String traits;
+
     private LocalDateTime createdAt;
 
 

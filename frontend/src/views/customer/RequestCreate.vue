@@ -69,6 +69,10 @@
           </el-col>
         </el-row>
 
+        <el-form-item label="需要接送">
+          <el-switch v-model="form.needPickup" active-text="需要陪诊师上门接送" inactive-text="自己前往医院" />
+        </el-form-item>
+
         <el-form-item label="预算（元）" prop="budget">
           <el-input-number
             v-model="form.budget"
@@ -132,6 +136,7 @@
 
 <script>
 import { createRequest } from '@/api/serviceRequest'
+import { createOrder } from '@/api/order'
 import { generateServiceSummary } from '@/api/ai'
 
 export default {
@@ -149,7 +154,8 @@ export default {
         budget: undefined,
         requirement: '',
         specialNotes: '',
-        aiSummary: ''
+        aiSummary: '',
+        needPickup: false
       },
       rules: {
         serviceType: [
@@ -181,7 +187,7 @@ export default {
   },
   computed: {
     isOrderMode() {
-      return !!this.$route.query.requestId
+      return !!this.$route.query.companionId
     }
   },
   methods: {
@@ -219,13 +225,21 @@ export default {
       this.submitting = true
       try {
         const payload = { ...this.form }
-        // 如果是从已匹配需求创建订单，带上 requestId
         if (this.isOrderMode) {
-          payload.requestId = this.$route.query.requestId
+          const res = await createRequest(payload)
+          const requestData = res.data || res
+          await createOrder({
+            requestId: requestData.id,
+            companionId: this.$route.query.companionId,
+            servicePrice: payload.budget || 0
+          })
+          this.$message.success('订单创建成功，等待陪诊师接单')
+          this.$router.push('/customer/orders')
+        } else {
+          await createRequest(payload)
+          this.$message.success('需求发布成功')
+          this.$router.push('/customer/requests')
         }
-        await createRequest(payload)
-        this.$message.success(this.isOrderMode ? '订单创建成功' : '需求发布成功')
-        this.$router.push('/customer/requests')
       } catch {
         /* 错误已统一处理 */
       } finally {
@@ -246,7 +260,7 @@ export default {
   font-family: var(--font-family);
   font-size: 20px;
   font-weight: 700;
-  color: var(--color-text-primary);
+  color: var(--brand-cream-100);
   margin: 0 0 20px;
 }
 
@@ -277,8 +291,8 @@ export default {
 }
 
 .request-form .el-form-item__label {
-  color: var(--color-text-regular);
-  font-weight: 500;
+  color: #1a1a1a;
+  font-weight: 600;
 }
 
 .request-form .el-input__inner,

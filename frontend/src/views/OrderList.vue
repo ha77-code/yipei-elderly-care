@@ -229,7 +229,7 @@ export default {
 <style scoped>
 .page-wrap { padding: 24px 32px; }
 .page-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-.page-title { font-family: var(--font-family); font-size: 20px; font-weight: 700; color: var(--color-text-primary); margin: 0; }
+.page-title { font-family: var(--font-family); font-size: 20px; font-weight: 700; color: var(--brand-cream-100); margin: 0; }
 .page-subtitle { margin: 6px 0 0; font-size: 13px; color: var(--color-text-secondary); }
 .filter-bar { display: flex; align-items: center; margin-bottom: 16px; padding: 16px 20px; background: #FFF; border: 1px solid var(--color-border-light); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
 .content-card { background: #FFF; border: 1px solid var(--color-border-light); border-radius: var(--radius-md); padding: 8px; box-shadow: var(--shadow-sm); }

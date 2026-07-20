@@ -82,6 +82,16 @@ public class UserService {
 
     /* ===== 管理员操作 ===== */
 
+    public void requireLogin(Long userId) {
+        SysUser user = sysUserMapper.selectById(userId);
+        if (user == null) {
+            throw new ForbiddenException("请先登录");
+        }
+        if (user.getStatus() != null && user.getStatus() != 1) {
+            throw new ForbiddenException("账号已被禁用");
+        }
+    }
+
     public void requireAdmin(Long userId) {
         SysUser user = sysUserMapper.selectById(userId);
         if (user == null || !RoleConstants.ADMIN.equals(user.getRole())) {

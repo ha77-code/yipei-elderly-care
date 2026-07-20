@@ -51,12 +51,13 @@ public class CompanionController {
         return ApiResponse.success();
     }
 
-    /** 陪诊师列表（审核通过） */
+    /** 陪诊师列表（审核通过，支持按性格筛选） */
     @GetMapping("/list")
     public ApiResponse<List<CompanionVO>> list(
             @RequestParam(required = false) String serviceArea,
-            @RequestParam(required = false) String serviceType) {
-        return ApiResponse.success(companionService.listApproved(serviceArea, serviceType));
+            @RequestParam(required = false) String serviceType,
+            @RequestParam(required = false) String traits) {
+        return ApiResponse.success(companionService.listApproved(serviceArea, serviceType, traits));
     }
 
     /** 陪诊师详情 */

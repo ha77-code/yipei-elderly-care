@@ -1,5 +1,6 @@
 package com.yipei.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -12,6 +13,7 @@ public class ServiceRequestCreateRequest {
     private String serviceType;
 
     @NotNull(message = "服务日期不能为空")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime serviceDate;
 
     @NotBlank(message = "医院名称不能为空")
@@ -26,6 +28,10 @@ public class ServiceRequestCreateRequest {
     private String specialNotes;
 
     private String aiSummary;
+
+    private String preferredTraits;
+
+    private Boolean needPickup;
 
     @NotBlank(message = "联系人不能为空")
     private String contactName;

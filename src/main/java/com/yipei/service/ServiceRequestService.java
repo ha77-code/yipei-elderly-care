@@ -44,6 +44,8 @@ public class ServiceRequestService {
         sr.setRequirement(request.getRequirement());
         sr.setSpecialNotes(request.getSpecialNotes());
         sr.setAiSummary(normalizeAiSummary(request.getAiSummary()));
+        sr.setPreferredTraits(request.getPreferredTraits());
+        sr.setNeedPickup(request.getNeedPickup());
         sr.setContactName(request.getContactName());
         sr.setContactPhone(request.getContactPhone());
         sr.setBudget(request.getBudget());
