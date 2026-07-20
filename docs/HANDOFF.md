@@ -8,6 +8,30 @@
 
 后端已完成普通需求申请撮合、指定陪诊师订单、订单完整状态流转、私信聊天、用户通知及管理员审核。当前正式前端不是普通 Vue 侧边栏工作台，而是 `frontend/public/*-concept-light.html` 三个原版轮盘页面；所有新增功能必须继续在原轮盘滑动面板内部扩展。
 
+## 2026-07-21 本次会话更新（最高优先级）
+
+### A. 页面切换叠加 Bug 修复
+
+`.panel-page` 原为 `height:100vh` 且默认 `overflow:visible`，某页内容超过一屏时会越界画到相邻页视口，出现"上一页残留 + 当前页只覆盖一部分"的叠加。已给三个轮盘页的 `.panel-page` 统一补 `overflow:hidden`，每页裁剪在自己一屏内，不影响内部 `.yp-scroll` 滚动，也不新建 stacking context（不破坏白瓷磨砂 `backdrop-filter`）。
+
+### B. 轮盘聊天红点
+
+- 客户/陪诊师轮盘的"订单"节点右上角新增红点，有未读私信时显示（`arc-chat-dot`，脉冲动画）。红点与"聊天记录"标签内既有的未读数字徽标并存，可在任意轮盘页看到未读提醒。
+- 实现：`frontend/public/concept-chat-dot.js` 把红点 circle 追加到 `#nodesGroup` 的订单节点组，用 `requestAnimationFrame` 同步节点当前 `cx/cy`（客户订单节点 index 3、陪诊师 index 2）。**未改动内联轮盘动画代码。**
+- 未读来源：`renderOrders` 计算会话未读总数后调用 `YP.setChatDot(n)`；`concept-live.js` 每 20 秒刷新时自动同步。
+- 聊天权限沿用后端 `ChatService.OPEN_STATUSES`（`ACCEPTED/IN_SERVICE/PENDING_CONFIRM`）：仅双方达成后到服务结束前可收发；`COMPLETED/CANCELLED` 后 `/chat/{id}/open` 返回 false，前端聊天窗自动转为只读，仅可查看历史。
+
+### C. 语音朗读（老年人 / 视障友好）
+
+- 新增 `frontend/public/concept-tts.js`，暴露 `YP.speak({path,method,body,button})` 与 `YP.stopSpeak()`；直接 `fetch` 音频流（成功返回 `audio/mpeg`，出错返回 JSON），再次点击同一按钮即停止，按钮朗读中显示"◼ 停止朗读"并有脉冲态。
+- 客户"陪诊师"页每张陪诊师卡片有"🔊 朗读信息"按钮 → `GET /api/tts/companion/{id}`，朗读姓名、区域、经验、擅长、介绍。
+- 客户"发布需求"表单有"🔊 朗读已填内容"按钮 → `POST /api/tts/speak`，把当前已填的服务类型/时间/医院/科室/联系人/预算/需求/特殊说明拼成文本朗读，方便核对后再提交。
+- TTS 已在 `application.yaml` 配好火山引擎（`yipei.tts`，含 17 个音色）。后端未配置时接口返回 503，前端提示"语音功能未接入"。
+
+### D. 约定
+
+- **每次功能更新后都要同步更新本 HANDOFF。**
+
 ## 2026-07-20 本次会话更新（最高优先级）
 
 ### 1. 前端基线与不可违反的约束
@@ -36,6 +60,8 @@
 | `frontend/public/concept-chat-navigation.js` | 点击私信通知后旋转到订单轮盘页、切换聊天标签并打开对应订单会话 |
 | `frontend/public/concept-live.js` | 每 20 秒静默刷新通知、聊天未读、订单等数据 |
 | `frontend/public/concept-reports.js` | 用户和陪诊师在订单卡片中提交投诉/反馈 |
+| `frontend/public/concept-tts.js` | 语音朗读公共层：`YP.speak()` / `YP.stopSpeak()`，拉取 `/api/tts` 音频流播放 |
+| `frontend/public/concept-chat-dot.js` | 轮盘订单节点未读私信红点，rAF 同步节点位置（不改动内联轮盘动画） |
 
 静态轮盘页面通过 `localStorage/sessionStorage` 的 `yipei_user` 获取登录用户，并向后端自动添加 `X-User-Id`。
 
