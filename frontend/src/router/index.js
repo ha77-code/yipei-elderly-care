@@ -34,6 +34,8 @@ const IncomeStats = () => import('@/views/companion/IncomeStats.vue')
 const AdminDashboard = () => import('@/views/admin/AdminDashboard.vue')
 const AdminUsers = () => import('@/views/admin/AdminUsers.vue')
 const CompanionReview = () => import('@/views/admin/CompanionReview.vue')
+const AvatarReview = () => import('@/views/admin/AvatarReview.vue')
+const RequestReview = () => import('@/views/admin/RequestReview.vue')
 const AdminRequests = () => import('@/views/admin/AdminRequests.vue')
 const AdminReports = () => import('@/views/admin/AdminReports.vue')
 const AdminStatistics = () => import('@/views/admin/AdminStatistics.vue')
@@ -173,6 +175,18 @@ const routes = [
         name: 'CompanionReview',
         component: CompanionReview,
         meta: { title: '陪诊师审核', role: ROLES.ADMIN }
+      },
+      {
+        path: 'admin/avatar-review',
+        name: 'AvatarReview',
+        component: AvatarReview,
+        meta: { title: '头像审核', role: ROLES.ADMIN }
+      },
+      {
+        path: 'admin/request-review',
+        name: 'RequestReview',
+        component: RequestReview,
+        meta: { title: '需求审核', role: ROLES.ADMIN }
       },
       {
         path: 'admin/requests',

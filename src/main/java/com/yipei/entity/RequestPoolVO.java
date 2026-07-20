@@ -5,8 +5,9 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/** 陪诊师需求广场卡片：需求信息 + 申请数 + 当前陪诊师申请状态 */
 @Data
-public class ServiceRequest {
+public class RequestPoolVO {
     private Long id;
     private Long customerId;
     private String serviceType;
@@ -15,21 +16,15 @@ public class ServiceRequest {
     private String hospitalName;
     private String department;
     private String requirement;
-    private String specialNotes;
     private String aiSummary;
     private String preferredTraits;
     private Boolean needPickup;
-    private String contactName;
-    private String contactPhone;
     private BigDecimal budget;
     private String status;
-    private Integer auditStatus;
-    private String auditRemark;
-    /** 通道B：客户指定的陪诊师 companion_profile.id，审核通过后据此生成订单 */
-    private Long preferredCompanionId;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 
-    /** 非持久字段：指定陪诊师昵称，供管理员审核页展示 */
-    private transient String preferredCompanionName;
+    /** 当前待处理申请数 */
+    private Integer applicationCount;
+    /** 当前陪诊师对该需求的申请状态（PENDING/ACCEPTED/REJECTED/WITHDRAWN），未申请为 null */
+    private String myApplicationStatus;
 }

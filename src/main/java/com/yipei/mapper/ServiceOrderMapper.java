@@ -86,6 +86,10 @@ public interface ServiceOrderMapper {
             "accepted_at = NOW() WHERE id = #{id} AND status = 'PENDING_ACCEPT'")
     int accept(@Param("id") Long id, @Param("companionId") Long companionId);
 
+    /** 通道A：客户接受申请后直接生成已接单订单，补 accepted_at */
+    @Update("UPDATE service_order SET accepted_at = NOW() WHERE id = #{id}")
+    int markAcceptedNow(@Param("id") Long id);
+
     /** 开始服务 */
     @Update("UPDATE service_order SET status = 'IN_SERVICE', started_at = NOW() " +
             "WHERE id = #{id} AND status = 'ACCEPTED'")

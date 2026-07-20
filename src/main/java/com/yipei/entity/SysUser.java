@@ -8,6 +8,9 @@ public class SysUser {
     private String password;
     private String nickname;
     private String phone;
+    private String avatar;
+    private String pendingAvatar;
+    private Integer avatarAuditStatus;
     private String role;
     private Integer status;
     private LocalDateTime createAt;
@@ -51,6 +54,30 @@ public class SysUser {
 
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
+    }
+
+    public String getPendingAvatar() {
+        return pendingAvatar;
+    }
+
+    public void setPendingAvatar(String pendingAvatar) {
+        this.pendingAvatar = pendingAvatar;
+    }
+
+    public Integer getAvatarAuditStatus() {
+        return avatarAuditStatus;
+    }
+
+    public void setAvatarAuditStatus(Integer avatarAuditStatus) {
+        this.avatarAuditStatus = avatarAuditStatus;
     }
 
     public String getRole() {

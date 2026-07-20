@@ -1,12 +1,12 @@
 <template>
   <div class="request-create-page">
-    <h2 class="page-title">{{ isOrderMode ? '创建订单' : '发布服务需求' }}</h2>
+    <h2 class="page-title">{{ isOrderMode ? '指定陪诊师下单' : '发布服务需求' }}</h2>
 
     <div class="content-card">
       <!-- 匹配信息提示（从我的需求跳转来创建订单时） -->
-      <div class="match-banner" v-if="isOrderMode && matchedRequest">
+      <div class="match-banner" v-if="isOrderMode">
         <i class="el-icon-info"></i>
-        <span>已匹配陪诊师，请确认需求信息并创建订单</span>
+        <span>您已指定陪诊师，提交后需管理员审核，通过后将自动为您生成订单</span>
       </div>
 
       <el-form
@@ -123,7 +123,7 @@
             round
             @click="handleSubmit"
           >
-            {{ isOrderMode ? '确认创建订单' : '发布需求' }}
+            {{ isOrderMode ? '提交并等待审核' : '发布需求' }}
           </el-button>
           <el-button size="medium" round @click="$router.back()">
             取消
@@ -136,14 +136,12 @@
 
 <script>
 import { createRequest } from '@/api/serviceRequest'
-import { createOrder } from '@/api/order'
 import { generateServiceSummary } from '@/api/ai'
 
 export default {
   name: 'RequestCreate',
   data() {
     return {
-      matchedRequest: null,
       form: {
         serviceType: '',
         serviceDate: '',
@@ -226,18 +224,14 @@ export default {
       try {
         const payload = { ...this.form }
         if (this.isOrderMode) {
-          const res = await createRequest(payload)
-          const requestData = res.data || res
-          await createOrder({
-            requestId: requestData.id,
-            companionId: this.$route.query.companionId,
-            servicePrice: payload.budget || 0
-          })
-          this.$message.success('订单创建成功，等待陪诊师接单')
-          this.$router.push('/customer/orders')
+          // 通道B：客户指定陪诊师，需求仍需管理员审核，通过后自动生成订单
+          payload.preferredCompanionId = this.$route.query.companionId
+          await createRequest(payload)
+          this.$message.success('已提交，管理员审核通过后将自动为您下单')
+          this.$router.push('/customer/requests')
         } else {
           await createRequest(payload)
-          this.$message.success('需求发布成功')
+          this.$message.success('需求发布成功，等待管理员审核')
           this.$router.push('/customer/requests')
         }
       } catch {

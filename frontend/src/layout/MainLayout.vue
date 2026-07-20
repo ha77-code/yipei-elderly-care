@@ -70,6 +70,8 @@ const T = {
   incomeStats: '\u6536\u5165\u7edf\u8ba1',
   userManage: '\u7528\u6237\u7ba1\u7406',
   companionReview: '\u966a\u8bca\u5e08\u5ba1\u6838',
+  avatarReview: '\u5934\u50cf\u5ba1\u6838',
+  requestReview: '\u9700\u6c42\u5ba1\u6838',
   requestManage: '\u9700\u6c42\u7ba1\u7406',
   orderManage: '\u8ba2\u5355\u7ba1\u7406',
   reportManage: '\u6295\u8bc9\u5904\u7406',
@@ -110,6 +112,7 @@ const SIDE_MAP = {
   ADMIN: [
     { label: T.userManage, path: '/admin/users', icon: 'el-icon-user' },
     { label: T.companionReview, path: '/admin/companion-review', icon: 'el-icon-finished' },
+    { label: T.avatarReview, path: '/admin/avatar-review', icon: 'el-icon-picture-outline' },
     { label: T.requestManage, path: '/admin/requests', icon: 'el-icon-document-copy' },
     { label: T.orderManage, path: '/admin/orders', icon: 'el-icon-s-order' },
     { label: T.reportManage, path: '/admin/reports', icon: 'el-icon-warning-outline' },

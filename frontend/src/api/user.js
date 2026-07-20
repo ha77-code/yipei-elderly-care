@@ -38,3 +38,16 @@ export function updateUserInfo(data) {
     data
   })
 }
+
+/** 上传头像（multipart/form-data，字段名 file；file 可为 File 或裁剪后的 Blob） */
+export function uploadAvatar(file) {
+  const formData = new FormData()
+  const name = file.name || 'avatar.png'
+  formData.append('file', file, name)
+  return request({
+    url: '/api/user/avatar',
+    method: 'post',
+    data: formData,
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}

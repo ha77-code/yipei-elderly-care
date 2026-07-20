@@ -67,39 +67,111 @@ public class OrderService {
         if (!sr.getCustomerId().equals(customerId)) {
             throw new ForbiddenException("只能基于自己的服务需求创建订单");
         }
-        int existCount = serviceRequestMapper.countOrdersByRequestId(request.getRequestId());
+        if (sr.getAuditStatus() == null || sr.getAuditStatus() != 1) {
+            throw new ForbiddenException("该需求尚未通过审核，暂不能创建订单");
+        }
+        return buildPendingOrder(customerId, request.getRequestId(), request.getCompanionId(),
+                request.getServicePrice(), "客户创建订单");
+    }
+
+    /**
+     * 通道B：指定下单需求审核通过后，自动为客户选定的陪诊师生成待接单订单。
+     * 价格取需求预算；预算为空时以 0 建单（与旧的指定下单默认行为一致）。
+     */
+    public ServiceOrder createDirectedOrder(Long customerId, Long requestId, Long companionProfileId,
+                                            BigDecimal budget) {
+        BigDecimal price = budget != null ? budget : BigDecimal.ZERO;
+        return buildPendingOrder(customerId, requestId, companionProfileId, price,
+                "指定需求审核通过，自动生成订单");
+    }
+
+    /** 生成 PENDING_ACCEPT 订单的共用逻辑（通道B 客户指定下单） */
+    private ServiceOrder buildPendingOrder(Long customerId, Long requestId, Long companionProfileId,
+                                           BigDecimal servicePrice, String logRemark) {
+        int existCount = serviceRequestMapper.countOrdersByRequestId(requestId);
         if (existCount > 0) {
             throw new ForbiddenException("该需求已生成订单，不能重复创建");
         }
         // companionId 是 companion_profile.id
-        CompanionProfile profile = companionProfileMapper.selectById(request.getCompanionId());
+        CompanionProfile profile = companionProfileMapper.selectById(companionProfileId);
         if (profile == null || profile.getAuditStatus() == null || profile.getAuditStatus() != 1) {
-            throw new NotFoundException("陪诊师不存在或未通过审核，ID: " + request.getCompanionId());
+            throw new NotFoundException("陪诊师不存在或未通过审核，ID: " + companionProfileId);
         }
         SysUser companion = sysUserMapper.selectById(profile.getUserId());
         if (companion == null || !RoleConstants.COMPANION.equals(companion.getRole())) {
             throw new NotFoundException("陪诊师用户异常，ID: " + profile.getUserId());
         }
-        BigDecimal platformFee = request.getServicePrice()
+        BigDecimal platformFee = servicePrice
                 .multiply(PLATFORM_RATE).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal companionIncome = request.getServicePrice().subtract(platformFee);
+        BigDecimal companionIncome = servicePrice.subtract(platformFee);
 
         ServiceOrder order = new ServiceOrder();
-        order.setRequestId(request.getRequestId());
+        order.setRequestId(requestId);
         order.setCustomerId(customerId);
         order.setCompanionId(profile.getId());
-        order.setServicePrice(request.getServicePrice());
+        order.setServicePrice(servicePrice);
         order.setPlatformFee(platformFee);
         order.setCompanionIncome(companionIncome);
         order.setStatus("PENDING_ACCEPT");
         serviceOrderMapper.insert(order);
-        serviceRequestMapper.updateStatus(sr.getId(), "MATCHED");
+        serviceRequestMapper.updateStatus(requestId, "MATCHED");
 
         OrderStatusLog log = new OrderStatusLog();
         log.setOrderId(order.getId());
         log.setToStatus("PENDING_ACCEPT");
         log.setOperatorId(customerId);
-        log.setRemark("客户创建订单");
+        log.setRemark(logRemark);
+        orderStatusLogMapper.insert(log);
+
+        return order;
+    }
+
+    /**
+     * 通道A：客户接受陪诊师申请，直接生成「已接单」订单（双方已达成，无需再走 PENDING_ACCEPT）。
+     * 价格取客户预算；若传入 servicePrice 则以其为准（用于预算为空时客户补价）。
+     * 返回创建的订单，供上层开启聊天等后续处理。
+     */
+    public ServiceOrder createFromApplication(Long customerId, Long requestId, Long companionProfileId,
+                                              BigDecimal servicePrice) {
+        ServiceRequest sr = serviceRequestMapper.selectById(requestId);
+        if (sr == null) {
+            throw new NotFoundException("服务需求不存在，ID: " + requestId);
+        }
+        if (!sr.getCustomerId().equals(customerId)) {
+            throw new ForbiddenException("只能基于自己的服务需求接受申请");
+        }
+        int existCount = serviceRequestMapper.countOrdersByRequestId(requestId);
+        if (existCount > 0) {
+            throw new ForbiddenException("该需求已生成订单，不能重复接受");
+        }
+        CompanionProfile profile = companionProfileMapper.selectById(companionProfileId);
+        if (profile == null || profile.getAuditStatus() == null || profile.getAuditStatus() != 1) {
+            throw new NotFoundException("陪诊师不存在或未通过审核，ID: " + companionProfileId);
+        }
+        BigDecimal price = servicePrice != null ? servicePrice : sr.getBudget();
+        if (price == null || price.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new ForbiddenException("请先为该需求设置有效的服务金额");
+        }
+        BigDecimal platformFee = price.multiply(PLATFORM_RATE).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal companionIncome = price.subtract(platformFee);
+
+        ServiceOrder order = new ServiceOrder();
+        order.setRequestId(requestId);
+        order.setCustomerId(customerId);
+        order.setCompanionId(profile.getId());
+        order.setServicePrice(price);
+        order.setPlatformFee(platformFee);
+        order.setCompanionIncome(companionIncome);
+        order.setStatus("ACCEPTED");
+        serviceOrderMapper.insert(order);
+        serviceOrderMapper.markAcceptedNow(order.getId());
+        serviceRequestMapper.updateStatus(requestId, "MATCHED");
+
+        OrderStatusLog log = new OrderStatusLog();
+        log.setOrderId(order.getId());
+        log.setToStatus("ACCEPTED");
+        log.setOperatorId(customerId);
+        log.setRemark("客户接受陪诊师申请，订单达成");
         orderStatusLogMapper.insert(log);
 
         return order;

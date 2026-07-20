@@ -35,6 +35,11 @@
             <span v-else class="text-muted">未设置</span>
           </template>
         </el-table-column>
+        <el-table-column label="审核" width="100" align="center">
+          <template slot-scope="{ row }">
+            <span :class="['audit-tag', `audit--${row.auditStatus}`]">{{ auditMap[row.auditStatus] || '待审核' }}</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="status" label="状态" width="100" align="center">
           <template slot-scope="{ row }">
             <span :class="['status-tag', `status--${row.status?.toLowerCase()}`]">
@@ -42,10 +47,18 @@
             </span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" align="center" fixed="right">
+        <el-table-column label="操作" width="220" align="center" fixed="right">
           <template slot-scope="{ row }">
             <el-button type="text" size="small" @click="showDetail(row)">
               详情
+            </el-button>
+            <el-button
+              v-if="row.status === 'PENDING' && row.auditStatus === 1"
+              type="text"
+              size="small"
+              @click="showApplications(row)"
+            >
+              查看申请
             </el-button>
             <el-button
               v-if="row.status === 'PENDING'"
@@ -55,14 +68,6 @@
               @click="handleCancel(row)"
             >
               取消
-            </el-button>
-            <el-button
-              v-if="row.status === 'MATCHED'"
-              type="text"
-              size="small"
-              @click="goCreateOrder(row)"
-            >
-              创建订单
             </el-button>
           </template>
         </el-table-column>
@@ -131,6 +136,36 @@
           <span class="detail-label">特殊说明</span>
           <span class="detail-value">{{ current.specialNotes }}</span>
         </div>
+        <div class="detail-item detail-full" v-if="current.auditStatus === 2 && current.auditRemark">
+          <span class="detail-label">审核未通过原因</span>
+          <span class="detail-value text-danger">{{ current.auditRemark }}</span>
+        </div>
+      </div>
+    </el-dialog>
+
+    <!-- 申请列表弹窗 -->
+    <el-dialog title="陪诊师申请" :visible.sync="appVisible" width="620px" class="warm-dialog">
+      <div v-loading="appLoading" class="app-list">
+        <div v-if="!applications.length && !appLoading" class="app-empty">暂时还没有陪诊师申请，可耐心等待</div>
+        <div v-for="app in applications" :key="app.id" class="app-card">
+          <el-avatar :size="52" :src="app.companionAvatar || undefined" icon="el-icon-user-solid" />
+          <div class="app-main">
+            <div class="app-top">
+              <span class="app-name">{{ app.companionName || '陪诊师' }}</span>
+              <span class="app-rating"><i class="el-icon-star-on"></i> {{ app.rating || '5.0' }} · 已完成{{ app.completedCount || 0 }}单</span>
+            </div>
+            <div class="app-meta">{{ app.serviceArea || '服务区域未填' }} · 从业{{ app.experienceYears || 0 }}年</div>
+            <div class="app-intro" v-if="app.introduction">{{ app.introduction }}</div>
+            <div class="app-msg" v-if="app.message"><i class="el-icon-chat-dot-round"></i> {{ app.message }}</div>
+          </div>
+          <div class="app-actions">
+            <template v-if="app.status === 'PENDING'">
+              <el-button type="primary" size="small" round @click="handleAcceptApp(app)">选TA</el-button>
+              <el-button type="text" size="small" class="text-danger" @click="handleRejectApp(app)">拒绝</el-button>
+            </template>
+            <span v-else :class="['app-tag', 'app--' + (app.status || '').toLowerCase()]">{{ appStatusMap[app.status] || app.status }}</span>
+          </div>
+        </div>
       </div>
     </el-dialog>
   </div>
@@ -138,6 +173,7 @@
 
 <script>
 import { getMyRequests, cancelRequest } from '@/api/serviceRequest'
+import { getApplicationsByRequest, acceptApplication, rejectApplication } from '@/api/application'
 
 const STATUS_MAP = {
   PENDING: '待处理',
@@ -145,6 +181,9 @@ const STATUS_MAP = {
   CANCELLED: '已取消',
   CLOSED: '已关闭'
 }
+
+const AUDIT_MAP = { 0: '待审核', 1: '已通过', 2: '未通过' }
+const APP_STATUS_MAP = { PENDING: '待选择', ACCEPTED: '已接受', REJECTED: '未选中', WITHDRAWN: '已撤回' }
 
 export default {
   name: 'MyRequests',
@@ -156,8 +195,14 @@ export default {
       pageSize: 10,
       total: 0,
       statusMap: STATUS_MAP,
+      auditMap: AUDIT_MAP,
+      appStatusMap: APP_STATUS_MAP,
       detailVisible: false,
-      current: null
+      current: null,
+      appVisible: false,
+      appLoading: false,
+      applications: [],
+      appRequest: null
     }
   },
   created() {
@@ -194,9 +239,40 @@ export default {
         } catch { /* 错误已统一处理 */ }
       }).catch(() => {})
     },
-    goCreateOrder(row) {
-      this.$router.push('/customer/companions')
-      this.$message.info('请选择一位陪诊师为您服务')
+    async showApplications(row) {
+      this.appRequest = row
+      this.appVisible = true
+      this.appLoading = true
+      try {
+        const res = await getApplicationsByRequest(row.id)
+        this.applications = res.data || res || []
+      } catch { this.applications = [] } finally { this.appLoading = false }
+    },
+    handleAcceptApp(app) {
+      const doAccept = (servicePrice) => {
+        this.$confirm(`确认选择 ${app.companionName || '该陪诊师'} 为您服务？确认后将生成订单。`, '确认选择', { type: 'success' })
+          .then(async () => {
+            try {
+              await acceptApplication(app.id, servicePrice != null ? { servicePrice } : {})
+              this.$message.success('已确认，订单已生成，可在“我的订单”中沟通')
+              this.appVisible = false
+              this.fetchList()
+            } catch {}
+          }).catch(() => {})
+      }
+      // 需求无预算时，让客户补填服务金额
+      if (!this.appRequest || !this.appRequest.budget) {
+        this.$prompt('请输入本单服务金额（元）', '设置金额', {
+          inputPattern: /^\d+(\.\d{1,2})?$/, inputErrorMessage: '请输入有效金额'
+        }).then(({ value }) => doAccept(Number(value))).catch(() => {})
+      } else {
+        doAccept(null)
+      }
+    },
+    handleRejectApp(app) {
+      this.$confirm('确认拒绝该申请？', '拒绝申请', { type: 'warning' }).then(async () => {
+        try { await rejectApplication(app.id); this.$message.success('已拒绝'); this.showApplications(this.appRequest) } catch {}
+      }).catch(() => {})
     },
     formatDate(dateStr) {
       if (!dateStr) return '-'
@@ -287,6 +363,31 @@ export default {
   background: rgba(100, 130, 180, 0.1);
   color: #5577AA;
 }
+
+/* 审核标签 */
+.audit-tag { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+.audit--0 { background: rgba(230,162,60,.1); color: #B88230; }
+.audit--1 { background: rgba(122,154,126,.12); color: #5C7A60; }
+.audit--2 { background: rgba(224,96,96,.1); color: #C05050; }
+
+/* 申请列表 */
+.app-list { min-height: 120px; }
+.app-empty { text-align: center; color: var(--color-text-placeholder); padding: 50px 0; font-size: 14px; }
+.app-card { display: flex; gap: 14px; padding: 16px; border: 1px solid var(--color-border-light); border-radius: var(--radius-md); margin-bottom: 12px; }
+.app-main { flex: 1; min-width: 0; }
+.app-top { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+.app-name { font-size: 15px; font-weight: 600; color: var(--color-text-primary); }
+.app-rating { font-size: 12px; color: #B88230; }
+.app-rating i { color: #E6A23C; }
+.app-meta { font-size: 13px; color: var(--color-text-secondary); margin-bottom: 6px; }
+.app-intro { font-size: 13px; color: var(--color-text-secondary); line-height: 1.5; }
+.app-msg { font-size: 13px; color: var(--color-text-primary); background: var(--color-bg-page); padding: 8px 10px; border-radius: var(--radius-sm); margin-top: 8px; }
+.app-msg i { color: var(--color-primary); }
+.app-actions { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; flex-shrink: 0; }
+.app-tag { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+.app--pending { background: rgba(230,162,60,.1); color: #B88230; }
+.app--accepted { background: rgba(122,154,126,.12); color: #5C7A60; }
+.app--rejected, .app--withdrawn { background: rgba(153,153,153,.1); color: #888; }
 
 /* 分页 */
 .table-footer {
