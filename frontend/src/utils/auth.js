@@ -20,11 +20,11 @@ function normalizeUser(user) {
 }
 
 export function setUser(user) {
-  localStorage.setItem(USER_KEY, JSON.stringify(normalizeUser(user)))
+  sessionStorage.setItem(USER_KEY, JSON.stringify(normalizeUser(user)))
 }
 
 export function getUser() {
-  const raw = localStorage.getItem(USER_KEY)
+  const raw = sessionStorage.getItem(USER_KEY)
   if (!raw) return null
   try {
     return normalizeUser(JSON.parse(raw))
@@ -34,7 +34,7 @@ export function getUser() {
 }
 
 export function clearUser() {
-  localStorage.removeItem(USER_KEY)
+  sessionStorage.removeItem(USER_KEY)
 }
 
 export function isLoggedIn() {

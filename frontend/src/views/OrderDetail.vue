@@ -105,7 +105,7 @@
     </div>
 
     <!-- 评价弹窗 -->
-    <el-dialog title="评价" :visible.sync="evalVisible" width="420px" :close-on-click-modal="false">
+    <el-dialog title="评价" :visible.sync="evalVisible" width="420px" :close-on-click-modal="false" append-to-body destroy-on-close>
       <el-form label-width="70px" size="small">
         <el-form-item label="评分">
           <el-rate v-model="evalForm.score" :max="5" show-score />
@@ -121,7 +121,7 @@
     </el-dialog>
 
     <!-- 投诉弹窗 -->
-    <el-dialog title="投诉" :visible.sync="reportVisible" width="420px" :close-on-click-modal="false">
+    <el-dialog title="投诉" :visible.sync="reportVisible" width="420px" :close-on-click-modal="false" append-to-body destroy-on-close>
       <el-form label-width="70px" size="small">
         <el-form-item label="原因">
           <el-select v-model="reportForm.reason" placeholder="请选择投诉原因" style="width:100%">

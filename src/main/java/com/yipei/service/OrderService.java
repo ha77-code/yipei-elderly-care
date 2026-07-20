@@ -221,6 +221,7 @@ public class OrderService {
         }
         serviceOrderMapper.confirm(orderId);
         serviceRequestMapper.updateStatus(order.getRequestId(), "CLOSED");
+        companionProfileMapper.incrementCompletedCount(order.getCompanionId());
 
         OrderStatusLog log = new OrderStatusLog();
         log.setOrderId(orderId);

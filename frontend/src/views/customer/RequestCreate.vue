@@ -187,7 +187,7 @@ export default {
   },
   computed: {
     isOrderMode() {
-      return !!this.$route.query.requestId
+      return !!this.$route.query.companionId
     }
   },
   methods: {
@@ -226,12 +226,14 @@ export default {
       try {
         const payload = { ...this.form }
         if (this.isOrderMode) {
+          const res = await createRequest(payload)
+          const requestData = res.data || res
           await createOrder({
-            requestId: this.$route.query.requestId,
+            requestId: requestData.id,
             companionId: this.$route.query.companionId,
             servicePrice: payload.budget || 0
           })
-          this.$message.success('订单创建成功')
+          this.$message.success('订单创建成功，等待陪诊师接单')
           this.$router.push('/customer/orders')
         } else {
           await createRequest(payload)
