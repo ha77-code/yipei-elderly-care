@@ -1,0 +1,444 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>益陪养老 · 管理后台（浅色）</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+/* ═══ 浅色主题 · 白瓷磨砂 + 深墨绿字 ═══ */
+:root{
+  --ink:46,60,38;            /* 深墨绿主文字 */
+  --ink-soft:96,110,82;      /* 次要文字 */
+  --ink-faint:130,140,116;   /* 辅助小字 */
+  --panel:255,255,255;
+  --accent:108,140,80;       /* 暖调绿 */
+  --accent-deep:78,106,56;
+  --warm-line:150,140,110;   /* 原木卡其分割 */
+  --amber:200,150,70;
+  --green-tag:120,150,88;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scrollbar-width:none}html::-webkit-scrollbar{display:none}
+body{font-family:'PingFang SC','Microsoft YaHei',-apple-system,sans-serif;color:rgba(var(--ink),0.9);background:#eef2e6;overflow:hidden;height:100vh;cursor:none}
+
+/* ═══ 自定义光标 · 明亮暖金辉光（浅色主题）═══ */
+.cursor-dot{position:fixed;width:12px;height:12px;background:rgba(255,238,160,0.96);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);box-shadow:0 0 22px rgba(255,232,148,0.94),0 0 50px rgba(255,215,115,0.7),0 0 85px rgba(255,195,90,0.44),0 0 135px rgba(255,225,130,0.26);transition:width .15s,height .15s,background .15s}
+.cursor-ring{position:fixed;width:52px;height:52px;border:2.5px solid rgba(190,218,118,0.8);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);box-shadow:0 0 30px rgba(200,226,138,0.58),0 0 58px rgba(225,210,118,0.38),0 0 95px rgba(255,218,130,0.22);transition:width .3s,height .3s,border-color .3s,box-shadow .3s}
+.cursor-dot.hover-text{width:48px;height:48px;background:rgba(255,240,170,0.5);box-shadow:0 0 40px rgba(255,230,140,0.78),0 0 75px rgba(255,208,108,0.5),0 0 115px rgba(255,228,130,0.3)}
+.cursor-ring.hover-text{width:98px;height:98px;border-color:rgba(205,228,128,0.92);box-shadow:0 0 52px rgba(218,232,148,0.62),0 0 84px rgba(245,218,130,0.4),0 0 138px rgba(255,230,148,0.24)}
+.trail-particle{position:fixed;pointer-events:none;z-index:9997;border-radius:50%;background:radial-gradient(circle,rgba(255,230,148,0.84),rgba(255,205,108,0.4),transparent);transform:translate(-50%,-50%);transition:left 0.08s linear,top 0.08s linear,opacity 0.6s ease}
+/* 聚光灯：光标处暖光晕提亮 */
+.spotlight-overlay{position:fixed;inset:0;z-index:1;pointer-events:none;background:rgba(210,225,175,0.06);mask-image:radial-gradient(circle 580px at 50% 50%,transparent 0%,transparent 28%,rgba(0,0,0,0.4) 65%,black 100%);-webkit-mask-image:radial-gradient(circle 580px at 50% 50%,transparent 0%,transparent 28%,rgba(0,0,0,0.4) 65%,black 100%)}
+/* 光标处暖光辉映（跟随光标的柔光斑） */
+.cursor-halo{position:fixed;width:420px;height:420px;pointer-events:none;z-index:1;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,rgba(255,240,175,0.24),rgba(255,220,140,0.11) 40%,transparent 66%);mix-blend-mode:screen}
+
+.bg-layer{position:fixed;inset:0;z-index:0;background:url('img/bg-bamboo-soft.webp') center/cover no-repeat}
+/* 极淡暖光罩：几乎不压暗，仅统一色温 */
+.bg-layer::after{content:'';position:absolute;inset:0;background:
+  linear-gradient(158deg,rgba(255,252,240,0.1) 0%,rgba(240,246,228,0.06) 50%,rgba(224,234,208,0.16) 100%),
+  radial-gradient(ellipse at 70% 22%,rgba(255,250,228,0.18) 0%,transparent 52%)}
+.bg-corners{position:fixed;inset:0;z-index:1;pointer-events:none;background:
+  radial-gradient(circle 280px at 0% 0%,rgba(255,245,210,0.18),transparent 62%),
+  radial-gradient(circle 320px at 100% 100%,rgba(210,225,180,0.15),transparent 62%)}
+.app-wrap{position:relative;z-index:2;display:flex;height:100vh;width:100%;animation:page-in 1s cubic-bezier(0.22,0.61,0.36,1) both}
+@keyframes page-in{0%{opacity:0;filter:brightness(1.06)}100%{opacity:1;filter:none}}
+
+/* ═══ 左侧导航 ═══ */
+.nav-zone{flex:0 0 22%;min-width:280px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;background:linear-gradient(155deg,rgba(255,255,255,0.4),rgba(248,250,240,0.24));backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-right:1px solid rgba(var(--warm-line),0.18);position:relative;overflow:visible;padding-left:20px;transition:box-shadow 0.5s ease,border-color 0.5s ease}
+.nav-zone.nav-glow{border-right-color:rgba(240,210,130,0.38);box-shadow:0 0 70px rgba(240,210,130,0.16),0 0 120px rgba(255,225,140,0.08),inset -1px 0 36px rgba(240,215,140,0.12)}
+.nav-brand{position:absolute;top:32px;left:24px;font-family:'Noto Serif SC',serif;font-size:16px;font-weight:700;color:rgba(var(--accent-deep),0.85);letter-spacing:0.08em;z-index:10}
+.arc-svg{width:100%;height:100%;cursor:grab;user-select:none;overflow:visible;will-change:transform;z-index:0}
+.arc-svg:active{cursor:grabbing}
+.arc-ring{fill:none;stroke:rgba(160,205,105,0.6);stroke-width:1;filter:url(#arcGlow)}
+.arc-node{fill:rgba(255,255,255,0.6);stroke:rgba(160,205,105,0.45);stroke-width:1;cursor:pointer;will-change:transform;transition:fill 0.3s ease,stroke 0.3s ease}
+.node-group:hover .arc-node{fill:rgba(255,245,210,0.85);stroke:rgba(240,210,130,0.6);filter:drop-shadow(0 0 8px rgba(255,225,140,0.45))}
+.arc-node.active{fill:rgba(160,210,110,0.88);stroke:rgba(140,195,90,0.92);filter:drop-shadow(0 0 14px rgba(180,215,120,0.6)),drop-shadow(0 0 28px rgba(240,210,120,0.3))}
+.arc-ring-halo{fill:none;stroke:rgba(240,215,130,0.55);stroke-width:1.8;opacity:0;transition:opacity 0.35s ease;pointer-events:none;filter:drop-shadow(0 0 6px rgba(255,225,140,0.4))}
+.node-group.active .arc-ring-halo{opacity:1}
+.arc-icon{fill:rgba(140,195,90,0.78);font-size:13px;text-anchor:middle;dominant-baseline:central;pointer-events:none;transition:fill 0.3s ease}
+.node-group.active .arc-icon{fill:#fff}
+.arc-label{fill:rgba(var(--ink-soft),0.7);font-size:10px;text-anchor:middle;letter-spacing:0.05em;pointer-events:none;transition:fill 0.3s ease}
+.node-group.active .arc-label{fill:rgba(140,195,90,0.95);font-weight:600}
+
+/* ═══ 右侧内容 ═══ */
+.content-zone{flex:1;overflow:hidden;position:relative}
+.content-zone::before,.content-zone::after{content:'';position:absolute;left:0;right:0;z-index:5;pointer-events:none}
+.content-zone::before{top:0;height:44px;background:linear-gradient(180deg,rgba(238,244,228,0.6) 0%,rgba(238,244,228,0.2) 55%,transparent 100%)}
+.content-zone::after{bottom:0;height:44px;background:linear-gradient(0deg,rgba(238,244,228,0.6) 0%,rgba(238,244,228,0.2) 55%,transparent 100%)}
+.panel-viewport{height:100vh;overflow-y:auto;scroll-snap-type:y mandatory}
+.panel-page{height:100vh;scroll-snap-align:start;display:flex;flex-direction:column;padding:40px 44px;position:relative}
+.panel-inner{max-width:880px;width:100%;flex:1;display:flex;flex-direction:column;margin:0 auto}
+
+.scroll-hint{position:absolute;bottom:40px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;z-index:5;pointer-events:none;opacity:0.65}
+.scroll-hint span{font-size:12px;color:rgba(var(--ink-faint),0.8);letter-spacing:0.06em}
+.scroll-hint-line{width:1px;height:32px;background:linear-gradient(180deg,rgba(180,215,115,0.55),transparent)}
+.scroll-hint.last{display:none}
+
+.section-head{display:flex;align-items:center;justify-content:space-between;padding:0 0 14px;margin-bottom:32px;border-bottom:1px solid rgba(200,185,145,0.28)}
+.section-head h2{font-family:'Noto Serif SC','PingFang SC',sans-serif;font-size:23px;font-weight:600;color:rgba(var(--accent-deep),0.92);letter-spacing:0.04em}
+.section-head .section-sub{font-size:12px;color:rgba(var(--ink-faint),0.85);letter-spacing:0.05em}
+
+/* 顶部筛选栏：浅一层白瓷玻璃 */
+.filter-strip{position:relative;z-index:30;display:flex;align-items:center;gap:12px;padding:12px 18px;margin-bottom:14px;background:linear-gradient(180deg,rgba(255,255,255,0.62),rgba(250,252,244,0.5));backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,0.7);border-radius:12px;box-shadow:0 8px 22px -12px rgba(60,70,40,0.28),inset 0 1px 0 rgba(255,255,255,0.6)}
+.filter-strip input{padding:9px 14px;background:rgba(255,255,255,0.7);border:1px solid rgba(var(--warm-line),0.28);border-radius:9px;color:rgba(var(--ink),0.85);font-size:15px;font-family:inherit;outline:none;transition:all 0.3s ease}
+.filter-strip input::placeholder{color:rgba(var(--ink-faint),0.7)}
+.filter-strip input:focus{border-color:rgba(180,215,115,0.7);box-shadow:0 0 0 4px rgba(200,225,140,0.2),0 0 16px -2px rgba(240,215,130,0.25)}
+.btn-sm{padding:9px 18px;background:linear-gradient(135deg,rgba(var(--accent),0.16),rgba(var(--accent),0.1));border:1px solid rgba(var(--accent),0.28);border-radius:9px;color:rgba(var(--accent-deep),0.9);font-size:12px;cursor:pointer;transition:all 0.3s ease;font-family:inherit;font-weight:600}
+.btn-sm:hover{background:linear-gradient(135deg,rgba(170,215,115,0.36),rgba(225,240,180,0.26));box-shadow:0 4px 18px -5px rgba(170,210,110,0.6),0 0 28px -2px rgba(245,220,130,0.64),0 0 50px -6px rgba(255,230,145,0.38);transform:translateY(-1px)}
+
+/* ═══ 自定义下拉框（替代原生 select）═══ */
+.cs{position:relative;font-family:inherit;user-select:none;z-index:1}
+.cs.open{z-index:50}
+.cs-trigger{display:flex;align-items:center;gap:10px;min-width:132px;padding:9px 14px;background:rgba(255,255,255,0.78);border:1px solid rgba(var(--warm-line),0.32);border-radius:9px;color:rgba(var(--ink),0.9);font-size:15px;cursor:pointer;transition:all 0.28s ease;font-family:inherit}
+.cs-trigger:hover{border-color:rgba(180,215,115,0.55);background:rgba(255,255,255,0.88);box-shadow:0 0 14px -2px rgba(200,225,140,0.25)}
+.cs.open .cs-trigger{border-color:rgba(170,210,110,0.75);box-shadow:0 0 0 5px rgba(195,225,140,0.22),0 0 18px -2px rgba(240,215,130,0.35),0 0 32px -4px rgba(255,225,140,0.2)}
+.cs-label{flex:1;white-space:nowrap}
+.cs-chevron{width:12px;height:12px;flex-shrink:0;transition:transform 0.3s cubic-bezier(0.22,0.61,0.36,1);color:rgba(var(--accent-deep),0.7)}
+.cs.open .cs-chevron{transform:rotate(180deg)}
+.cs-menu{position:fixed;padding:6px;background:rgba(254,255,251,0.98);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border:1px solid rgba(195,225,140,0.32);border-radius:11px;box-shadow:0 20px 50px -14px rgba(50,60,30,0.44),0 3px 10px rgba(50,60,30,0.16),0 0 30px -4px rgba(240,215,130,0.18),inset 0 1px 0 rgba(255,255,255,0.95);z-index:9995;opacity:0;pointer-events:none;transition:opacity 0.18s ease}
+.cs-menu.open{opacity:1;pointer-events:auto;z-index:9995}
+.cs-opt{padding:10px 15px;border-radius:7px;font-size:14px;color:rgba(var(--ink),0.88);cursor:pointer;transition:all 0.18s ease;white-space:nowrap}
+.cs-opt:hover{background:linear-gradient(135deg,rgba(195,225,140,0.26),rgba(245,220,140,0.18));color:rgba(130,185,80,0.98);box-shadow:inset 0 0 0 1px rgba(200,225,140,0.22),inset 0 0 20px -8px rgba(240,215,130,0.25)}
+.cs-opt.sel{background:rgba(195,225,140,0.24);color:rgba(130,185,80,0.98);font-weight:600}
+
+/* 表格卡片：白瓷磨砂 */
+.table-wrap{position:relative;background:linear-gradient(180deg,rgba(255,255,255,0.58),rgba(250,252,244,0.46));backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,0.66);border-radius:16px;overflow:hidden;flex:1;box-shadow:0 20px 46px -22px rgba(50,60,30,0.32),inset 0 1px 0 rgba(255,255,255,0.55)}
+.table-wrap::before{content:'';position:absolute;inset:0;pointer-events:none;border-radius:16px;background:
+  radial-gradient(ellipse 70% 40% at 50% 0%,rgba(255,245,215,0.35),transparent 70%),
+  radial-gradient(ellipse 70% 40% at 50% 100%,rgba(225,235,200,0.22),transparent 70%)}
+table{width:100%;border-collapse:collapse;position:relative;z-index:1}
+thead th{text-align:left;padding:16px 18px;font-size:14px;font-weight:600;color:rgba(var(--accent-deep),0.82);letter-spacing:0.04em;border-bottom:1px solid rgba(var(--warm-line),0.3)}
+tbody td{padding:0 18px;height:58px;font-size:14px;color:rgba(var(--ink),0.82);border-bottom:1px solid rgba(var(--warm-line),0.12)}
+tbody tr{transition:all 0.3s ease}
+tbody tr:hover{background:rgba(var(--accent),0.07)}
+tbody tr:hover td{box-shadow:inset 0 0 55px -18px rgba(245,220,140,0.5),inset 0 0 90px -30px rgba(255,230,150,0.25)}
+tbody td:first-child{color:rgba(var(--accent-deep),0.7);font-weight:600}
+
+/* 状态标签 */
+.tag-pill{display:inline-block;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid;letter-spacing:0.03em}
+.tag-green{border-color:rgba(170,210,120,0.42);color:rgba(130,185,80,0.88);background:linear-gradient(135deg,rgba(185,220,135,0.18),rgba(210,230,170,0.12))}
+.tag-amber{border-color:rgba(235,205,130,0.45);color:rgba(170,130,60,0.92);background:linear-gradient(135deg,rgba(245,215,140,0.2),rgba(240,210,130,0.12))}
+.tag-red{border-color:rgba(195,120,105,0.4);color:rgba(160,80,65,0.85);background:linear-gradient(135deg,rgba(210,140,120,0.16),rgba(200,120,100,0.08))}
+.tag-gray{border-color:rgba(150,145,130,0.35);color:rgba(110,110,95,0.8);background:linear-gradient(135deg,rgba(180,175,160,0.16),rgba(160,155,140,0.08))}
+
+.btn-action{padding:6px 14px;background:rgba(255,255,255,0.5);border:1px solid rgba(var(--warm-line),0.3);border-radius:8px;color:rgba(var(--ink-soft),0.9);font-size:14px;cursor:pointer;transition:all 0.28s cubic-bezier(0.22,0.61,0.36,1);font-family:inherit;margin-right:6px}
+.btn-action:hover{background:linear-gradient(135deg,rgba(255,252,240,0.96),rgba(245,220,140,0.24));color:rgba(130,185,80,0.98);border-color:rgba(240,210,130,0.6);transform:translateY(-1px);box-shadow:0 5px 18px -5px rgba(60,60,30,0.28),0 0 30px -2px rgba(245,220,135,0.68),0 0 52px -6px rgba(255,230,148,0.4),0 0 80px -10px rgba(255,225,140,0.2)}
+.btn-action.primary{background:linear-gradient(135deg,rgba(var(--accent),0.9),rgba(var(--accent-deep),0.9));border-color:rgba(var(--accent-deep),0.9);color:#fff}
+.btn-action.primary:hover{background:linear-gradient(135deg,rgba(160,210,110,1),rgba(135,190,85,1));transform:translateY(-1px);box-shadow:0 6px 18px -6px rgba(140,195,90,0.6),0 0 28px -2px rgba(200,225,140,0.72),0 0 50px -6px rgba(240,215,130,0.4)}
+.btn-action.danger{color:rgba(170,90,75,0.85);border-color:rgba(190,120,105,0.32)}
+.btn-action.danger:hover{background:linear-gradient(135deg,rgba(220,160,145,0.2),rgba(210,130,110,0.1));color:rgba(170,80,60,0.95);border-color:rgba(200,125,105,0.55);box-shadow:0 3px 12px -4px rgba(200,120,100,0.2)}
+
+.back-link{position:fixed;top:24px;left:calc(22% + 20px);z-index:10;display:inline-flex;align-items:center;gap:8px;font-size:19px;font-weight:700;color:rgba(var(--ink-soft),0.85);text-decoration:none;transition:all 0.3s;letter-spacing:0.04em}
+.back-link:hover{color:rgba(140,195,90,1);text-shadow:0 0 22px rgba(255,230,145,0.62),0 0 44px rgba(255,215,120,0.36),0 0 72px rgba(255,225,140,0.18)}
+.back-link svg{width:21px;height:21px}
+
+.theme-badge{position:fixed;top:22px;right:24px;z-index:20;padding:6px 14px;background:rgba(255,255,255,0.6);border:1px solid rgba(200,185,145,0.33);border-radius:999px;font-size:11px;color:rgba(140,195,90,0.88);letter-spacing:0.06em;backdrop-filter:blur(10px)}
+	/* 工作台统计卡片 */
+	.stat-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:24px}
+	.mini-stat{flex:1;min-width:130px;background:rgba(255,255,255,0.55);backdrop-filter:blur(10px);border-radius:12px;padding:16px 14px;text-align:center;border:1px solid rgba(255,255,255,0.6);box-shadow:0 4px 12px -6px rgba(60,70,40,0.12)}
+	.mini-val{font-size:24px;font-weight:800;color:rgba(var(--accent-deep),0.88)}
+	.mini-lbl{font-size:11px;color:rgba(var(--ink-faint),0.78);margin-top:4px}
+	.quick-card{background:rgba(255,255,255,0.55);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.6);border-radius:10px;padding:16px 18px;cursor:pointer;transition:all 0.25s ease}
+	.quick-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px -8px rgba(60,70,40,0.22),0 0 20px -4px rgba(240,215,130,0.25);border-color:rgba(200,225,140,0.4)}
+	.quick-card h4{font-size:14px;font-weight:700;color:rgba(var(--accent-deep),0.88);margin-bottom:4px}
+	.quick-card p{font-size:12px;color:rgba(var(--ink-faint),0.72)}
+</style>
+</head>
+<body>
+<div class="bg-layer"></div><div class="bg-corners"></div>
+<div class="spotlight-overlay" id="spotlight"></div>
+<div class="cursor-halo" id="cursorHalo"></div>
+<div class="cursor-dot" id="cursorDot"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+<div class="trail-particle" id="trail1" style="width:18px;height:18px"></div>
+<div class="trail-particle" id="trail2" style="width:14px;height:14px"></div>
+<div class="trail-particle" id="trail3" style="width:10px;height:10px"></div>
+<div class="trail-particle" id="trail4" style="width:7px;height:7px"></div>
+<div class="trail-particle" id="trail5" style="width:5px;height:5px"></div>
+
+<div class="theme-badge">浅色主题 · Demo</div>
+
+<div class="app-wrap">
+  <nav class="nav-zone" id="navZone">
+    <div class="nav-brand">益陪</div>
+    <svg class="arc-svg" id="arcSvg" viewBox="-60 200 170 320">
+      <defs>
+        <filter id="arcGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="1.2" result="b"/>
+          <feColorMatrix in="b" type="matrix" values="0 0 0 0 0.42  0 0 0 0 0.55  0 0 0 0 0.31  0 0 0 0.5 0" result="warm"/>
+          <feMerge><feMergeNode in="warm"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <path class="arc-ring" id="arcTrack" d="M-80,350 A140,140 0 0,1 -80,350"/>
+      <g id="nodesGroup"></g>
+    </svg>
+  </nav>
+
+  <div class="content-zone">
+    <a href="landing.html" class="back-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7" stroke-linecap="round"/></svg>返回首页</a>
+    <div class="panel-viewport" id="panelViewport">
+
+      <!-- 工作台 -->
+      <div class="panel-page" id="page-dash" data-page="0"><div class="panel-inner">
+        <div class="section-head"><h2>管理后台</h2><span class="section-sub">数据概览</span></div>
+        <div class="stat-row">
+          <div class="mini-stat"><div class="mini-val">1,286</div><div class="mini-lbl">注册用户</div></div>
+          <div class="mini-stat"><div class="mini-val">86</div><div class="mini-lbl">陪诊师</div></div>
+          <div class="mini-stat"><div class="mini-val">5</div><div class="mini-lbl">待审核</div></div>
+          <div class="mini-stat"><div class="mini-val">328</div><div class="mini-lbl">总订单</div></div>
+          <div class="mini-stat"><div class="mini-val">8</div><div class="mini-lbl">待处理投诉</div></div>
+          <div class="mini-stat"><div class="mini-val" style="color:rgba(170,130,60,0.9)">￥12,580</div><div class="mini-lbl">平台收入</div></div>
+        </div>
+        <div class="table-wrap" style="padding:24px">
+          <h3 style="font-family:'Noto Serif SC',serif;font-size:17px;font-weight:600;color:rgba(78,106,56,0.92);margin-bottom:16px">快捷入口</h3>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+            <div class="quick-card" onclick="goPage(1)"><h4>☺ 用户管理</h4><p>管理平台用户，启用或禁用账号</p></div>
+            <div class="quick-card" onclick="goPage(2)"><h4>✓ 陪诊师审核</h4><p>审核陪诊师入驻申请</p></div>
+            <div class="quick-card" onclick="goPage(3)"><h4>✎ 需求管理</h4><p>查看全部服务需求</p></div>
+            <div class="quick-card" onclick="goPage(4)"><h4>☰ 订单管理</h4><p>查看全部订单，跟踪服务进度</p></div>
+            <div class="quick-card" onclick="goPage(5)"><h4>⚠ 投诉处理</h4><p>处理用户投诉和举报</p></div>
+            <div class="quick-card" onclick="goPage(6)"><h4>◆ 平台统计</h4><p>查看运营数据和收入概览</p></div>
+          </div>
+        </div>
+      </div><div class="scroll-hint"><div class="scroll-hint-line"></div><span>继续滚动 · 用户管理</span></div></div>
+
+      <!-- 用户管理 -->
+      <div class="panel-page" id="page-users" data-page="1"><div class="panel-inner">
+        <div class="section-head"><h2>用户管理</h2><span class="section-sub">共 1,286 人</span></div>
+        <div class="filter-strip">
+          <div class="cs" data-cs='["全部角色","客户","陪诊师","管理员"]'></div>
+          <div class="cs" data-cs='["全部状态","正常","已禁用"]'></div>
+          <input placeholder="搜索..." style="flex:1;max-width:180px">
+          <button class="btn-sm">重置</button>
+        </div>
+        <div class="table-wrap"><table><thead><tr><th>ID</th><th>用户名</th><th>昵称</th><th>手机号</th><th>角色</th><th>状态</th><th>注册时间</th><th>操作</th></tr></thead><tbody>
+          <tr><td>1</td><td>customer1</td><td>Zhang San</td><td>138****0001</td><td><span class="tag-pill tag-green">客户</span></td><td><span class="tag-pill tag-green">正常</span></td><td>2026-07-16</td><td><button class="btn-action">禁用</button></td></tr>
+          <tr><td>2</td><td>companion1</td><td>Li Peizhen</td><td>138****0002</td><td><span class="tag-pill tag-amber">陪诊师</span></td><td><span class="tag-pill tag-green">正常</span></td><td>2026-07-16</td><td><button class="btn-action">禁用</button></td></tr>
+          <tr><td>3</td><td>admin1</td><td>Admin</td><td>138****0003</td><td><span class="tag-pill tag-gray">管理员</span></td><td><span class="tag-pill tag-green">正常</span></td><td>2026-07-16</td><td><button class="btn-action">-</button></td></tr>
+          <tr><td>4</td><td>customer2</td><td>Wang Wu</td><td>138****0004</td><td><span class="tag-pill tag-green">客户</span></td><td><span class="tag-pill tag-green">正常</span></td><td>2026-07-17</td><td><button class="btn-action">禁用</button></td></tr>
+        </tbody></table></div>
+      </div><div class="scroll-hint"><div class="scroll-hint-line"></div><span>继续滚动 · 陪诊师审核</span></div></div>
+
+      <div class="panel-page" id="page-review" data-page="2"><div class="panel-inner">
+        <div class="section-head"><h2>陪诊师审核</h2><span class="section-sub">待审核 5 人</span></div>
+        <div class="table-wrap"><table><thead><tr><th>编号</th><th>姓名</th><th>服务区域</th><th>服务类型</th><th>经验</th><th>介绍</th><th>操作</th></tr></thead><tbody>
+          <tr><td>1</td><td>Wang Fang</td><td>北京市朝阳区</td><td><span class="tag-pill tag-green">门诊陪诊</span></td><td>5年</td><td>资深陪诊师，擅长老年护理...</td><td><button class="btn-action primary">通过</button><button class="btn-action danger">拒绝</button></td></tr>
+          <tr><td>2</td><td>Zhao Min</td><td>上海市浦东新区</td><td><span class="tag-pill tag-green">住院陪护</span></td><td>3年</td><td>护理专业毕业...</td><td><button class="btn-action primary">通过</button><button class="btn-action danger">拒绝</button></td></tr>
+          <tr><td>3</td><td>Chen Li</td><td>广州市天河区</td><td><span class="tag-pill tag-green">检查陪同</span></td><td>2年</td><td>熟悉各大医院流程...</td><td><button class="btn-action primary">通过</button><button class="btn-action danger">拒绝</button></td></tr>
+        </tbody></table></div>
+      </div><div class="scroll-hint"><div class="scroll-hint-line"></div><span>继续滚动 · 订单管理</span></div></div>
+
+      <!-- 需求管理 -->
+      <div class="panel-page" id="page-requests" data-page="3"><div class="panel-inner">
+        <div class="section-head"><h2>需求管理</h2><span class="section-sub">共 156 条</span></div>
+        <div class="filter-strip">
+          <div class="cs" data-cs='["全部状态","待匹配","已匹配","已完成","已取消"]'></div>
+          <button class="btn-sm">重置</button>
+        </div>
+        <div class="table-wrap"><table><thead><tr><th>需求号</th><th>发布人</th><th>服务类型</th><th>服务时间</th><th>地点</th><th>预算</th><th>操作</th></tr></thead><tbody>
+          <tr><td>#R001</td><td>Zhang San</td><td>门诊陪诊</td><td>2026-07-20 09:00</td><td>人民医院</td><td>￥200.00</td><td><button class="btn-action">详情</button></td></tr>
+          <tr><td>#R002</td><td>Wang Wu</td><td>检查陪同</td><td>2026-07-21 14:00</td><td>协和医院</td><td>￥150.00</td><td><button class="btn-action">详情</button></td></tr>
+        </tbody></table></div>
+      </div><div class="scroll-hint"><div class="scroll-hint-line"></div><span>继续滚动 · 订单管理</span></div></div>
+
+      <!-- 订单管理 -->
+      <div class="panel-page" id="page-orders" data-page="4"><div class="panel-inner">
+        <div class="section-head"><h2>订单管理</h2><span class="section-sub">共 328 笔</span></div>
+        <div class="filter-strip">
+          <div class="cs" data-cs='["全部状态","待接单","服务中","已完成"]'></div>
+          <button class="btn-sm">重置</button>
+        </div>
+        <div class="table-wrap"><table><thead><tr><th>订单号</th><th>客户</th><th>服务时间</th><th>陪诊师</th><th>价格</th><th>状态</th><th>操作</th></tr></thead><tbody>
+          <tr><td>#1001</td><td>Zhang San</td><td>2026-07-20 09:00</td><td>Li Peizhen</td><td>￥200.00</td><td><span class="tag-pill tag-amber">服务中</span></td><td><button class="btn-action">详情</button></td></tr>
+          <tr><td>#1002</td><td>Wang Wu</td><td>2026-07-21 14:00</td><td>-</td><td>￥150.00</td><td><span class="tag-pill tag-gray">待接单</span></td><td><button class="btn-action">详情</button></td></tr>
+          <tr><td>#1003</td><td>Liu Qi</td><td>2026-07-19 10:30</td><td>Zhao Min</td><td>￥180.00</td><td><span class="tag-pill tag-green">已完成</span></td><td><button class="btn-action">详情</button></td></tr>
+        </tbody></table></div>
+      </div><div class="scroll-hint"><div class="scroll-hint-line"></div><span>继续滚动 · 投诉处理</span></div></div>
+
+      <!-- 投诉处理 -->
+      <div class="panel-page" id="page-reports" data-page="5"><div class="panel-inner">
+        <div class="section-head"><h2>投诉处理</h2><span class="section-sub">待处理 3 件</span></div>
+        <div class="table-wrap"><table><thead><tr><th>编号</th><th>订单号</th><th>投诉人</th><th>原因</th><th>状态</th><th>时间</th><th>操作</th></tr></thead><tbody>
+          <tr><td>1</td><td>#982</td><td>Zhang San</td><td>服务态度差</td><td><span class="tag-pill tag-red">待处理</span></td><td>2026-07-17</td><td><button class="btn-action primary">处理</button></td></tr>
+          <tr><td>2</td><td>#945</td><td>Li Si</td><td>未按时到达</td><td><span class="tag-pill tag-amber">处理中</span></td><td>2026-07-16</td><td><button class="btn-action primary">解决</button></td></tr>
+        </tbody></table></div>
+      </div><div class="scroll-hint"><div class="scroll-hint-line"></div><span>继续滚动 · 平台统计</span></div></div>
+
+      <!-- 平台统计 -->
+      <div class="panel-page" id="page-stats" data-page="6"><div class="panel-inner">
+        <div class="section-head"><h2>平台统计</h2><span class="section-sub">实时数据</span></div>
+        <div class="table-wrap"><table><thead><tr><th>指标</th><th>数值</th><th>指标</th><th>数值</th></tr></thead><tbody>
+          <tr><td>注册用户</td><td>1,286</td><td>陪诊师</td><td>86</td></tr>
+          <tr><td>总订单</td><td>328</td><td>已完成</td><td>290</td></tr>
+          <tr><td>待接单</td><td>12</td><td>服务中</td><td>18</td></tr>
+          <tr><td>投诉总数</td><td>8</td><td>平台收入</td><td>￥12,580.00</td></tr>
+        </tbody></table></div>
+      </div><div class="scroll-hint last"><div class="scroll-hint-line"></div><span>已到底 · 益陪养老</span></div></div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══ 自定义下拉框（菜单提到body层，fixed定位精准对齐）═══ */
+(function(){
+var chevron='<svg class="cs-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+document.querySelectorAll('.cs').forEach(function(cs){
+  var opts=JSON.parse(cs.getAttribute('data-cs'))
+  var current=opts[0]
+  cs.innerHTML='<div class="cs-trigger"><span class="cs-label">'+current+'</span>'+chevron+'</div>'
+  var trigger=cs.querySelector('.cs-trigger')
+  var label=cs.querySelector('.cs-label')
+  /* 菜单直接挂在body下，彻底避开所有父级overflow/transform/stacking干扰 */
+  var menu=document.createElement('div')
+  menu.className='cs-menu'
+  menu.innerHTML=opts.map(function(o,i){return '<div class="cs-opt'+(i===0?' sel':'')+'" data-v="'+o+'">'+o+'</div>'}).join('')
+  document.body.appendChild(menu)
+  function positionMenu(){
+    var r=trigger.getBoundingClientRect()
+    menu.style.left=r.left+'px'
+    menu.style.top=r.bottom+'px'
+    menu.style.minWidth=r.width+'px'
+  }
+  function closeAll(){
+    document.querySelectorAll('.cs.open').forEach(function(x){
+      x.classList.remove('open')
+      /* 找到x对应的body下menu并隐藏 */
+      document.querySelectorAll('body>.cs-menu').forEach(function(m){m.classList.remove('open')})
+    })
+  }
+  trigger.addEventListener('click',function(e){
+    e.stopPropagation()
+    var wasOpen=cs.classList.contains('open')
+    closeAll()
+    if(!wasOpen){positionMenu();cs.classList.add('open');menu.classList.add('open')}
+  })
+  menu.querySelectorAll('.cs-opt').forEach(function(opt){
+    opt.addEventListener('click',function(e){
+      e.stopPropagation()
+      label.textContent=opt.getAttribute('data-v')
+      menu.querySelectorAll('.cs-opt').forEach(function(x){x.classList.remove('sel')})
+      opt.classList.add('sel')
+      cs.classList.remove('open')
+      menu.classList.remove('open')
+    })
+  })
+  /* 窗口大小变化时更新已打开菜单的位置 */
+  window.addEventListener('resize',function(){if(cs.classList.contains('open'))positionMenu()})
+})
+document.addEventListener('click',function(e){
+  /* 点击外部关闭所有 */
+  document.querySelectorAll('.cs.open').forEach(function(x){x.classList.remove('open')})
+  document.querySelectorAll('body>.cs-menu.open').forEach(function(m){m.classList.remove('open')})
+})
+window.addEventListener('scroll',function(){
+  document.querySelectorAll('.cs.open').forEach(function(x){x.classList.remove('open')})
+  document.querySelectorAll('body>.cs-menu.open').forEach(function(m){m.classList.remove('open')})
+},true)
+})();
+/* ═══ 弧形导航（逻辑同主版）═══ */
+(function(){
+var nodesGroup=document.getElementById('nodesGroup')
+var arcSvg=document.getElementById('arcSvg')
+var panelViewport=document.getElementById('panelViewport')
+var sections=[
+  {id:'dash',icon:'⌂',label:'工作台'},
+  {id:'users',icon:'☺',label:'用户'},
+  {id:'review',icon:'✔',label:'审核'},
+  {id:'requests',icon:'✎',label:'需求'},
+  {id:'orders',icon:'☰',label:'订单'},
+  {id:'reports',icon:'⚠',label:'投诉'},
+  {id:'stats',icon:'◆',label:'统计'}
+]
+	var cx=-80,cy=350,r=140,n=sections.length
+var angleRange=Math.PI
+var baseAngles=[]
+for(var i=0;i<n;i++){baseAngles.push(-angleRange/2+(angleRange*((i+0.5)/n)))}
+var activeIdx=0,offset=0,nodeEls=[]
+function arcPos(a){while(a>angleRange/2)a-=angleRange;while(a<-angleRange/2)a+=angleRange;return {x:cx+r*Math.cos(a),y:cy+r*Math.sin(a)}}
+sections.forEach(function(s,i){
+  var pos=arcPos(baseAngles[i])
+  var g=document.createElementNS('http://www.w3.org/2000/svg','g')
+  g.setAttribute('class','node-group'+(i===activeIdx?' active':''));g.style.cursor='pointer'
+  var halo=document.createElementNS('http://www.w3.org/2000/svg','circle')
+  halo.setAttribute('cx',pos.x);halo.setAttribute('cy',pos.y);halo.setAttribute('r',22);halo.setAttribute('class','arc-ring-halo');g.appendChild(halo)
+  var circle=document.createElementNS('http://www.w3.org/2000/svg','circle')
+  circle.setAttribute('cx',pos.x);circle.setAttribute('cy',pos.y);circle.setAttribute('r',16)
+  circle.setAttribute('class','arc-node'+(i===activeIdx?' active':''));g.appendChild(circle)
+  var icon=document.createElementNS('http://www.w3.org/2000/svg','text')
+  icon.setAttribute('x',pos.x);icon.setAttribute('y',pos.y+1);icon.setAttribute('class','arc-icon');icon.textContent=s.icon;g.appendChild(icon)
+  var label=document.createElementNS('http://www.w3.org/2000/svg','text')
+  label.setAttribute('x',pos.x);label.setAttribute('y',pos.y+22);label.setAttribute('class','arc-label');label.textContent=s.label;g.appendChild(label)
+  g.addEventListener('click',function(){goPage(i)})
+  g.addEventListener('mouseenter',function(){gsap.to(circle,{attr:{r:18},duration:0.2})})
+  g.addEventListener('mouseleave',function(){gsap.to(circle,{attr:{r:16},duration:0.2})})
+  nodesGroup.appendChild(g)
+  nodeEls.push({g:g,circle:circle,icon:icon,label:label,halo:halo})
+})
+function updatePositions(){
+  nodeEls.forEach(function(nd,i){
+    var angle=baseAngles[i]+offset
+    while(angle>angleRange/2)angle-=angleRange;while(angle<-angleRange/2)angle+=angleRange
+    var pos=arcPos(angle)
+    nd.circle.setAttribute('cx',pos.x);nd.circle.setAttribute('cy',pos.y)
+    nd.halo.setAttribute('cx',pos.x);nd.halo.setAttribute('cy',pos.y)
+    nd.icon.setAttribute('x',pos.x);nd.icon.setAttribute('y',pos.y+1)
+    nd.label.setAttribute('x',pos.x);nd.label.setAttribute('y',pos.y+22)
+    nd.circle.classList.toggle('active',i===activeIdx)
+    nd.g.classList.toggle('active',i===activeIdx)
+    var edgeDist=Math.abs(angle)/(angleRange/2)
+    nd.g.style.opacity=1-Math.max(0,(edgeDist-0.7)/0.3)*0.6
+  })
+}
+function goPage(idx){
+  activeIdx=idx
+  var t=-baseAngles[idx],diff=t-offset
+  while(diff>angleRange/2)diff-=angleRange;while(diff<-angleRange/2)diff+=angleRange
+  t=offset+diff
+  gsap.killTweensOf({o:offset})
+  gsap.to({o:offset},{o:t,duration:0.35,ease:'power2.out',force3D:true,overwrite:true,onUpdate:function(){offset=this.targets()[0].o;updatePositions()}})
+  var page=document.getElementById('page-'+sections[idx].id)
+  if(page){panelViewport.scrollTo({top:page.offsetTop,behavior:'smooth'})}
+}
+var wb=false
+arcSvg.addEventListener('wheel',function(e){
+  e.preventDefault();if(wb)return;wb=true;setTimeout(function(){wb=false},20)
+  offset+=e.deltaY*0.0025;updatePositions()
+  var best=-1,bestD=Infinity
+  nodeEls.forEach(function(nd,i){var a=baseAngles[i]+offset;while(a>angleRange/2)a-=angleRange;while(a<-angleRange/2)a+=angleRange;if(Math.abs(a)<bestD){bestD=Math.abs(a);best=i}})
+  if(best!==activeIdx){activeIdx=best;updatePositions()}
+})
+var ticking=false
+panelViewport.addEventListener('scroll',function(){
+  if(!ticking){requestAnimationFrame(function(){
+    var pages=document.querySelectorAll('.panel-page'),best=-1,bestD=Infinity
+    pages.forEach(function(p,i){var d=Math.abs(p.getBoundingClientRect().top-100);if(d<bestD){bestD=d;best=i}})
+    if(best>=0&&best!==activeIdx){activeIdx=best;
+      var to=-baseAngles[best],d=to-offset;while(d>angleRange/2)d-=angleRange;while(d<-angleRange/2)d+=angleRange;to=offset+d
+      gsap.killTweensOf({o:offset})
+      gsap.to({o:offset},{o:to,duration:0.35,ease:'power2.out',force3D:true,overwrite:true,onUpdate:function(){offset=this.targets()[0].o;updatePositions()}})
+    }
+    ticking=false
+  });ticking=true}
+})
+})();
+
+/* ═══ 光标 · 粒子 · 聚光灯 · 发光 ═══ */
+(function(){
+var dot=document.getElementById('cursorDot'),ring=document.getElementById('cursorRing'),spotlight=document.getElementById('spotlight'),navZone=document.getElementById('navZone'),halo=document.getElementById('cursorHalo')
+var mx=window.innerWidth/2,my=window.innerHeight/2,dx=mx,dy=my
+document.addEventListener('mousemove',function(e){mx=e.clientX;my=e.clientY})
+function uc(){dx+=(mx-dx)*0.22;dy+=(my-dy)*0.22;dot.style.left=dx+'px';dot.style.top=dy+'px';ring.style.left=mx+'px';ring.style.top=my+'px';halo.style.left=mx+'px';halo.style.top=my+'px';requestAnimationFrame(uc)}uc()
+var trails=[{el:document.getElementById('trail1'),delay:0.06,x:mx,y:my},{el:document.getElementById('trail2'),delay:0.12,x:mx,y:my},{el:document.getElementById('trail3'),delay:0.18,x:mx,y:my},{el:document.getElementById('trail4'),delay:0.25,x:mx,y:my},{el:document.getElementById('trail5'),delay:0.33,x:mx,y:my}]
+function ut(){trails.forEach(function(t){t.x+=(mx-t.x)*t.delay;t.y+=(my-t.y)*t.delay;t.el.style.left=t.x+'px';t.el.style.top=t.y+'px';var dist=Math.sqrt((mx-t.x)*(mx-t.x)+(my-t.y)*(my-t.y));t.el.style.opacity=Math.max(0.12,1-dist/180)});requestAnimationFrame(ut)}ut()
+function us(){var g='radial-gradient(circle 500px at '+mx+'px '+my+'px,transparent 0%,transparent 34%,rgba(0,0,0,0.5) 70%,black 100%)';spotlight.style.maskImage=g;spotlight.style.webkitMaskImage=g;requestAnimationFrame(us)}us()
+document.querySelectorAll('a,.btn-action,.btn-sm,.cs-trigger,.cs-opt,.filter-strip input,.node-group,tbody tr,.back-link').forEach(function(el){
+  el.addEventListener('mouseenter',function(){dot.classList.add('hover-text');ring.classList.add('hover-text')})
+  el.addEventListener('mouseleave',function(){dot.classList.remove('hover-text');ring.classList.remove('hover-text')})
+})
+document.addEventListener('mousemove',function(e){navZone.classList.toggle('nav-glow',e.clientX<navZone.getBoundingClientRect().right+40)})
+})();
+</script>
+</body>
+</html>

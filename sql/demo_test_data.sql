@@ -887,34 +887,3 @@ SELECT
     '约定取药后1小时内送到，实际用了2个半小时。虽然最终药品没问题，但老人等着用药非常着急。希望陪诊师以后能更准时，或者提前告知延迟原因。',
     'PENDING', '2026-07-26 16:00:00'
 ON DUPLICATE KEY UPDATE reason=VALUES(reason), content=VALUES(content);
-
-
--- ============================================================================
--- 第十九部分：需求审核状态（撮合流程）
---   历史演示需求统一置为「已通过」，让它们在需求广场/撮合流程中正常展示；
---   再挑 2 条最新的 PENDING 需求置为「待审核」，用于演示管理员需求审核队列。
--- ============================================================================
-UPDATE service_request SET audit_status = 1 WHERE audit_status = 0;
-
--- 韩爷爷(customer10)的心血管陪诊 + 蒋女士(customer9)的取药：保留为待审核
-UPDATE service_request SET audit_status = 0
-WHERE status = 'PENDING'
-  AND customer_id = (SELECT id FROM sys_user WHERE username='customer10')
-  AND hospital_name = '北京安贞医院';
-UPDATE service_request SET audit_status = 0
-WHERE status = 'PENDING'
-  AND customer_id = (SELECT id FROM sys_user WHERE username='customer9')
-  AND service_type = '取药';
-
--- 演示：一条陪诊师主动申请（companion3 申请 吴奶奶 的待匹配陪诊需求，等待客户选择）
-INSERT INTO service_application(request_id, companion_id, message, status, created_at, updated_at)
-SELECT
-    (SELECT id FROM service_request WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer1')
-        AND status='PENDING' AND service_type='陪诊' AND audit_status=1 LIMIT 1),
-    (SELECT cp.id FROM companion_profile cp JOIN sys_user su ON cp.user_id=su.id WHERE su.username='companion3'),
-    '您好，我有护理专业背景，擅长老年患者陪护，时间可以配合，希望能为您服务。',
-    'PENDING', '2026-07-16 10:00:00', '2026-07-16 10:00:00'
-FROM dual
-WHERE EXISTS (SELECT 1 FROM service_request WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer1')
-        AND status='PENDING' AND service_type='陪诊' AND audit_status=1)
-ON DUPLICATE KEY UPDATE message=VALUES(message);
