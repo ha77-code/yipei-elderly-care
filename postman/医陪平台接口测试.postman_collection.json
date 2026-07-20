@@ -1,0 +1,1818 @@
+{
+  "info": {
+    "name": "医陪平台接口测试",
+    "description": "# 医陪平台 - 全角色接口测试集合\n\n## 环境变量\n导入后需创建环境，配置以下变量：\n\n| 变量名 | 示例值 | 说明 |\n|--------|--------|------|\n| `baseUrl` | `http://localhost:8080` | 后端地址 |\n| `userId` | `4` | 当前登录用户ID |\n| `adminId` | `17` | 管理员ID |\n| `companionId` | `12` | 陪诊师用户ID |\n| `companionProfileId` | `1` | 陪诊师资料ID |\n| `orderId` | `45` | 测试订单ID |\n| `requestId` | `67` | 测试需求ID |\n\n## 测试账号\n| 用户名 | 密码 | 角色 |\n|--------|------|------|\n| `customer1` | `123456` | 客户 |\n| `companion1` | `123456` | 陪诊师 |\n| `admin1` | `123456` | 管理员 |\n\n## 使用方式\n1. 创建环境 → 配好 `baseUrl`\n2. 先跑 **登录** 接口，自动写入 `userId`\n3. 再按顺序跑其他接口\n4. 用 Runner 批量执行",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "yipei-tester"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "userId", "value": "4" },
+    { "key": "adminId", "value": "17" },
+    { "key": "companionId", "value": "12" },
+    { "key": "companionProfileId", "value": "1" },
+    { "key": "orderId", "value": "" },
+    { "key": "requestId", "value": "" },
+    { "key": "customer1Id", "value": "4" }
+  ],
+  "item": [
+    {
+      "name": "0. 环境配置 & 使用说明",
+      "description": "包含两个示例请求，演示如何配置环境和变量\n\n1. 先导入环境变量\n2. 跑登录接口获取 userId\n3. 后续请求自动通过 Pre-request Script 注入 X-User-Id",
+      "item": []
+    },
+    {
+      "name": "1. 用户模块",
+      "description": "用户注册、登录、信息管理",
+      "item": [
+        {
+          "name": "POST 登录",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": ["// 生成随机手机号 138xxxxxxxx", "var phone = '138' + Math.floor(Math.random() * 90000000 + 10000000);", "var username = 'test_' + Date.now().toString().slice(-6);", "pm.variables.set('gen_phone', phone);", "pm.variables.set('gen_username', username);", "console.log('生成用户名: ' + username + ', 手机号: ' + phone);"],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.code === 200 && json.data) {",
+                  "    pm.environment.set('userId', json.data.id);",
+                  "    pm.environment.set('userRole', json.data.role);",
+                  "    console.log('✅ 登录成功: ' + json.data.nickname + ' (id=' + json.data.id + ', role=' + json.data.role + ')');",
+                  "    pm.test('登录成功', function () { pm.expect(json.code).to.equal(200); });",
+                  "    pm.test('返回了用户ID', function () { pm.expect(json.data.id).to.be.a('number'); });",
+                  "    // 按角色自动写入对应变量",
+                  "    if (json.data.role === 'CUSTOMER')  { pm.environment.set('customerId', json.data.id); console.log('→ customerId 已更新'); }",
+                  "    if (json.data.role === 'COMPANION') { pm.environment.set('companionId', json.data.id); console.log('→ companionId 已更新'); }",
+                  "    if (json.data.role === 'ADMIN')     { pm.environment.set('adminId', json.data.id);     console.log('→ adminId 已更新'); }",
+                  "} else {",
+                  "    pm.test('登录失败: ' + json.message, function () { throw new Error(json.message); });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"customer1\",\n  \"password\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/user/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "user", "login"]
+            },
+            "description": "### 客户登录\n\n- 用 customer1 / 123456 登录\n- 成功后自动将 userId 写入环境变量\n- 切换角色时改 username 即可\n\n测试账号：\n- customer1～customer10（客户）\n- companion1～companion8（陪诊师）\n- admin1～admin3（管理员）\n密码统一：123456"
+          },
+          "response": []
+        },
+        {
+          "name": "POST 注册",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.code === 200) {",
+                  "    pm.test('注册成功', function () { pm.expect(json.code).to.equal(200); });",
+                  "} else {",
+                  "    pm.test('注册结果: ' + json.message, function () { pm.expect(json.code).to.be.oneOf([200, 500]); });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{gen_username}}\",\n  \"password\": \"123456\",\n  \"nickname\": \"测试_{{ gen_username }}\",\n  \"phone\": \"{{gen_phone}}\",\n  \"role\": \"CUSTOMER\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/user/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "user", "register"]
+            },
+            "description": "### 注册新用户\n\n- 角色可选：CUSTOMER / COMPANION / ADMIN\n- 使用随机数生成唯一的用户名和手机号\n- 密码必须 ≥ 6 位"
+          },
+          "response": []
+        },
+        {
+          "name": "GET 获取用户信息",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('获取用户信息成功', function () { pm.expect(json.code).to.equal(200); });",
+                  "pm.test('返回了用户数据', function () { pm.expect(json.data).to.have.property('nickname'); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/user/info?id={{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "user", "info"],
+              "query": [{"key": "id", "value": "{{userId}}"}]
+            },
+            "description": "### 获取用户信息\n\n- 通过 query 参数 id 查询\n- 无需 X-User-Id 头"
+          },
+          "response": []
+        },
+        {
+          "name": "GET 用户详情",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('获取用户详情成功', function () { pm.expect(json.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/user/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "user", "{{userId}}"]
+            },
+            "description": "### 获取用户详情\n\n- 通过路径参数 id 查询\n- 无需 X-User-Id 头"
+          },
+          "response": []
+        },
+        {
+          "name": "GET 用户列表(管理员)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// 自动使用 adminId 作为 X-User-Id",
+                  "pm.request.headers.add({ key: 'X-User-Id', value: pm.environment.get('adminId') });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('获取用户列表成功', function () { pm.expect(json.code).to.equal(200); });",
+                  "pm.test('返回的是数组', function () { pm.expect(json.data).to.be.an('array'); });",
+                  "console.log('用户总数: ' + json.data.length);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-User-Id", "value": "{{adminId}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/user/list",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "user", "list"]
+            },
+            "description": "### 管理员获取用户列表\n\n- 必须使用管理员 X-User-Id\n- 非管理员返回 403"
+          },
+          "response": []
+        },
+        {
+          "name": "PUT 修改个人信息",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({ key: 'X-User-Id', value: pm.environment.get('userId') });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('修改个人信息成功', function () { pm.expect(json.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "{{userId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nickname\": \"张三\",\n  \"phone\": \"13800000001\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/user/info",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "user", "info"]
+            },
+            "description": "### 修改个人信息\n\n- 可修改：nickname（昵称）、phone（手机号）\n- 需要 X-User-Id 头"
+          },
+          "response": []
+        },
+        {
+          "name": "PUT 修改用户状态(管理员)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('修改状态成功', function () { pm.expect(json.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "{{adminId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/user/{{userId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "user", "{{userId}}", "status"]
+            },
+            "description": "### 管理员修改用户状态\n\n- status: 1=启用, 0=禁用\n- 需要管理员 X-User-Id\n- 路径参数为目标用户 ID"
+          },
+          "response": []
+        },
+        {
+          "name": "PUT 修改密码",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({ key: 'X-User-Id', value: pm.environment.get('userId') });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('修改密码成功', function () { pm.expect(json.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "{{userId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"oldPassword\": \"123456\",\n  \"newPassword\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/user/password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "user", "password"]
+            },
+            "description": "### 修改密码\n\n- oldPassword: 旧密码\n- newPassword: 新密码（≥6位）\n- ⚠️ 测试时新旧密码填一样的避免测试账号失效"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. 陪诊师模块",
+      "description": "陪诊师入驻、资料管理、列表查询",
+      "item": [
+        {
+          "name": "POST 提交入驻申请",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({ key: 'X-User-Id', value: pm.environment.get('userId') });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('申请提交成功', function () { pm.expect(json.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "{{userId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"realName\": \"测试陪诊师\",\n  \"avatar\": \"/uploads/avatars/test.jpg\",\n  \"introduction\": \"5年三甲医院陪诊经验，熟悉各大医院就诊流程。耐心细致，擅长与老年人沟通。\",\n  \"serviceArea\": \"北京市海淀区\",\n  \"serviceTypes\": \"陪诊,取药,挂号,检查\",\n  \"experienceYears\": 5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/companion/apply",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "companion", "apply"]
+            },
+            "description": "### 提交陪诊师入驻申请\n\n- 需要 X-User-Id（申请人ID）\n- 提交后需管理员审核（auditStatus=0 待审核）\n- serviceTypes 用逗号分隔"
+          },
+          "response": []
+        },
+        {
+          "name": "GET 我的入驻资料",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({ key: 'X-User-Id', value: pm.environment.get('companionId') });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('获取资料成功', function () { pm.expect(json.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-User-Id", "value": "{{companionId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/companion/profile/my",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "companion", "profile", "my"]
+            },
+            "description": "### 查看我的陪诊师资料\n\n- 用陪诊师的 X-User-Id\n- 返回完整的 CompanionProfile 对象"
+          },
+          "response": []
+        },
+        {
+          "name": "PUT 修改入驻资料",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({ key: 'X-User-Id', value: pm.environment.get('companionId') });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "{{companionId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"realName\": \"李小华\",\n  \"avatar\": \"/uploads/avatars/companion1.jpg\",\n  \"introduction\": \"从事陪诊服务5年，熟悉北京各大医院就诊流程，耐心细致。\",\n  \"serviceArea\": \"北京市朝阳区\",\n  \"serviceTypes\": \"陪诊,取药,挂号,住院办理\",\n  \"experienceYears\": 5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/companion/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "companion", "profile"]
+            },
+            "description": "### 修改入驻资料\n\n- 只能修改自己的资料\n- X-User-Id 必须对应陪诊师身份"
+          },
+          "response": []
+        },
+        {
+          "name": "GET 陪诊师列表",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('获取列表成功', function () { pm.expect(json.code).to.equal(200); });",
+                  "pm.test('返回数组', function () { pm.expect(json.data).to.be.an('array'); });",
+                  "console.log('陪诊师数量: ' + json.data.length);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/companion/list",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "companion", "list"]
+            },
+            "description": "### 陪诊师列表（审核通过的）\n\n- 可选参数：serviceArea（区域）、serviceType（服务类型）\n- 无需认证\n- 只返回 auditStatus=1 的陪诊师\n\n### 参数示例\n- 按区域：`?serviceArea=北京市朝阳区`\n- 按类型：`?serviceType=陪诊`\n- 组合：`?serviceArea=北京市海淀区&serviceType=挂号`"
+          },
+          "response": []
+        },
+        {
+          "name": "GET 陪诊师详情",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('获取详情成功', function () { pm.expect(json.code).to.equal(200); });",
+                  "console.log('陪诊师: ' + json.data.realName + ', 评分: ' + json.data.rating);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/companion/{{companionProfileId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "companion", "{{companionProfileId}}"]
+            },
+            "description": "### 陪诊师详情\n\n- 路径参数为 companion_profile 表的 id（不是 userId）\n- companion1 的 profileId 通常是 1"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. 服务需求模块",
+      "description": "客户发布和管理服务需求",
+      "item": [
+        {
+          "name": "POST 发布需求",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({ key: 'X-User-Id', value: pm.environment.get('userId') });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.code === 200) {",
+                  "    pm.environment.set('requestId', json.data.id);",
+                  "    pm.test('发布成功', function () { pm.expect(json.code).to.equal(200); });",
+                  "    console.log('✅ 需求发布成功，id=' + json.data.id);",
+                  "} else {",
+                  "    pm.test('发布失败: ' + json.message, function () { console.error(json.message); });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "{{userId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"serviceType\": \"陪诊\",\n  \"serviceDate\": \"2026-08-20T08:30:00\",\n  \"hospitalName\": \"北京协和医院\",\n  \"department\": \"心内科\",\n  \"requirement\": \"老人需要做心脏彩超和心电图检查，需要陪诊师陪同完成挂号、候诊、检查全过程。\",\n  \"specialNotes\": \"老人听力不太好，请陪诊师耐心沟通。\",\n  \"aiSummary\": \"\",\n  \"contactName\": \"张三\",\n  \"contactPhone\": \"13800000001\",\n  \"budget\": 300.00\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/service-request/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "service-request", "create"]
+            },
+            "description": "### 发布服务需求\n\n- 必填：serviceType, serviceDate, hospitalName, department, requirement, contactName, contactPhone\n- 请求成功后自动保存 requestId 到环境变量\n- 常用 serviceType: 陪诊, 取药, 挂号, 检查, 住院办理"
+          },
+          "response": []
+        },
+        {
+          "name": "GET 我的需求列表",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('获取列表成功', function () { pm.expect(json.code).to.equal(200); });",
+                  "console.log('需求数量: ' + json.data.length);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/service-request/list?customerId={{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "service-request", "list"],
+              "query": [{"key": "customerId", "value": "{{userId}}"}]
+            },
+            "description": "### 查看我发布的需求列表\n\n- ⚠️ 必填 query 参数：customerId\n- 不传 customerId 会返回 500"
+          },
+          "response": []
+        },
+        {
+          "name": "GET 需求详情",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('获取详情成功', function () { pm.expect(json.code).to.equal(200); });",
+                  "console.log('需求状态: ' + json.data.status);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/service-request/{{requestId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "service-request", "{{requestId}}"]
+            },
+            "description": "### 查看需求详情\n\n- 路径参数为需求 ID\n- 无需 X-User-Id"
+          },
+          "response": []
+        },
+        {
+          "name": "PUT 取消需求",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({ key: 'X-User-Id', value: pm.environment.get('userId') });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('取消结果', function () { pm.expect(json.code).to.be.oneOf([200, 403]); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "{{userId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/service-request/{{requestId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "service-request", "{{requestId}}", "cancel"]
+            },
+            "description": "### 取消服务需求\n\n- 只能取消自己发布的需求\n- 已有关联订单的需求可能无法取消"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. 订单模块",
+      "description": "订单创建、状态流转、查询",
+      "item": [
+        {
+          "name": "POST 创建订单",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({ key: 'X-User-Id', value: pm.environment.get('userId') });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.code === 200) {",
+                  "    pm.environment.set('orderId', json.data.id);",
+                  "    console.log('✅ 订单创建成功，id=' + json.data.id + ', 状态=' + json.data.status);",
+                  "}",
+                  "pm.test('操作结果', function () { pm.expect(json.code).to.be.oneOf([200, 403]); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "{{userId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestId\": {{requestId}},\n  \"companionId\": {{companionProfileId}},\n  \"servicePrice\": 300.00\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/order/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "order", "create"]
+            },
+            "description": "### 创建订单\n\n- requestId: 服务需求 ID\n- companionId: 陪诊师资料 ID（companion_profile.id，不是 userId）\n- servicePrice: 服务价格\n- ⚠️ X-User-Id 必须与需求的 customerId 一致\n- 平台自动计算 platformFee（10%）和 companionIncome"
+          },
+          "response": []
+        },
+        {
+          "name": "GET 我的订单",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({ key: 'X-User-Id', value: pm.environment.get('userId') });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('获取订单成功', function () { pm.expect(json.code).to.equal(200); });",
+                  "console.log('订单数量: ' + json.data.length);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-User-Id", "value": "{{userId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/order/my",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "order", "my"]
+            },
+            "description": "### 我的订单\n\n- 返回当前用户相关的所有订单（作为客户或陪诊师）\n- 自动根据 userId 判断角色"
+          },
+          "response": []
+        },
+        {
+          "name": "GET 按角色查订单",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('查询成功', function () { pm.expect(json.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/order/list?userId={{userId}}&role=CUSTOMER",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "order", "list"],
+              "query": [
+                {"key": "userId", "value": "{{userId}}"},
+                {"key": "role", "value": "CUSTOMER"}
+              ]
+            },
+            "description": "### 按角色查订单\n\n- userId + role 组合查询\n- role: CUSTOMER 或 COMPANION\n- 客户角色返回其发布需求关联的订单\n- 陪诊师角色返回其接的单"
+          },
+          "response": []
+        },
+        {
+          "name": "GET 可接订单(陪诊师)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({ key: 'X-User-Id', value: pm.environment.get('companionId') });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('获取可接订单成功', function () { pm.expect(json.code).to.equal(200); });",
+                  "console.log('可接订单数: ' + json.data.length);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-User-Id", "value": "{{companionId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/order/available",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "order", "available"]
+            },
+            "description": "### 陪诊师查看可接订单\n\n- 返回状态为 PENDING_ACCEPT 的订单\n- 可选筛选：?serviceType=陪诊&keyword=协和\n- 仅显示分配给该陪诊师的待接订单"
+          },
+          "response": []
+        },
+        {
+          "name": "GET 订单详情",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({ key: 'X-User-Id', value: pm.environment.get('userId') });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('获取订单详情成功', function () { pm.expect(json.code).to.equal(200); });",
+                  "console.log('订单状态: ' + json.data.status + ', 金额: ¥' + json.data.servicePrice);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-User-Id", "value": "{{userId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/order/{{orderId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "order", "{{orderId}}"]
+            },
+            "description": "### 订单详情\n\n- 返回订单完整信息：客户名、陪诊师名、需求信息、状态流转记录\n- 需要 X-User-Id"
+          },
+          "response": []
+        },
+        {
+          "name": "PUT 接单",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({ key: 'X-User-Id', value: pm.environment.get('companionId') });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('接单操作', function () { pm.expect(json.code).to.be.oneOf([200, 403]); });",
+                  "if (json.code === 200) console.log('✅ 接单成功');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "{{companionId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/order/{{orderId}}/accept",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "order", "{{orderId}}", "accept"]
+            },
+            "description": "### 陪诊师接单\n\n- 订单状态从 PENDING_ACCEPT → ACCEPTED\n- 需要陪诊师 X-User-Id\n- 陪诊师必须与订单分配的 companionId 匹配"
+          },
+          "response": []
+        },
+        {
+          "name": "PUT 拒单",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({ key: 'X-User-Id', value: pm.environment.get('companionId') });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "{{companionId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"时间冲突，无法接此订单\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/order/{{orderId}}/reject",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "order", "{{orderId}}", "reject"]
+            },
+            "description": "### 陪诊师拒单\n\n- 订单状态 → REJECTED\n- Body 传 reason 字段说明拒绝原因"
+          },
+          "response": []
+        },
+        {
+          "name": "PUT 开始服务",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({ key: 'X-User-Id', value: pm.environment.get('companionId') });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('开始服务', function () { pm.expect(json.code).to.be.oneOf([200, 403]); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "{{companionId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/order/{{orderId}}/start",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "order", "{{orderId}}", "start"]
+            },
+            "description": "### 陪诊师开始服务\n\n- 订单状态：ACCEPTED → IN_SERVICE\n- 需要订单已接单且未开始"
+          },
+          "response": []
+        },
+        {
+          "name": "PUT 提交完成",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({ key: 'X-User-Id', value: pm.environment.get('companionId') });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('提交完成', function () { pm.expect(json.code).to.be.oneOf([200, 403]); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "{{companionId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/order/{{orderId}}/complete",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "order", "{{orderId}}", "complete"]
+            },
+            "description": "### 陪诊师提交服务完成\n\n- 订单状态：IN_SERVICE → PENDING_CONFIRM\n- 应先创建服务记录再调此接口"
+          },
+          "response": []
+        },
+        {
+          "name": "PUT 确认完成",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({ key: 'X-User-Id', value: pm.environment.get('userId') });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('确认完成', function () { pm.expect(json.code).to.be.oneOf([200, 403]); });",
+                  "if (json.code === 200) console.log('✅ 订单已完成');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "{{userId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/order/{{orderId}}/confirm",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "order", "{{orderId}}", "confirm"]
+            },
+            "description": "### 客户确认完成\n\n- 订单状态：PENDING_CONFIRM → COMPLETED\n- 需要用客户的 X-User-Id"
+          },
+          "response": []
+        },
+        {
+          "name": "PUT 取消订单",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({ key: 'X-User-Id', value: pm.environment.get('userId') });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('取消操作', function () { pm.expect(json.code).to.be.oneOf([200, 403]); });",
+                  "if (json.code === 403) console.log('⚠️ 只能取消未开始的订单');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "{{userId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cancelReason\": \"不需要了\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/order/{{orderId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "order", "{{orderId}}", "cancel"]
+            },
+            "description": "### 取消订单\n\n- ⚠️ 只能取消未开始（PENDING_ACCEPT 或 ACCEPTED）的订单\n- 已完成（COMPLETED）或进行中（IN_SERVICE）的订单返回 403\n- Body 传 cancelReason"
+          },
+          "response": []
+        },
+        {
+          "name": "GET 状态记录",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({ key: 'X-User-Id', value: pm.environment.get('userId') });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('获取状态日志成功', function () { pm.expect(json.code).to.equal(200); });",
+                  "console.log('状态变更记录: ' + json.data.length + ' 条');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-User-Id", "value": "{{userId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/order/{{orderId}}/status-log",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "order", "{{orderId}}", "status-log"]
+            },
+            "description": "### 订单状态变更记录\n\n- 查看订单的完整生命周期流转\n- 包含操作人、时间、状态变更、备注"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. 评价模块",
+      "description": "订单完成后双向评价",
+      "item": [
+        {
+          "name": "POST 创建评价",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({ key: 'X-User-Id', value: pm.environment.get('userId') });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('评价成功', function () { pm.expect(json.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "{{userId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": {{orderId}},\n  \"toUserId\": {{companionId}},\n  \"score\": 5,\n  \"content\": \"服务非常专业，态度很好，强烈推荐！\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/evaluation/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "evaluation", "create"]
+            },
+            "description": "### 创建评价\n\n- orderId: 订单ID\n- toUserId: 被评价用户的ID（sys_user.id）\n- score: 1-5 分\n- content: 评价内容\n- 客户评价陪诊师：toUserId 填陪诊师的 userId\n- 陪诊师评价客户：toUserId 填客户的 userId\n- 同一个人对同一订单只能评价一次"
+          },
+          "response": []
+        },
+        {
+          "name": "GET 订单下的评价",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('获取评价成功', function () { pm.expect(json.code).to.equal(200); });",
+                  "console.log('该订单有 ' + json.data.length + ' 条评价');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/evaluation/order/{{orderId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "evaluation", "order", "{{orderId}}"]
+            },
+            "description": "### 查看订单评价\n\n- 返回该订单下的所有评价（双向）\n- 无需认证\n- 可用于查看双方互评结果"
+          },
+          "response": []
+        },
+        {
+          "name": "GET 陪诊师收到的评价",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('获取评价成功', function () { pm.expect(json.code).to.equal(200); });",
+                  "if (json.data.length > 0) {",
+                  "    var avg = json.data.reduce(function(s, e) { return s + e.score; }, 0) / json.data.length;",
+                  "    console.log('评价数量: ' + json.data.length + ', 平均分: ' + avg.toFixed(1));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/evaluation/companion/{{companionProfileId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "evaluation", "companion", "{{companionProfileId}}"]
+            },
+            "description": "### 陪诊师收到的评价\n\n- 路径参数为 companion_profile.id\n- 无需认证\n- 可用于陪诊师查看自己的口碑"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "6. 投诉模块",
+      "description": "投诉/举报管理",
+      "item": [
+        {
+          "name": "POST 发起投诉",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({ key: 'X-User-Id', value: pm.environment.get('userId') });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('投诉提交成功', function () { pm.expect(json.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "{{userId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": {{orderId}},\n  \"reason\": \"服务态度差\",\n  \"content\": \"陪诊师在服务过程中态度不好，一直玩手机，对老人不够耐心。\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/report/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "report", "create"]
+            },
+            "description": "### 发起投诉\n\n- orderId: 关联的订单ID\n- reason: 投诉原因（简短概括）\n- content: 详细投诉内容\n- 投诉状态流转：PENDING → PROCESSING → RESOLVED/REJECTED\n- 常见 reason: 服务态度差、费用争议、服务质量、药品配送延迟、客户爽约"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "7. 管理员模块",
+      "description": "管理员专用接口（需 admin 角色）",
+      "item": [
+        {
+          "name": "GET 需求列表",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({ key: 'X-User-Id', value: pm.environment.get('adminId') });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('管理员查询需求', function () { pm.expect(json.code).to.equal(200); });",
+                  "console.log('需求总数: ' + json.data.length);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-User-Id", "value": "{{adminId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/service-request/list?status=PENDING",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "service-request", "list"],
+              "query": [
+                {"key": "status", "value": "PENDING", "disabled": false}
+              ]
+            },
+            "description": "### 管理员查看所有需求\n\n- 必须管理员 X-User-Id\n- 可选筛选：status (PENDING/MATCHED/CANCELLED/CLOSED)、serviceType\n- 示例：`?status=PENDING&serviceType=陪诊`"
+          },
+          "response": []
+        },
+        {
+          "name": "GET 订单列表",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({ key: 'X-User-Id', value: pm.environment.get('adminId') });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('管理员查询订单', function () { pm.expect(json.code).to.equal(200); });",
+                  "console.log('订单总数: ' + json.data.length);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-User-Id", "value": "{{adminId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "orders"]
+            },
+            "description": "### 管理员查看所有订单\n\n- 可选筛选：status (COMPLAINT/IN_SERVICE/COMPLETED...)、customerId、companionId\n- 示例：`?status=COMPLAINT` 查看被投诉的订单"
+          },
+          "response": []
+        },
+        {
+          "name": "GET 投诉列表",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({ key: 'X-User-Id', value: pm.environment.get('adminId') });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('查询投诉成功', function () { pm.expect(json.code).to.equal(200); });",
+                  "console.log('投诉总数: ' + json.data.length);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-User-Id", "value": "{{adminId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/report/list",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "report", "list"]
+            },
+            "description": "### 管理员查看投诉列表\n\n- 可选筛选：status (PENDING/PROCESSING/RESOLVED/REJECTED)\n- 示例：`?status=PENDING` 只查看待处理投诉"
+          },
+          "response": []
+        },
+        {
+          "name": "PUT 处理投诉",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({ key: 'X-User-Id', value: pm.environment.get('adminId') });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('处理投诉成功', function () { pm.expect(json.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "{{adminId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"RESOLVED\",\n  \"remark\": \"已核实情况，对陪诊师进行警告处理，退还客户部分服务费用。\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/report/1/handle",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "report", "1", "handle"]
+            },
+            "description": "### 管理员处理投诉\n\n- 路径参数为报告ID\n- status: RESOLVED（已解决）或 REJECTED（已驳回）\n- remark: 处理备注\n- 处理后会更新 handledBy, handledAt, handleRemark"
+          },
+          "response": []
+        },
+        {
+          "name": "GET 待审核陪诊师",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({ key: 'X-User-Id', value: pm.environment.get('adminId') });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('获取待审核列表成功', function () { pm.expect(json.code).to.equal(200); });",
+                  "console.log('待审核: ' + json.data.length + ' 人');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-User-Id", "value": "{{adminId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/companion/pending",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "companion", "pending"]
+            },
+            "description": "### 待审核陪诊师列表\n\n- 返回 auditStatus=0 的陪诊师资料\n- 审核通过 → auditStatus=1，拒绝 → auditStatus=2"
+          },
+          "response": []
+        },
+        {
+          "name": "PUT 审核陪诊师",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({ key: 'X-User-Id', value: pm.environment.get('adminId') });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('审核操作成功', function () { pm.expect(json.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "{{adminId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"auditStatus\": 1,\n  \"remark\": \"资质符合要求，审核通过\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/companion/{{companionProfileId}}/audit",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "companion", "{{companionProfileId}}", "audit"]
+            },
+            "description": "### 审核陪诊师\n\n- 路径参数为 companion_profile.id\n- auditStatus: 1=通过, 2=拒绝\n- remark: 审核批注\n- 审核通过后陪诊师才能在列表中被搜索到"
+          },
+          "response": []
+        },
+        {
+          "name": "GET 平台统计",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({ key: 'X-User-Id', value: pm.environment.get('adminId') });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('获取统计成功', function () { pm.expect(json.code).to.equal(200); });",
+                  "var d = json.data;",
+                  "console.log('=== 平台统计 ===');",
+                  "console.log('用户总数: ' + d.totalUsers);",
+                  "console.log('陪诊师: ' + d.totalCompanions);",
+                  "console.log('订单总数: ' + d.totalOrders + ' (已完成: ' + d.completedOrders + ')');",
+                  "console.log('投诉数: ' + d.complaintCount + ' (待处理: ' + d.pendingComplaintCount + ')');",
+                  "console.log('总收入: ¥' + d.totalRevenue + ' (平台: ¥' + d.platformRevenue + ')');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "{{adminId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/statistics",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "statistics"]
+            },
+            "description": "### 平台统计数据\n\n- 返回平台核心指标：用户数、订单数、收入、投诉数等\n- 适合用于管理后台 Dashboard"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "8. 文件 & 导出",
+      "description": "文件上传和CSV导出",
+      "item": [
+        {
+          "name": "POST 文件上传",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('上传结果', function () { pm.expect(json.code).to.be.oneOf([200, 500]); });",
+                  "if (json.code === 200) console.log('文件URL: ' + json.data.url);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "",
+                  "description": "选择要上传的文件，最大 10MB"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/file/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "file", "upload"]
+            },
+            "description": "### 文件上传\n\n- Body 类型：form-data\n- 字段名：file\n- 最大 10MB\n- 返回：`{\"url\":\"/uploads/{uuid}.ext\",\"filename\":\"...\"}`\n- 注意：uploads 目录必须存在，否则返回 500"
+          },
+          "response": []
+        },
+        {
+          "name": "GET 导出用户CSV",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('导出成功或返回内容', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 500, 204]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/export/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "export", "users"]
+            },
+            "description": "### 导出用户CSV\n\n- 返回 CSV 文件（UTF-8 BOM）\n- Postman 里点 Send and Download 按钮下载\n- Excel 可直接打开（UTF-8 BOM 保证中文不乱码）"
+          },
+          "response": []
+        },
+        {
+          "name": "GET 导出订单CSV",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('导出成功或返回内容', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 500, 204]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/export/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "export", "orders"]
+            },
+            "description": "### 导出订单CSV\n\n- 返回 CSV 文件\n- Postman 里点 Send and Download 下载"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "9. AI & TTS",
+      "description": "AI摘要生成和TTS语音合成",
+      "item": [
+        {
+          "name": "POST AI需求摘要",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('AI接口', function () { pm.expect(json.code).to.be.oneOf([200, 503]); });",
+                  "if (json.code === 200) console.log('AI摘要: ' + json.data.summary);",
+                  "if (json.code === 503) console.log('⚠️ AI未配置，跳过');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"老人需要做心脏彩超和心电图检查，有高血压病史，听力不太好，需要陪诊师陪同挂号、候诊、检查全过程。\",\n  \"serviceType\": \"陪诊\",\n  \"hospitalName\": \"北京协和医院\",\n  \"department\": \"心内科\",\n  \"specialNotes\": \"老人听力不太好，请耐心沟通\",\n  \"serviceDate\": \"2026-08-15T08:30:00\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/service-summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "service-summary"]
+            },
+            "description": "### AI 服务需求摘要生成\n\n- 需要配置 AI API Key（DeepSeek）\n- 未配置时返回 503\n- 将用户填写的需求文本自动提炼为一句话摘要"
+          },
+          "response": []
+        },
+        {
+          "name": "GET TTS语音",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('TTS接口', function () { pm.expect(pm.response.code).to.be.oneOf([200, 503]); });",
+                  "if (pm.response.code === 200) console.log('✅ TTS音频返回成功');",
+                  "if (pm.response.code === 503) console.log('⚠️ TTS未配置火山引擎，跳过');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/tts/companion/{{companionProfileId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tts", "companion", "{{companionProfileId}}"]
+            },
+            "description": "### TTS 语音合成\n\n- 返回 audio/mpeg 格式音频\n- 读取陪诊师信息并转为语音\n- 需要配置火山引擎 TTS\n- 未配置返回 503"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "10. 服务记录",
+      "description": "陪诊师填写服务过程记录",
+      "item": [
+        {
+          "name": "POST 创建服务记录",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({ key: 'X-User-Id', value: pm.environment.get('companionId') });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('创建服务记录成功', function () { pm.expect(json.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-User-Id", "value": "{{companionId}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": {{orderId}},\n  \"content\": \"1. 8:30到达医院门诊大厅\\n2. 协助挂号、候诊\\n3. 陪同医生问诊，记录医嘱\\n4. 排队缴费、取药\\n5. 核对药品并交给家属\\n6. 护送老人到地铁站\",\n  \"importantNotes\": \"医生调整了用药剂量；下次复诊9月20日；血压偏高建议每日监测。\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/service-record/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "service-record", "create"]
+            },
+            "description": "### 陪诊师创建服务记录\n\n- 需要陪诊师 X-User-Id\n- orderId: 关联的订单 ID\n- content: 详细服务过程（支持换行）\n- importantNotes: 重要提醒事项\n- 每个订单只能创建一条记录"
+          },
+          "response": []
+        },
+        {
+          "name": "GET 按订单查记录",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('查询服务记录成功', function () { pm.expect(json.code).to.equal(200); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/service-record/order/{{orderId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "service-record", "order", "{{orderId}}"]
+            },
+            "description": "### 根据订单ID查询服务记录\n\n- 无需认证\n- 返回该订单的完整服务记录"
+          },
+          "response": []
+        },
+        {
+          "name": "GET 我的服务记录",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.request.headers.add({ key: 'X-User-Id', value: pm.environment.get('companionId') });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('获取我的记录成功', function () { pm.expect(json.code).to.equal(200); });",
+                  "console.log('我的服务记录: ' + json.data.length + ' 条');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-User-Id", "value": "{{companionId}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/service-record/my",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "service-record", "my"]
+            },
+            "description": "### 陪诊师查看自己填写的服务记录\n\n- 需要陪诊师 X-User-Id\n- 返回该陪诊师填写的所有服务记录"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
