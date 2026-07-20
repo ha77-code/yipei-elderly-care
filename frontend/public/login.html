@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>登录 — 益陪养老</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scrollbar-width:none}html::-webkit-scrollbar{display:none}
+body{font-family:'PingFang SC','Noto Serif SC','Microsoft YaHei',-apple-system,sans-serif;color:#E8E2D8;background:#0D1A0C;overflow:hidden;height:100vh;cursor:none}
+
+.cursor-dot{position:fixed;width:10px;height:10px;background:rgba(255,210,140,0.95);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);box-shadow:0 0 20px rgba(255,200,120,0.7),0 0 50px rgba(255,180,100,0.4);transition:width .15s,height .15s,background .15s}
+.cursor-ring{position:fixed;width:50px;height:50px;border:2px solid rgba(255,200,130,0.35);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);box-shadow:0 0 30px rgba(255,190,110,0.2);transition:width .3s,height .3s,border-color .3s}
+.trail-particle{position:fixed;pointer-events:none;z-index:9997;border-radius:50%;background:radial-gradient(circle,rgba(255,200,120,0.75),rgba(255,170,90,0.25),transparent);transform:translate(-50%,-50%);transition:left 0.08s linear,top 0.08s linear,opacity 0.6s ease}
+
+.bg-full{position:fixed;inset:0;z-index:0;background:url('img/bg-bamboo.jpg') center/cover no-repeat}
+.bg-overlay{position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse at 35% 50%,rgba(18,30,12,0.18) 0%,rgba(8,16,6,0.65) 100%)}
+.bg-overlay::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(12,26,10,0.55) 0%,rgba(10,22,8,0.35) 45%,rgba(6,14,4,0.05) 50%,rgba(4,10,3,0) 55%)}
+.spotlight-overlay{position:fixed;inset:0;z-index:1;pointer-events:none;background:rgba(6,12,4,0.32);mask-image:radial-gradient(circle 400px at 50% 50%,transparent 0%,transparent 22%,rgba(0,0,0,0.3) 58%,black 100%);-webkit-mask-image:radial-gradient(circle 400px at 50% 50%,transparent 0%,transparent 22%,rgba(0,0,0,0.3) 58%,black 100%)}
+
+.page-wrap{position:relative;z-index:2;display:flex;height:100vh;width:100%}
+.split-card{display:flex;width:100%;height:100%;overflow:hidden}
+
+/* 左：竹林实景 48% */
+.split-left{flex:0 0 48%;position:relative;overflow:visible;background:url('img/bg-bamboo.jpg') center 30%/cover no-repeat;display:flex;align-items:center;justify-content:center}
+.split-left::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 60%,rgba(28,48,18,0.15) 0%,rgba(8,18,6,0.7) 100%);z-index:1}
+.split-left::after{content:'';position:absolute;right:0;top:0;bottom:0;width:200px;z-index:3;background:linear-gradient(90deg,transparent 0%,rgba(10,20,8,0.25) 25%,rgba(10,20,8,0.55) 55%,rgba(10,20,8,0.82) 82%,rgba(10,20,8,1) 100%)}
+
+.split-brand-overlay{position:relative;z-index:2;text-align:left;padding:40px 40px 40px 48px}
+.split-brand-overlay h2{font-family:'Noto Serif SC',serif;font-size:clamp(60px,7vw,88px);font-weight:700;color:#FFF8EE;letter-spacing:0.06em;margin-bottom:16px;line-height:1.05}
+.split-brand-overlay .tagline{font-size:17px;color:rgba(240,225,200,0.82);letter-spacing:0.1em;margin-bottom:44px}
+.split-brand-overlay .feat-row{display:flex;flex-direction:column;gap:16px}
+.split-brand-overlay .feat-item{display:flex;align-items:center;gap:10px;font-size:16px;color:rgba(235,220,195,0.8)}
+.split-brand-overlay .feat-dot{width:4px;height:4px;border-radius:50%;background:rgba(220,190,150,0.55);flex-shrink:0}
+
+/* 右：表单面板 */
+.split-right{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 52px;background:rgba(10,20,8,0.85);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);min-height:0}
+.split-right .form-tabs,.split-right .form-area,.split-right .quick-area{width:100%;max-width:440px}
+
+.form-tabs{display:flex;gap:0;margin-bottom:36px}
+.form-tab{padding:0 0 10px;font-size:18px;font-weight:500;color:rgba(240,225,205,0.58);border:none;background:transparent;cursor:none;transition:all 0.3s ease;font-family:inherit;letter-spacing:0.06em;position:relative}
+.form-tab+.form-tab{margin-left:28px}
+.form-tab::after{content:'';position:absolute;bottom:0;left:0;width:0;height:2px;background:rgba(240,210,170,0.65);border-radius:1px;transition:width 0.35s cubic-bezier(0.22,0.61,0.36,1)}
+.form-tab.active{color:rgba(250,225,190,0.95);font-weight:600}
+.form-tab.active::after{width:100%}
+.form-tab:hover:not(.active){color:rgba(245,230,210,0.78)}
+
+.auth-form{display:none;flex-direction:column;gap:22px;min-height:390px}
+.auth-form.active{display:flex}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+.field-group{display:flex;flex-direction:column;gap:6px}
+.field-label{font-size:13px;color:rgba(225,215,195,0.68);letter-spacing:0.06em;font-weight:500}
+.field-input{width:100%;height:52px;padding:0 16px;background:rgba(30,44,22,0.35);border:1px solid rgba(210,195,175,0.2);border-radius:10px;color:#FFF6EC;font-size:17px;font-family:inherit;outline:none;transition:all 0.35s cubic-bezier(0.22,0.61,0.36,1);cursor:none}
+.field-input:hover{border-color:rgba(225,210,185,0.35);background:rgba(35,50,26,0.4)}
+.field-input:focus{border-color:rgba(240,210,170,0.6);background:rgba(35,50,26,0.45);box-shadow:0 0 0 4px rgba(225,195,155,0.1)}
+.field-input::placeholder{color:rgba(210,195,175,0.35);font-size:16px}
+.field-input.error{border-color:rgba(220,140,120,0.5);box-shadow:0 0 0 4px rgba(220,140,120,0.05)}
+.field-error{font-size:11px;color:rgba(235,160,140,0.8);display:none}
+.field-error.show{display:block}
+
+.role-opts{display:flex;gap:0;background:rgba(30,44,22,0.25);border-radius:10px;padding:3px}
+.role-opt{flex:1;padding:11px 0;text-align:center;font-size:15px;font-weight:500;color:rgba(225,210,185,0.58);border:none;background:transparent;border-radius:8px;cursor:none;transition:all 0.3s ease;font-family:inherit}
+.role-opt.active{background:rgba(225,195,155,0.15);color:rgba(250,225,190,0.94);font-weight:600}
+.role-opt:hover:not(.active){color:rgba(235,220,195,0.75)}
+
+.submit-btn{width:100%;height:52px;margin-top:8px;background:rgba(225,195,160,0.9);color:#0E0C06;font-size:17px;font-weight:600;font-family:inherit;border:none;border-radius:11px;cursor:none;letter-spacing:0.1em;transition:all 0.4s cubic-bezier(0.22,0.61,0.36,1)}
+.submit-btn:hover{background:rgba(240,210,175,0.95);transform:translateY(-1px);box-shadow:0 8px 32px rgba(215,185,155,0.35)}
+.submit-btn.loading{opacity:0.6;pointer-events:none}
+
+.form-footer{text-align:center;margin-top:16px;font-size:14px;color:rgba(225,205,180,0.58)}
+.form-footer a{color:rgba(240,215,185,0.78);text-decoration:none;cursor:none;transition:color 0.3s}
+.form-footer a:hover{color:rgba(255,235,200,0.95)}
+
+.quick-area{margin-top:20px;padding-top:18px;border-top:1px solid rgba(200,185,165,0.08)}
+.quick-label{font-size:11px;color:rgba(210,200,180,0.48);text-align:center;letter-spacing:0.08em;margin-bottom:10px}
+.quick-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.quick-acc{padding:8px 6px;text-align:center;background:rgba(30,44,22,0.25);border:1px solid rgba(210,195,175,0.1);border-radius:8px;cursor:none;transition:all 0.3s ease}
+.quick-acc:hover{background:rgba(35,50,26,0.4);border-color:rgba(230,200,170,0.3)}
+.quick-acc-name{font-size:13px;font-weight:600;color:rgba(235,220,195,0.78);margin-bottom:1px}
+.quick-acc-role{font-size:11px;color:rgba(210,195,175,0.5)}
+
+.back-home{position:fixed;top:26px;left:32px;z-index:200;display:inline-flex;align-items:center;gap:8px;font-size:12px;color:rgba(210,195,170,0.6);text-decoration:none;cursor:none;transition:color 0.3s;letter-spacing:0.04em}
+.back-home:hover{color:rgba(245,220,185,0.9)}
+.back-home svg{width:14px;height:14px}
+
+@media(max-width:780px){.split-card{flex-direction:column}.split-left{flex:none;height:180px;background-position:center 50%}.split-brand-overlay h2{font-size:20px}.split-brand-overlay .feat-row{display:none}.split-right{padding:40px 28px;justify-content:flex-start}.form-row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="cursor-dot" id="cursorDot"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+<div class="trail-particle" id="trail1" style="width:18px;height:18px"></div>
+<div class="trail-particle" id="trail2" style="width:14px;height:14px"></div>
+<div class="trail-particle" id="trail3" style="width:10px;height:10px"></div>
+<div class="trail-particle" id="trail4" style="width:7px;height:7px"></div>
+<div class="trail-particle" id="trail5" style="width:5px;height:5px"></div>
+<div class="bg-full"></div>
+<div class="bg-overlay"></div>
+<div class="spotlight-overlay" id="spotlight"></div>
+<a href="landing.html" class="back-home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7" stroke-linecap="round"/></svg>返回首页</a>
+
+<div class="page-wrap">
+<div class="split-card">
+<div class="split-left">
+<div class="split-brand-overlay">
+<h2>益陪<br>养老</h2>
+<p class="tagline">用陪伴，守护每一段金色年华</p>
+<div class="feat-row">
+<div class="feat-item"><span class="feat-dot"></span>持证陪诊师，身份可查</div>
+<div class="feat-item"><span class="feat-dot"></span>全程陪同，安心无忧</div>
+<div class="feat-item"><span class="feat-dot"></span>服务可追溯，评价透明</div>
+</div></div></div>
+
+<div class="split-right">
+<div class="form-tabs">
+<button class="form-tab active" data-tab="login">登 录</button>
+<button class="form-tab" data-tab="register">注 册</button>
+</div>
+<div class="form-area">
+<form class="auth-form active" id="loginForm" autocomplete="off">
+<div class="field-group"><label class="field-label">用户名</label><input class="field-input" type="text" id="loginUser" placeholder="请输入用户名" autocomplete="off"><span class="field-error" id="loginUserErr"></span></div>
+<div class="field-group"><label class="field-label">密码</label><input class="field-input" type="password" id="loginPass" placeholder="请输入密码" autocomplete="off"><span class="field-error" id="loginPassErr"></span></div>
+<button type="submit" class="submit-btn" id="loginBtn">登 录</button>
+<div class="form-footer">还没有账号？<a href="#" data-switch="register">立即注册</a></div>
+</form>
+<form class="auth-form" id="registerForm" autocomplete="off">
+<div class="form-row">
+<div class="field-group"><label class="field-label">用户名</label><input class="field-input" type="text" id="regUser" placeholder="3~50个字符" autocomplete="off"><span class="field-error" id="regUserErr"></span></div>
+<div class="field-group"><label class="field-label">手机号</label><input class="field-input" type="tel" id="regPhone" placeholder="请输入手机号" autocomplete="off"><span class="field-error" id="regPhoneErr"></span></div>
+</div>
+<div class="field-group"><label class="field-label">昵称</label><input class="field-input" type="text" id="regNick" placeholder="请输入您的昵称" autocomplete="off"><span class="field-error" id="regNickErr"></span></div>
+<div class="form-row">
+<div class="field-group"><label class="field-label">密码</label><input class="field-input" type="password" id="regPass" placeholder="不少于6位" autocomplete="off"><span class="field-error" id="regPassErr"></span></div>
+<div class="field-group"><label class="field-label">确认密码</label><input class="field-input" type="password" id="regPass2" placeholder="再次输入密码" autocomplete="off"><span class="field-error" id="regPass2Err"></span></div>
+</div>
+<div class="field-group"><label class="field-label">注册身份</label>
+<div class="role-opts" id="regRole">
+<button type="button" class="role-opt active" data-role="CUSTOMER">客户</button>
+<button type="button" class="role-opt" data-role="COMPANION">陪诊师</button>
+</div></div>
+<button type="submit" class="submit-btn" id="regBtn">注 册</button>
+<div class="form-footer">已有账号？<a href="#" data-switch="login">立即登录</a></div>
+</form>
+</div>
+<div class="quick-area" id="quickTest">
+<div class="quick-label">快速体验</div>
+<div class="quick-row">
+<div class="quick-acc" data-login="customer1"><div class="quick-acc-name">customer1</div><div class="quick-acc-role">客户</div></div>
+<div class="quick-acc" data-login="companion1"><div class="quick-acc-name">companion1</div><div class="quick-acc-role">陪诊师</div></div>
+<div class="quick-acc" data-login="admin1"><div class="quick-acc-name">admin1</div><div class="quick-acc-role">管理员</div></div>
+</div></div></div></div></div>
+
+<script>
+const dot=document.getElementById('cursorDot'),ring=document.getElementById('cursorRing'),spotlight=document.getElementById('spotlight')
+let mx=window.innerWidth/2,my=window.innerHeight/2,dx=mx,dy=my
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY})
+function uc(){dx+=(mx-dx)*0.22;dy+=(my-dy)*0.22;dot.style.left=dx+'px';dot.style.top=dy+'px';ring.style.left=mx+'px';ring.style.top=my+'px';requestAnimationFrame(uc)}uc()
+const trails=[{el:document.getElementById('trail1'),delay:0.06,x:mx,y:my},{el:document.getElementById('trail2'),delay:0.12,x:mx,y:my},{el:document.getElementById('trail3'),delay:0.18,x:mx,y:my},{el:document.getElementById('trail4'),delay:0.25,x:mx,y:my},{el:document.getElementById('trail5'),delay:0.33,x:mx,y:my}]
+function ut(){trails.forEach(t=>{t.x+=(mx-t.x)*t.delay;t.y+=(my-t.y)*t.delay;t.el.style.left=t.x+'px';t.el.style.top=t.y+'px';t.el.style.opacity=Math.max(0.12,1-Math.sqrt((mx-t.x)**2+(my-t.y)**2)/200)});requestAnimationFrame(ut)}ut()
+function us(){spotlight.style.maskImage=`radial-gradient(circle 400px at ${mx}px ${my}px,transparent 0%,transparent 22%,rgba(0,0,0,0.3) 58%,black 100%)`;spotlight.style.webkitMaskImage=`radial-gradient(circle 400px at ${mx}px ${my}px,transparent 0%,transparent 22%,rgba(0,0,0,0.3) 58%,black 100%)`;requestAnimationFrame(us)}us()
+document.querySelectorAll('a,button,input').forEach(el=>{el.addEventListener('mouseenter',()=>{dot.style.width='40px';dot.style.height='40px';dot.style.background='rgba(255,220,160,0.25)';dot.style.mixBlendMode='overlay';ring.style.width='85px';ring.style.height='85px';ring.style.borderColor='rgba(255,210,140,0.55)'});el.addEventListener('mouseleave',()=>{dot.style.width='';dot.style.height='';dot.style.background='';dot.style.mixBlendMode='';ring.style.width='';ring.style.height='';ring.style.borderColor=''})})
+let ct='login'
+document.querySelectorAll('.form-tab').forEach(t=>t.addEventListener('click',()=>st(t.dataset.tab)))
+document.querySelectorAll('[data-switch]').forEach(l=>l.addEventListener('click',e=>{e.preventDefault();st(l.dataset.switch)}))
+function st(t){ct=t;document.querySelectorAll('.form-tab').forEach(tb=>tb.classList.toggle('active',tb.dataset.tab===t));document.getElementById('loginForm').classList.toggle('active',t==='login');document.getElementById('registerForm').classList.toggle('active',t==='register');document.getElementById('quickTest').style.display=t==='login'?'':'none';ce()}
+document.querySelectorAll('.role-opt').forEach(o=>o.addEventListener('click',()=>{o.parentElement.querySelectorAll('.role-opt').forEach(s=>s.classList.remove('active'));o.classList.add('active')}))
+function se(id,msg){const el=document.getElementById(id);el.textContent=msg;el.classList.add('show');el.previousElementSibling?.classList.add('error')}
+function ce(){document.querySelectorAll('.field-error').forEach(e=>{e.classList.remove('show');e.textContent=''});document.querySelectorAll('.field-input.error').forEach(e=>e.classList.remove('error'))}
+const A='http://localhost:8080/api'
+async function ac(m,p,b){const r=await fetch(A+p,{method:m,headers:{'Content-Type':'application/json'},body:b?JSON.stringify(b):undefined});const d=await r.json();if(!r.ok&&d.code!==200)throw new Error(d.message||'请求失败');return d}
+document.getElementById('loginForm').addEventListener('submit',async e=>{e.preventDefault();ce();const u=document.getElementById('loginUser').value.trim(),p=document.getElementById('loginPass').value;let v=true;if(!u){se('loginUserErr','请输入用户名');v=false}if(!p||p.length<6){se('loginPassErr','密码不少于6位');v=false}if(!v)return;const btn=document.getElementById('loginBtn');btn.classList.add('loading');btn.textContent='登录中...';try{const d=await ac('POST','/user/login',{username:u,password:p});if(d.code===200&&d.data){sessionStorage.removeItem('yipei_user');localStorage.setItem('yipei_user',JSON.stringify(d.data));window.location.href='/?skip=1'}else{se('loginPassErr',d.message||'登录失败')}}catch(err){se('loginPassErr',err.message||'网络错误')}finally{btn.classList.remove('loading');btn.textContent='登 录'}})
+document.getElementById('registerForm').addEventListener('submit',async e=>{e.preventDefault();ce();const u=document.getElementById('regUser').value.trim(),ph=document.getElementById('regPhone').value.trim(),n=document.getElementById('regNick').value.trim(),p=document.getElementById('regPass').value,p2=document.getElementById('regPass2').value,role=document.querySelector('#regRole .role-opt.active')?.dataset.role||'CUSTOMER';let v=true;if(!u||u.length<3){se('regUserErr','用户名3~50个字符');v=false}if(!/^1[3-9]\d{9}$/.test(ph)){se('regPhoneErr','手机号不正确');v=false}if(!n){se('regNickErr','请输入昵称');v=false}if(!p||p.length<6){se('regPassErr','密码不少于6位');v=false}if(p!==p2){se('regPass2Err','两次密码不一致');v=false}if(!v)return;const btn=document.getElementById('regBtn');btn.classList.add('loading');btn.textContent='注册中...';try{const d=await ac('POST','/user/register',{username:u,password:p,phone:ph,nickname:n,role});if(d.code===200){alert('注册成功！请登录');st('login');document.getElementById('loginUser').value=u}else{se('regUserErr',d.message||'注册失败')}}catch(err){se('regUserErr',err.message||'网络错误')}finally{btn.classList.remove('loading');btn.textContent='注 册'}})
+document.querySelectorAll('.quick-acc').forEach(a=>a.addEventListener('click',()=>{document.getElementById('loginUser').value=a.dataset.login;document.getElementById('loginPass').value='123456';document.getElementById('loginForm').dispatchEvent(new Event('submit'))}))
+</script>
+</body>
+</html>

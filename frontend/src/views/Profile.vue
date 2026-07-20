@@ -5,14 +5,10 @@
     <div class="profile-card">
       <template v-if="!editing">
         <div class="profile-avatar-area">
-          <div class="avatar-ring avatar-ring--clickable" @click="triggerAvatarUpload" title="点击更换头像">
-            <el-avatar :size="88" :src="user.avatar || undefined" icon="el-icon-user-solid" class="profile-avatar" />
-            <div v-if="uploadingAvatar" class="avatar-uploading-overlay"><i class="el-icon-loading" /></div>
+          <div class="avatar-ring">
+            <el-avatar :size="88" icon="el-icon-user-solid" class="profile-avatar" />
           </div>
-          <span v-if="avatarStatusText" :class="['avatar-status', `avatar-status--${user.avatarAuditStatus}`]">{{ avatarStatusText }}</span>
-          <span class="avatar-upload-hint">点击头像更换</span>
           <span :class="['role-badge', `role-badge--${(user.role || '').toLowerCase()}`]">{{ roleLabel }}</span>
-          <input ref="avatarInput" type="file" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none" @change="handleAvatarSelect" />
         </div>
 
         <div class="info-grid">
@@ -56,21 +52,16 @@
         <el-button type="primary" :loading="changingPwd" @click="handleChangePwd">确认修改</el-button>
       </span>
     </el-dialog>
-
-    <!-- 头像裁剪 -->
-    <avatar-cropper v-model="cropperVisible" :src="cropSrc" @cropped="handleCropped" />
   </div>
 </template>
 
 <script>
 import { getUser, setUser, ROLE_LABELS } from '@/utils/auth'
-import { getUserInfo, updateUserInfo, uploadAvatar } from '@/api/user'
+import { getUserInfo, updateUserInfo } from '@/api/user'
 import request from '@/api/request'
-import AvatarCropper from '@/components/AvatarCropper.vue'
 
 export default {
   name: 'Profile',
-  components: { AvatarCropper },
   data() {
     const user = getUser() || {}
     return {
@@ -82,9 +73,6 @@ export default {
         phone: [{ required: true, message: '请输入手机号', trigger: 'blur' }, { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }]
       },
       saving: false,
-      uploadingAvatar: false,
-      cropperVisible: false,
-      cropSrc: '',
       showPwdDialog: false,
       pwdForm: { oldPassword: '', newPassword: '' },
       pwdRules: {
@@ -96,12 +84,6 @@ export default {
   },
   computed: {
     roleLabel() { return ROLE_LABELS[this.user.role] || '客户' },
-    avatarStatusText() {
-      const s = this.user.avatarAuditStatus
-      if (s === 0) return '头像审核中'
-      if (s === 2) return '头像审核未通过，请重新上传'
-      return ''
-    },
     infoItems() {
       return [
         { key: 'username', label: '用户名', value: this.user.username || '-' },
@@ -117,27 +99,6 @@ export default {
   methods: {
     async fetchUserInfo() {
       try { const res = await getUserInfo(); const d = res.data || res; this.user = { ...d }; setUser(d) } catch {}
-    },
-    triggerAvatarUpload() { if (!this.uploadingAvatar) this.$refs.avatarInput.click() },
-    handleAvatarSelect(e) {
-      const file = e.target.files && e.target.files[0]
-      e.target.value = ''
-      if (!file) return
-      if (!/^image\/(jpeg|png|gif|webp)$/.test(file.type)) { this.$message.error('仅支持 JPG、PNG、GIF、WEBP 格式的图片'); return }
-      if (file.size > 5 * 1024 * 1024) { this.$message.error('图片大小不能超过 5MB'); return }
-      const reader = new FileReader()
-      reader.onload = ev => { this.cropSrc = ev.target.result; this.cropperVisible = true }
-      reader.readAsDataURL(file)
-    },
-    async handleCropped(blob) {
-      this.uploadingAvatar = true
-      try {
-        const res = await uploadAvatar(blob)
-        const d = res.data || res
-        const u = { ...this.user, avatarAuditStatus: d.avatarAuditStatus, pendingAvatar: d.pendingAvatar }
-        this.user = u; setUser(u)
-        this.$message.success('头像已提交，等待管理员审核')
-      } catch {} finally { this.uploadingAvatar = false }
     },
     startEdit() { this.editForm.nickname = this.user.nickname || ''; this.editForm.phone = this.user.phone || ''; this.editing = true },
     cancelEdit() { this.editing = false },
@@ -173,14 +134,7 @@ export default {
 
 /* Avatar */
 .profile-avatar-area { display: flex; flex-direction: column; align-items: center; margin-bottom: 40px; }
-.avatar-ring { position: relative; padding: 4px; border-radius: 50%; background: linear-gradient(135deg, var(--color-primary-light), var(--color-primary)); margin-bottom: 8px; }
-.avatar-ring--clickable { cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; }
-.avatar-ring--clickable:hover { transform: scale(1.04); box-shadow: 0 6px 18px rgba(0,0,0,0.12); }
-.avatar-uploading-overlay { position: absolute; inset: 4px; border-radius: 50%; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 22px; }
-.avatar-upload-hint { font-size: 12px; color: var(--color-text-placeholder); margin-bottom: 12px; }
-.avatar-status { font-size: 12px; font-weight: 550; padding: 2px 10px; border-radius: 12px; margin-bottom: 6px; }
-.avatar-status--0 { background: rgba(196,168,130,.16); color: #8B7355; }
-.avatar-status--2 { background: rgba(224,96,96,.12); color: #C24444; }
+.avatar-ring { padding: 4px; border-radius: 50%; background: linear-gradient(135deg, var(--color-primary-light), var(--color-primary)); margin-bottom: 16px; }
 .profile-avatar { background: #fff; color: var(--color-primary-dark); }
 .role-badge { padding: 5px 18px; border-radius: 20px; font-size: 13px; font-weight: 550; }
 .role-badge--customer { background: var(--color-primary-dim); color: var(--color-primary-dark); }

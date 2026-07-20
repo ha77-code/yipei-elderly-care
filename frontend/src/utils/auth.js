@@ -20,11 +20,22 @@ function normalizeUser(user) {
 }
 
 export function setUser(user) {
-  sessionStorage.setItem(USER_KEY, JSON.stringify(normalizeUser(user)))
+  const data = JSON.stringify(normalizeUser(user))
+  sessionStorage.setItem(USER_KEY, data)
+  localStorage.setItem(USER_KEY, data)
 }
 
 export function getUser() {
-  const raw = sessionStorage.getItem(USER_KEY)
+  // 优先从 sessionStorage 读（Vue 登录页存放处）
+  let raw = sessionStorage.getItem(USER_KEY)
+  // 如果没有，尝试从 localStorage 读（静态 login.html 页存放处）
+  if (!raw) {
+    raw = localStorage.getItem(USER_KEY)
+    // 如果从 localStorage 读到，同步到 sessionStorage
+    if (raw) {
+      sessionStorage.setItem(USER_KEY, raw)
+    }
+  }
   if (!raw) return null
   try {
     return normalizeUser(JSON.parse(raw))
@@ -35,6 +46,7 @@ export function getUser() {
 
 export function clearUser() {
   sessionStorage.removeItem(USER_KEY)
+  localStorage.removeItem(USER_KEY)
 }
 
 export function isLoggedIn() {

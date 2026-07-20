@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>登录 — 益陪养老</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scrollbar-width:none}html::-webkit-scrollbar{display:none}
+body{
+  font-family:'PingFang SC','Noto Serif SC','Microsoft YaHei',-apple-system,sans-serif;
+  color:#E8E2D8;background:#0D1A0C;overflow:hidden;height:100vh;cursor:none;
+}
+
+/* ── 光标 ── */
+.cursor-dot{
+  position:fixed;width:10px;height:10px;background:rgba(255,210,140,0.95);
+  border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);
+  box-shadow:0 0 20px rgba(255,200,120,0.7),0 0 50px rgba(255,180,100,0.4);
+  transition:width .15s,height .15s,background .15s;
+}
+.cursor-ring{
+  position:fixed;width:50px;height:50px;border:2px solid rgba(255,200,130,0.35);
+  border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);
+  box-shadow:0 0 30px rgba(255,190,110,0.2);transition:width .3s,height .3s,border-color .3s;
+}
+.trail-particle{
+  position:fixed;pointer-events:none;z-index:9997;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,200,120,0.75),rgba(255,170,90,0.25),transparent);
+  transform:translate(-50%,-50%);transition:left 0.08s linear,top 0.08s linear,opacity 0.6s ease;
+}
+
+/* ── 背景 ── */
+.bg-full{position:fixed;inset:0;z-index:0;background:url('img/bg-bamboo.jpg') center/cover no-repeat}
+.bg-overlay{
+  position:fixed;inset:0;z-index:0;
+  background:linear-gradient(160deg,rgba(6,12,4,0.48) 0%,rgba(8,16,6,0.35) 35%,rgba(10,18,8,0.4) 65%,rgba(6,12,4,0.55) 100%);
+}
+.spotlight-overlay{
+  position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:rgba(8,14,6,0.28);
+  mask-image:radial-gradient(circle 420px at 50% 50%,transparent 0%,transparent 22%,rgba(0,0,0,0.3) 58%,black 100%);
+  -webkit-mask-image:radial-gradient(circle 420px at 50% 50%,transparent 0%,transparent 22%,rgba(0,0,0,0.3) 58%,black 100%);
+}
+
+/* ── 主布局：左右分区，但无硬边框 ── */
+.page-wrap{
+  position:relative;z-index:2;display:flex;
+  height:100vh;width:100%;
+}
+
+/* ── 左品牌区（40%）─ 垂直居中 ── */
+.brand-zone{
+  flex:0 0 40%;display:flex;flex-direction:column;
+  justify-content:flex-start;padding:80px 56px 60px;
+}
+.back-link{
+  display:inline-flex;align-items:center;gap:8px;font-size:12px;
+  color:rgba(200,180,150,0.5);text-decoration:none;cursor:none;
+  margin-bottom:48px;transition:color 0.3s;letter-spacing:0.06em;
+  width:fit-content;
+}
+.back-link:hover{color:rgba(220,200,165,0.8)}
+.back-link svg{width:14px;height:14px}
+.brand-title{
+  font-family:'Noto Serif SC',serif;
+  font-size:clamp(48px,6vw,72px);font-weight:700;
+  color:#F2ECE0;letter-spacing:0.06em;line-height:1.1;
+  margin-bottom:18px;
+}
+.brand-tagline{
+  font-size:17px;color:rgba(225,210,180,0.65);letter-spacing:0.1em;margin-bottom:56px;
+}
+.brand-features{display:flex;flex-direction:column;gap:18px}
+.brand-feat{
+  display:flex;align-items:center;gap:12px;
+  font-size:16px;color:rgba(225,210,180,0.68);
+}
+.brand-feat-line{width:28px;height:1px;background:rgba(220,190,150,0.4);flex-shrink:0}
+
+/* ── 右表单区（60%） ── */
+.form-zone{
+  flex:1;display:flex;flex-direction:column;
+  justify-content:center;padding:80px 64px 80px 0;
+}
+.form-inner{max-width:440px}
+
+/* Tab */
+.form-tabs{display:flex;gap:0;margin-bottom:36px}
+.form-tab{
+  padding:0 0 10px;font-size:17px;font-weight:500;
+  color:rgba(230,215,190,0.55);border:none;background:transparent;
+  cursor:none;transition:all 0.3s ease;font-family:inherit;
+  letter-spacing:0.06em;position:relative;
+}
+.form-tab+.form-tab{margin-left:32px}
+.form-tab::after{
+  content:'';position:absolute;bottom:0;left:0;width:0;height:2px;
+  background:rgba(230,200,160,0.6);border-radius:1px;
+  transition:width 0.35s cubic-bezier(0.22,0.61,0.36,1);
+}
+.form-tab.active{color:rgba(245,225,185,0.94);font-weight:600}
+.form-tab.active::after{width:100%}
+.form-tab:hover:not(.active){color:rgba(235,220,195,0.72)}
+
+/* 表单 */
+.auth-form{display:none;flex-direction:column;gap:24px}
+.auth-form.active{display:flex}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+/* 字段 — 底部线风格 */
+.field-group{position:relative}
+.field-input{
+  width:100%;height:52px;padding:0 0 12px;
+  background:transparent;border:none;
+  border-bottom:1px solid rgba(210,195,170,0.22);
+  color:#F2EDE5;font-size:17px;font-family:inherit;outline:none;
+  transition:all 0.4s ease;cursor:none;letter-spacing:0.03em;
+}
+.field-input:hover{border-bottom-color:rgba(220,205,180,0.35)}
+.field-input:focus{border-bottom-color:rgba(230,200,160,0.65)}
+.field-input::placeholder{color:rgba(205,190,170,0.35);font-size:16px}
+.field-input.error{border-bottom-color:rgba(220,140,120,0.5)}
+.field-error{font-size:11px;color:rgba(235,160,140,0.8);display:none;margin-top:6px}
+.field-error.show{display:block}
+
+/* 角色 */
+.role-opts{display:flex;gap:0;margin:4px 0}
+.role-opt{
+  flex:1;padding:11px 0;text-align:center;font-size:15px;
+  color:rgba(220,205,180,0.5);border:none;background:transparent;
+  cursor:none;transition:all 0.3s ease;font-family:inherit;
+  border-bottom:1px solid transparent;
+}
+.role-opt.active{color:rgba(245,220,180,0.9);font-weight:600;border-bottom-color:rgba(230,200,160,0.55)}
+.role-opt:hover:not(.active){color:rgba(230,215,190,0.68)}
+
+/* 提交按钮 */
+.submit-btn{
+  width:100%;height:52px;margin-top:10px;
+  background:transparent;color:rgba(245,220,180,0.88);
+  font-size:16px;font-weight:500;font-family:inherit;
+  border:1px solid rgba(230,200,160,0.35);border-radius:50px;
+  cursor:none;letter-spacing:0.12em;
+  transition:all 0.4s cubic-bezier(0.22,0.61,0.36,1);
+}
+.submit-btn:hover{
+  background:rgba(220,190,160,0.1);border-color:rgba(235,205,165,0.6);
+  box-shadow:0 0 52px rgba(220,180,140,0.15);
+  transform:translateY(-1px);
+}
+.submit-btn.loading{opacity:0.6;pointer-events:none}
+
+/* 底部链接 */
+.form-footer{
+  text-align:center;margin-top:12px;font-size:14px;color:rgba(220,205,180,0.55);
+}
+.form-footer a{color:rgba(235,210,180,0.72);text-decoration:none;cursor:none;transition:color 0.3s}
+.form-footer a:hover{color:rgba(250,225,190,0.9)}
+
+/* 快速体验 */
+.quick-zone{
+  margin-top:28px;display:flex;gap:20px;
+}
+.quick-acc{
+  font-size:13px;color:rgba(215,200,175,0.45);cursor:none;
+  transition:all 0.35s ease;letter-spacing:0.04em;
+  background:none;border:none;font-family:inherit;padding:0;
+}
+.quick-acc:hover{color:rgba(240,215,180,0.7)}
+
+@media(max-width:768px){
+  .page-wrap{flex-direction:column}
+  .brand-zone{flex:none;padding:40px 28px 0}
+  .brand-title{font-size:36px}
+  .brand-features{display:none}
+  .form-zone{padding:40px 28px;justify-content:flex-start}
+}
+</style>
+</head>
+<body>
+
+<div class="cursor-dot" id="cursorDot"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+<div class="trail-particle" id="trail1" style="width:18px;height:18px"></div>
+<div class="trail-particle" id="trail2" style="width:14px;height:14px"></div>
+<div class="trail-particle" id="trail3" style="width:10px;height:10px"></div>
+<div class="trail-particle" id="trail4" style="width:7px;height:7px"></div>
+<div class="trail-particle" id="trail5" style="width:5px;height:5px"></div>
+<div class="bg-full"></div>
+<div class="bg-overlay"></div>
+<div class="spotlight-overlay" id="spotlight"></div>
+
+<div class="page-wrap">
+
+  <!-- ═══ 左品牌区（40%）═══ -->
+  <div class="brand-zone">
+    <a href="landing.html" class="back-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7" stroke-linecap="round"/></svg>
+      返回首页
+    </a>
+    <h1 class="brand-title">益陪<br>养老</h1>
+    <p class="brand-tagline">用陪伴，守护每一段金色年华</p>
+    <div class="brand-features">
+      <div class="brand-feat"><span class="brand-feat-line"></span>持证陪诊师，身份可查</div>
+      <div class="brand-feat"><span class="brand-feat-line"></span>全程陪同，安心无忧</div>
+      <div class="brand-feat"><span class="brand-feat-line"></span>服务可追溯，评价透明</div>
+    </div>
+  </div>
+
+  <!-- ═══ 右表单区（60%）═══ -->
+  <div class="form-zone">
+    <div class="form-inner">
+      <div class="form-tabs">
+        <button class="form-tab active" data-tab="login">登 录</button>
+        <button class="form-tab" data-tab="register">注 册</button>
+      </div>
+
+      <!-- 登录 -->
+      <form class="auth-form active" id="loginForm" autocomplete="off">
+        <div class="field-group">
+          <input class="field-input" type="text" id="loginUser" placeholder="用户名" autocomplete="off">
+          <span class="field-error" id="loginUserErr"></span>
+        </div>
+        <div class="field-group">
+          <input class="field-input" type="password" id="loginPass" placeholder="密码" autocomplete="off">
+          <span class="field-error" id="loginPassErr"></span>
+        </div>
+        <button type="submit" class="submit-btn" id="loginBtn">登 录</button>
+        <div class="form-footer">还没有账号？<a href="#" data-switch="register">立即注册</a></div>
+      </form>
+
+      <!-- 注册 -->
+      <form class="auth-form" id="registerForm" autocomplete="off">
+        <div class="form-row">
+          <div class="field-group">
+            <input class="field-input" type="text" id="regUser" placeholder="用户名" autocomplete="off">
+            <span class="field-error" id="regUserErr"></span>
+          </div>
+          <div class="field-group">
+            <input class="field-input" type="tel" id="regPhone" placeholder="手机号" autocomplete="off">
+            <span class="field-error" id="regPhoneErr"></span>
+          </div>
+        </div>
+        <div class="field-group">
+          <input class="field-input" type="text" id="regNick" placeholder="昵称" autocomplete="off">
+          <span class="field-error" id="regNickErr"></span>
+        </div>
+        <div class="form-row">
+          <div class="field-group">
+            <input class="field-input" type="password" id="regPass" placeholder="密码（不少于6位）" autocomplete="off">
+            <span class="field-error" id="regPassErr"></span>
+          </div>
+          <div class="field-group">
+            <input class="field-input" type="password" id="regPass2" placeholder="确认密码" autocomplete="off">
+            <span class="field-error" id="regPass2Err"></span>
+          </div>
+        </div>
+        <div class="role-opts" id="regRole">
+          <button type="button" class="role-opt active" data-role="CUSTOMER">客户</button>
+          <button type="button" class="role-opt" data-role="COMPANION">陪诊师</button>
+        </div>
+        <button type="submit" class="submit-btn" id="regBtn">注 册</button>
+        <div class="form-footer">已有账号？<a href="#" data-switch="login">立即登录</a></div>
+      </form>
+
+      <div class="quick-zone" id="quickTest">
+        <button class="quick-acc" data-login="customer1">customer1 · 客户</button>
+        <button class="quick-acc" data-login="companion1">companion1 · 陪诊师</button>
+        <button class="quick-acc" data-login="admin1">admin1 · 管理员</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const dot=document.getElementById('cursorDot'),ring=document.getElementById('cursorRing')
+const spotlight=document.getElementById('spotlight')
+let mx=window.innerWidth/2,my=window.innerHeight/2,dx=mx,dy=my
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY})
+function updateCursor(){dx+=(mx-dx)*0.22;dy+=(my-dy)*0.22;dot.style.left=dx+'px';dot.style.top=dy+'px';ring.style.left=mx+'px';ring.style.top=my+'px';requestAnimationFrame(updateCursor)}updateCursor()
+const trails=[{el:document.getElementById('trail1'),delay:0.06,x:mx,y:my},{el:document.getElementById('trail2'),delay:0.12,x:mx,y:my},{el:document.getElementById('trail3'),delay:0.18,x:mx,y:my},{el:document.getElementById('trail4'),delay:0.25,x:mx,y:my},{el:document.getElementById('trail5'),delay:0.33,x:mx,y:my}]
+function updateTrails(){trails.forEach(t=>{t.x+=(mx-t.x)*t.delay;t.y+=(my-t.y)*t.delay;t.el.style.left=t.x+'px';t.el.style.top=t.y+'px';t.el.style.opacity=Math.max(0.12,1-Math.sqrt((mx-t.x)**2+(my-t.y)**2)/200)});requestAnimationFrame(updateTrails)}updateTrails()
+function updateSpotlight(){spotlight.style.maskImage=`radial-gradient(circle 420px at ${mx}px ${my}px,transparent 0%,transparent 22%,rgba(0,0,0,0.3) 58%,black 100%)`;spotlight.style.webkitMaskImage=`radial-gradient(circle 420px at ${mx}px ${my}px,transparent 0%,transparent 22%,rgba(0,0,0,0.3) 58%,black 100%)`;requestAnimationFrame(updateSpotlight)}updateSpotlight()
+document.querySelectorAll('a,button,input').forEach(el=>{el.addEventListener('mouseenter',()=>{dot.style.width='40px';dot.style.height='40px';dot.style.background='rgba(255,220,160,0.25)';dot.style.mixBlendMode='overlay';ring.style.width='85px';ring.style.height='85px';ring.style.borderColor='rgba(255,210,140,0.55)'});el.addEventListener('mouseleave',()=>{dot.style.width='';dot.style.height='';dot.style.background='';dot.style.mixBlendMode='';ring.style.width='';ring.style.height='';ring.style.borderColor=''})})
+
+let currentTab='login'
+document.querySelectorAll('.form-tab').forEach(t=>t.addEventListener('click',()=>switchTab(t.dataset.tab)))
+document.querySelectorAll('[data-switch]').forEach(l=>l.addEventListener('click',e=>{e.preventDefault();switchTab(l.dataset.switch)}))
+function switchTab(t){currentTab=t;document.querySelectorAll('.form-tab').forEach(tb=>tb.classList.toggle('active',tb.dataset.tab===t));document.getElementById('loginForm').classList.toggle('active',t==='login');document.getElementById('registerForm').classList.toggle('active',t==='register');document.getElementById('quickTest').style.display=t==='login'?'':'none';clearErrors()}
+document.querySelectorAll('.role-opt').forEach(o=>o.addEventListener('click',()=>{o.parentElement.querySelectorAll('.role-opt').forEach(s=>s.classList.remove('active'));o.classList.add('active')}))
+function showError(id,msg){const el=document.getElementById(id);el.textContent=msg;el.classList.add('show');el.previousElementSibling?.classList.add('error')}
+function clearErrors(){document.querySelectorAll('.field-error').forEach(e=>{e.classList.remove('show');e.textContent=''});document.querySelectorAll('.field-input.error').forEach(e=>e.classList.remove('error'))}
+
+const API='http://localhost:8080/api'
+async function apiCall(m,p,b){const r=await fetch(API+p,{method:m,headers:{'Content-Type':'application/json'},body:b?JSON.stringify(b):undefined});const d=await r.json();if(!r.ok&&d.code!==200)throw new Error(d.message||'请求失败');return d}
+
+document.getElementById('loginForm').addEventListener('submit',async e=>{e.preventDefault();clearErrors();const u=document.getElementById('loginUser').value.trim(),p=document.getElementById('loginPass').value;let v=true;if(!u){showError('loginUserErr','请输入用户名');v=false}if(!p||p.length<6){showError('loginPassErr','密码不少于6位');v=false}if(!v)return;const btn=document.getElementById('loginBtn');btn.classList.add('loading');btn.textContent='登录中...';try{const d=await apiCall('POST','/user/login',{username:u,password:p});if(d.code===200&&d.data){localStorage.setItem('yipei_user',JSON.stringify(d.data));window.location.href='/?skip=1'}else{showError('loginPassErr',d.message||'登录失败')}}catch(err){showError('loginPassErr',err.message||'网络错误')}finally{btn.classList.remove('loading');btn.textContent='登 录'}})
+document.getElementById('registerForm').addEventListener('submit',async e=>{e.preventDefault();clearErrors();const u=document.getElementById('regUser').value.trim(),ph=document.getElementById('regPhone').value.trim(),n=document.getElementById('regNick').value.trim(),p=document.getElementById('regPass').value,p2=document.getElementById('regPass2').value,role=document.querySelector('#regRole .role-opt.active')?.dataset.role||'CUSTOMER';let v=true;if(!u||u.length<3){showError('regUserErr','用户名3~50个字符');v=false}if(!/^1[3-9]\d{9}$/.test(ph)){showError('regPhoneErr','手机号不正确');v=false}if(!n){showError('regNickErr','请输入昵称');v=false}if(!p||p.length<6){showError('regPassErr','密码不少于6位');v=false}if(p!==p2){showError('regPass2Err','两次密码不一致');v=false}if(!v)return;const btn=document.getElementById('regBtn');btn.classList.add('loading');btn.textContent='注册中...';try{const d=await apiCall('POST','/user/register',{username:u,password:p,phone:ph,nickname:n,role});if(d.code===200){alert('注册成功！请登录');switchTab('login');document.getElementById('loginUser').value=u}else{showError('regUserErr',d.message||'注册失败')}}catch(err){showError('regUserErr',err.message||'网络错误')}finally{btn.classList.remove('loading');btn.textContent='注 册'}})
+document.querySelectorAll('.quick-acc').forEach(a=>a.addEventListener('click',()=>{document.getElementById('loginUser').value=a.dataset.login;document.getElementById('loginPass').value='123456';document.getElementById('loginForm').dispatchEvent(new Event('submit'))}))
+</script>
+</body>
+</html>
