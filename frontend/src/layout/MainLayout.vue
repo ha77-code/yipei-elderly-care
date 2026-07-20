@@ -113,6 +113,7 @@ const SIDE_MAP = {
     { label: T.userManage, path: '/admin/users', icon: 'el-icon-user' },
     { label: T.companionReview, path: '/admin/companion-review', icon: 'el-icon-finished' },
     { label: T.avatarReview, path: '/admin/avatar-review', icon: 'el-icon-picture-outline' },
+    { label: T.requestReview, path: '/admin/request-review', icon: 'el-icon-s-check' },
     { label: T.requestManage, path: '/admin/requests', icon: 'el-icon-document-copy' },
     { label: T.orderManage, path: '/admin/orders', icon: 'el-icon-s-order' },
     { label: T.reportManage, path: '/admin/reports', icon: 'el-icon-warning-outline' },
