@@ -32,7 +32,7 @@ public interface CompanionProfileMapper {
             "WHERE cp.audit_status = 1 " +
             "<if test='serviceArea != null and serviceArea != \"\"'> AND cp.service_area LIKE CONCAT('%',#{serviceArea},'%')</if>" +
             "<if test='serviceType != null and serviceType != \"\"'> AND cp.service_types LIKE CONCAT('%',#{serviceType},'%')</if>" +
-            "<if test='traits != null and traits != \"\"'> AND cp.traits IS NOT NULL AND cp.traits != ''</if>" +
+            "<if test='traits != null and traits != \"\"'> AND cp.traits LIKE CONCAT('%',#{traits},'%')</if>" +
             " ORDER BY cp.rating DESC, cp.completed_count DESC" +
             "</script>")
     List<CompanionVO> selectApproved(@Param("serviceArea") String serviceArea,
