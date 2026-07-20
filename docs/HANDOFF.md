@@ -6,7 +6,218 @@
 
 ## 当前状态
 
-后端 11 个模块全部完成，订单完整状态流转 PENDING_ACCEPT→ACCEPTED→IN_SERVICE→PENDING_CONFIRM→COMPLETED。前端 20+ 页面全部就绪，全局视觉已升级。可通过 Postman 完整跑通全部业务流程。
+后端已完成普通需求申请撮合、指定陪诊师订单、订单完整状态流转、私信聊天、用户通知及管理员审核。当前正式前端不是普通 Vue 侧边栏工作台，而是 `frontend/public/*-concept-light.html` 三个原版轮盘页面；所有新增功能必须继续在原轮盘滑动面板内部扩展。
+
+## 2026-07-20 本次会话更新（最高优先级）
+
+### 1. 前端基线与不可违反的约束
+
+- 项目直接打开时必须先进入 `frontend/public/landing.html`。`frontend/public/index.html` 会在没有 `?skip=1` 时跳转到 `landing.html`。
+- 登录成功或从落地页进入个人中心时，按角色进入：
+  - 客户：`frontend/public/customer-concept-light.html`
+  - 陪诊师：`frontend/public/companion-concept-light.html`
+  - 管理员：`frontend/public/admin-concept-light.html`
+- 必须保留以下原版效果，不能再次改成普通侧边栏或另一套 Vue 工作台：
+  - 左侧弧形轮盘节点。
+  - 鼠标滚轮旋转轮盘。
+  - 右侧 `.panel-viewport` / `.panel-page` 纵向整屏滑动及 scroll snap。
+  - `goPage(index)` 与轮盘联动。
+  - GSAP 动画、自定义光标、粒子、聚光灯、竹林背景和白瓷磨砂卡片。
+- 三个页面的轮盘节点和滑动面板数量保持不变：客户 `4/4`、陪诊师 `5/5`、管理员 `7/7`。
+- 三个原轮盘 HTML 的现有动画代码没有修改，只增加了公共样式和功能脚本引用。
+- 原 Vue `MainLayout` 及旧路由页面仍保留在仓库中，但不是当前正式业务入口。后续不要把新增功能重新接回侧边栏布局。
+
+### 2. 新增前端公共层
+
+| 文件 | 作用 |
+|------|------|
+| `frontend/public/concept-functional.css` | 在原白瓷磨砂设计体系内补充标签、表单、按钮、弹窗、聊天气泡和通知样式 |
+| `frontend/public/concept-runtime.js` | 角色校验、API 请求、状态格式化、Toast、Modal、通知列表、聊天窗口和只读历史 |
+| `frontend/public/concept-chat-navigation.js` | 点击私信通知后旋转到订单轮盘页、切换聊天标签并打开对应订单会话 |
+| `frontend/public/concept-live.js` | 每 20 秒静默刷新通知、聊天未读、订单等数据 |
+| `frontend/public/concept-reports.js` | 用户和陪诊师在订单卡片中提交投诉/反馈 |
+
+静态轮盘页面通过 `localStorage/sessionStorage` 的 `yipei_user` 获取登录用户，并向后端自动添加 `X-User-Id`。
+
+### 3. 客户轮盘已完成
+
+客户轮盘仍为 4 页：
+
+1. 首页
+   - 真实订单、陪诊师和进行中统计。
+   - 消息通知与全部已读。
+   - 个人资料和密码修改。
+2. 陪诊师
+   - 读取审核通过的真实陪诊师。
+   - 搜索、查看服务信息和指定陪诊师。
+3. 发布需求
+   - “发布需求 / 我的需求”标签。
+   - 普通公开需求发布。
+   - 指定陪诊师需求发布，指定时必须填写大于 0 的预算。
+   - 查看需求审核状态、取消需求。
+   - 查看陪诊师申请，客户可以同意或拒绝；同意后自动生成 `ACCEPTED` 订单。
+4. 订单
+   - “订单进度 / 聊天记录”标签。
+   - 查看状态日志、确认完成、取消订单、评价陪诊师、投诉反馈。
+   - 点击会话卡片或私信通知进入对应订单聊天。
+
+相关脚本：
+
+- `frontend/public/customer-base.js`
+- `frontend/public/customer-profile.js`
+- `frontend/public/customer-requests.js`
+- `frontend/public/customer-orders.js`
+
+### 4. 陪诊师轮盘已完成
+
+陪诊师轮盘仍为 5 页：
+
+1. 工作台
+   - 真实统计、入驻认证资料、审核状态和消息通知。
+2. 可接订单
+   - “需求广场 / 指定给我的 / 我的申请”标签。
+   - 公开需求申请和撤回申请。
+   - 客户指定订单接受或拒绝。
+3. 我的订单
+   - “订单进度 / 聊天记录”标签。
+   - 开始服务、提交服务完成、状态日志、私信和历史记录。
+4. 服务记录
+   - 查看和填写订单服务记录。
+5. 客户评价
+   - 查看真实评分和评价内容。
+
+相关脚本：
+
+- `frontend/public/companion-base.js`
+- `frontend/public/companion-work.js`
+- `frontend/public/companion-records.js`
+
+### 5. 管理员轮盘已完成
+
+管理员轮盘仍为 7 页：
+
+1. 工作台：真实统计、管理员待办通知和快捷入口。
+2. 用户：搜索、角色/状态筛选、启用和禁用账号。
+3. 审核：“陪诊师 / 头像 / 服务需求”三类审核标签。
+4. 需求：全部需求、审核和撮合状态、指定陪诊师信息。
+5. 订单：全部订单、状态筛选和订单状态日志。
+6. 投诉：开始处理、解决或驳回，并通知投诉人。
+7. 统计：用户、订单、投诉、平台收入和陪诊师收入。
+
+相关脚本：
+
+- `frontend/public/admin-base.js`
+- `frontend/public/admin-manage.js`
+- `frontend/public/admin-operations.js`
+
+### 6. 订单撮合流程
+
+#### 普通公开需求
+
+```text
+客户发布需求
+  → 管理员审核通过
+  → 需求进入陪诊师需求广场
+  → 陪诊师提交申请
+  → 客户同意某个申请
+  → 自动生成 ACCEPTED 订单并拒绝其他申请
+  → 双方私信开启
+```
+
+#### 客户指定陪诊师
+
+```text
+客户选择指定陪诊师并发布需求
+  → 管理员审核通过
+  → 自动生成 PENDING_ACCEPT 订单
+  → 指定陪诊师接受：进入 ACCEPTED，私信开启
+  → 指定陪诊师拒绝：订单 REJECTED，需求 CLOSED
+```
+
+关键后端文件：
+
+- `ApplicationService.java`
+- `ServiceRequestService.java`
+- `OrderService.java`
+- `ServiceApplicationMapper.java`
+- `ServiceRequestMapper.java`
+
+### 7. 私信聊天规则
+
+- 私信只存在于客户和陪诊师的订单轮盘页中。
+- 仅双方已经同意服务的订单可以发送消息，后端允许状态：
+  - `ACCEPTED`
+  - `IN_SERVICE`
+  - `PENDING_CONFIRM`
+- `PENDING_ACCEPT` 表示指定陪诊师尚未同意，不能聊天。
+- `COMPLETED`、`CANCELLED` 等结束状态不能继续发送，只能查看已有聊天记录。
+- 后端读取历史记录时会标记聊天消息已读。
+- 每次发送私信都会写入一条 `CHAT_MESSAGE` 用户通知，消息和通知在同一事务内完成。
+- 点击“收到新的私信”通知时：
+  1. 自动旋转到角色的订单轮盘页。
+  2. 自动切换到“聊天记录”标签。
+  3. 自动打开通知关联订单的聊天界面。
+  4. 对应聊天通知标记为已读。
+- 服务结束后聊天弹窗显示“服务已结束，无法继续聊天，仅可查看聊天记录”。
+
+关键文件：
+
+- `src/main/java/com/yipei/service/ChatService.java`
+- `src/main/java/com/yipei/mapper/ChatMessageMapper.java`
+- `frontend/public/concept-runtime.js`
+- `frontend/public/concept-chat-navigation.js`
+
+### 8. 消息通知
+
+已覆盖：
+
+- 陪诊师资料、头像、服务需求审核待办和审核结果。
+- 陪诊师提交/撤回申请，客户同意/拒绝申请。
+- 指定订单、接单、拒单、开始服务、待确认、完成和取消。
+- 投诉提交和投诉处理结果。
+- 新私信 `CHAT_MESSAGE` 通知。
+- 前端通知和聊天未读数每 20 秒静默刷新。
+
+通知接口：
+
+```text
+GET /api/notifications
+GET /api/notifications/unread
+PUT /api/notifications/{id}/read
+PUT /api/notifications/read-all
+```
+
+### 9. 数据库迁移状态
+
+迁移文件：
+
+- `sql/migrations/20260720_add_user_notification.sql`
+- `sql/migrations/20260721_add_matching_and_chat.sql`
+
+当前开发机 MySQL `3306` 未监听，因此本次会话没有实际执行迁移。启动数据库后必须先执行上述迁移；尤其是 `user_notification` 表不存在时，私信通知写入会失败，并因事务回滚导致该次消息发送失败。
+
+### 10. 验证结果
+
+- `./mvnw.cmd test`：9 个测试全部通过。
+- 新增 `ChatServiceTest`：
+  - 验证双方同意后可以发送消息并生成订单私信通知。
+  - 验证服务完成后发送被后端拒绝。
+- `npm run build`：生产构建成功。
+- 前端构建只有原有资源体积 warning，无编译错误。
+- 所有新增轮盘脚本通过 `node --check`。
+- `git diff --check` 通过。
+
+### 11. 后续接手时的首要步骤
+
+1. 启动 MySQL 并执行两份迁移。
+2. 启动后端和前端，从 `landing.html` 进入。
+3. 使用客户、陪诊师、管理员三类账号实际走一遍：
+   - 普通需求申请撮合。
+   - 指定陪诊师接单。
+   - 双方同意后聊天。
+   - 点击私信通知进入对应聊天。
+   - 完成订单后确认只能查看历史、不能继续发送。
+4. 后续前端功能只能继续添加在原轮盘面板内部，不得修改轮盘形式、动画和整体视觉。
 
 ## 一、后端已完成
 

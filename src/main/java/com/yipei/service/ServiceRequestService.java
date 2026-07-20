@@ -23,20 +23,24 @@ public class ServiceRequestService {
     private final AiSummaryService aiSummaryService;
     private final AuditRecordMapper auditRecordMapper;
     private final OrderService orderService;
+    private final UserNotificationService notificationService;
 
     public ServiceRequestService(ServiceRequestMapper serviceRequestMapper,
                                  SysUserMapper sysUserMapper,
                                  AiSummaryService aiSummaryService,
                                  AuditRecordMapper auditRecordMapper,
-                                 OrderService orderService) {
+                                 OrderService orderService,
+                                 UserNotificationService notificationService) {
         this.serviceRequestMapper = serviceRequestMapper;
         this.sysUserMapper = sysUserMapper;
         this.aiSummaryService = aiSummaryService;
         this.auditRecordMapper = auditRecordMapper;
         this.orderService = orderService;
+        this.notificationService = notificationService;
     }
 
     /** 发布服务需求 */
+    @Transactional
     public ServiceRequest create(Long customerId, ServiceRequestCreateRequest request) {
         SysUser user = sysUserMapper.selectById(customerId);
         if (user == null) {
@@ -71,6 +75,8 @@ public class ServiceRequestService {
                 serviceRequestMapper.updateAiSummary(sr.getId(), summary);
             });
         }
+        notificationService.sendToRole(RoleConstants.ADMIN, "REQUEST_AUDIT_PENDING", "有新的需求待审核",
+                "需求 #" + sr.getId() + "（" + sr.getServiceType() + "）已提交，请及时审核。", sr.getId());
         return sr;
     }
 
@@ -111,6 +117,9 @@ public class ServiceRequestService {
             throw new ForbiddenException("审核状态只能为 1（通过）或 2（拒绝）");
         }
         serviceRequestMapper.updateAuditStatus(id, auditStatus, remark);
+        if (auditStatus == 2) {
+            serviceRequestMapper.updateStatus(id, "CLOSED");
+        }
 
         AuditRecord record = new AuditRecord();
         record.setBusinessType("service_request");
@@ -124,6 +133,17 @@ public class ServiceRequestService {
         if (auditStatus == 1 && request.getPreferredCompanionId() != null) {
             orderService.createDirectedOrder(
                     request.getCustomerId(), id, request.getPreferredCompanionId(), request.getBudget());
+        }
+
+        if (auditStatus == 1) {
+            String content = request.getPreferredCompanionId() == null
+                    ? "您的陪诊需求已通过审核，现已进入需求广场。"
+                    : "您的指定陪诊需求已通过审核，订单已发送给指定陪诊师。";
+            notificationService.send(request.getCustomerId(), "REQUEST_AUDIT_APPROVED", "需求审核已通过", content, id);
+        } else {
+            String suffix = remark == null || remark.isBlank() ? "" : " 原因：" + remark.trim();
+            notificationService.send(request.getCustomerId(), "REQUEST_AUDIT_REJECTED", "需求审核未通过",
+                    "您的陪诊需求未通过审核。" + suffix, id);
         }
     }
 

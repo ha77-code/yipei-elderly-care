@@ -24,6 +24,9 @@ public interface SysUserMapper {
     @Select("SELECT " + COLS + "FROM sys_user WHERE username = #{username}")
     SysUser selectByUsername(@Param("username") String username);
 
+    @Select("SELECT id FROM sys_user WHERE role = #{role} AND status = 1 ORDER BY id")
+    List<Long> selectActiveIdsByRole(@Param("role") String role);
+
     /** 待审核头像的用户列表 */
     @Select("SELECT " + COLS + "FROM sys_user WHERE avatar_audit_status = 0 ORDER BY updated_at DESC")
     List<SysUser> selectPendingAvatars();

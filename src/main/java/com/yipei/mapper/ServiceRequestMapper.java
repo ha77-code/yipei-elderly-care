@@ -20,8 +20,14 @@ public interface ServiceRequestMapper {
     @Select("SELECT " + COLS + "FROM service_request WHERE id = #{id}")
     ServiceRequest selectById(@Param("id") Long id);
 
-    @Select("SELECT " + COLS + "FROM service_request WHERE customer_id = #{customerId} " +
-            "ORDER BY created_at DESC")
+    @Select("SELECT sr.id, sr.customer_id, sr.service_type, sr.service_date, sr.hospital_name, sr.department, " +
+            "sr.requirement, sr.special_notes, sr.ai_summary, sr.preferred_traits, sr.need_pickup, " +
+            "sr.contact_name, sr.contact_phone, sr.budget, sr.status, sr.audit_status, sr.audit_remark, " +
+            "sr.preferred_companion_id, sr.created_at, sr.updated_at, u.nickname AS preferred_companion_name " +
+            "FROM service_request sr " +
+            "LEFT JOIN companion_profile cp ON sr.preferred_companion_id = cp.id " +
+            "LEFT JOIN sys_user u ON cp.user_id = u.id " +
+            "WHERE sr.customer_id = #{customerId} ORDER BY sr.created_at DESC")
     List<ServiceRequest> selectByCustomerId(@Param("customerId") Long customerId);
 
     @Insert("INSERT INTO service_request(customer_id, service_type, service_date, hospital_name, " +

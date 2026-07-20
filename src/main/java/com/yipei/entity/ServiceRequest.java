@@ -30,6 +30,6 @@ public class ServiceRequest {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    /** 非持久字段：指定陪诊师昵称，供管理员审核页展示 */
-    private transient String preferredCompanionName;
+    /** 非持久字段：指定陪诊师昵称，供客户和管理员页面展示 */
+    private String preferredCompanionName;
 }

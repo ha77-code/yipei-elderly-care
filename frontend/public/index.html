@@ -5,6 +5,11 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <title>益陪养老 — 专业养老陪护服务平台</title>
+  <script>
+    if (new URLSearchParams(window.location.search).get('skip') !== '1') {
+      window.location.replace('/landing.html')
+    }
+  </script>
   <link rel="icon" href="<%= BASE_URL %>favicon.ico">
   <!-- Inter 字体：现代几何无衬线，适配中英混排 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">

@@ -13,6 +13,7 @@ import com.yipei.mapper.AuditRecordMapper;
 import com.yipei.mapper.SysUserMapper;
 import com.yipei.util.PasswordUtil;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -23,13 +24,16 @@ public class UserService {
     private final SysUserMapper sysUserMapper;
     private final FileStorageService fileStorageService;
     private final AuditRecordMapper auditRecordMapper;
+    private final UserNotificationService notificationService;
 
     public UserService(SysUserMapper sysUserMapper,
                        FileStorageService fileStorageService,
-                       AuditRecordMapper auditRecordMapper) {
+                       AuditRecordMapper auditRecordMapper,
+                       UserNotificationService notificationService) {
         this.sysUserMapper = sysUserMapper;
         this.fileStorageService = fileStorageService;
         this.auditRecordMapper = auditRecordMapper;
+        this.notificationService = notificationService;
     }
 
     /* ===== 登录 ===== */
@@ -137,6 +141,7 @@ public class UserService {
     /* ===== 头像上传 ===== */
 
     /** 上传新头像，进入待审核状态（不立即替换已展示头像），返回更新后的用户信息 */
+    @Transactional
     public UserVO uploadAvatar(Long id, MultipartFile file) {
         SysUser user = sysUserMapper.selectById(id);
         if (user == null) {
@@ -144,6 +149,8 @@ public class UserService {
         }
         String url = fileStorageService.storeImage(file);
         sysUserMapper.updatePendingAvatar(id, url);
+        notificationService.sendToRole(RoleConstants.ADMIN, "AVATAR_AUDIT_PENDING", "有新的头像待审核",
+                (user.getNickname() == null ? user.getUsername() : user.getNickname()) + "提交了新头像，请及时审核。", id);
         return toUserVO(sysUserMapper.selectById(id));
     }
 
@@ -157,6 +164,7 @@ public class UserService {
     }
 
     /** 审核头像：auditStatus 1 通过 / 2 拒绝 */
+    @Transactional
     public void auditAvatar(Long userId, Long auditorId, Integer auditStatus, String remark) {
         requireAdmin(auditorId);
         SysUser user = sysUserMapper.selectById(userId);
@@ -181,6 +189,12 @@ public class UserService {
         record.setAuditStatus(auditStatus);
         record.setRemark(remark);
         auditRecordMapper.insert(record);
+        String suffix = remark == null || remark.isBlank() ? "" : " 备注：" + remark.trim();
+        notificationService.send(userId,
+                auditStatus == 1 ? "AVATAR_AUDIT_APPROVED" : "AVATAR_AUDIT_REJECTED",
+                auditStatus == 1 ? "头像审核已通过" : "头像审核未通过",
+                (auditStatus == 1 ? "您的新头像已通过审核并生效。" : "您的新头像未通过审核，当前头像保持不变。") + suffix,
+                userId);
     }
 
     /* ===== 修改密码 ===== */

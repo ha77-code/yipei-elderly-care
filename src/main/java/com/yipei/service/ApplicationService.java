@@ -63,6 +63,7 @@ public class ApplicationService {
     }
 
     /** 陪诊师申请接单 */
+    @Transactional
     public ServiceApplication apply(Long userId, Long requestId, String message) {
         CompanionProfile profile = requireApprovedCompanion(userId);
         ServiceRequest sr = serviceRequestMapper.selectById(requestId);
@@ -89,7 +90,8 @@ public class ApplicationService {
             // 之前撤回或被拒，允许重新申请
             existing.setMessage(message);
             existing.setStatus("PENDING");
-            applicationMapper.updateStatus(existing.getId(), "PENDING");
+            applicationMapper.resubmit(existing.getId(), message);
+            notifyCustomerOfApplication(sr, profile, requestId);
             return existing;
         }
         ServiceApplication application = new ServiceApplication();
@@ -98,9 +100,7 @@ public class ApplicationService {
         application.setMessage(message);
         application.setStatus("PENDING");
         applicationMapper.insert(application);
-        String companionName = profileName(profile.getUserId());
-        notificationService.send(sr.getCustomerId(), "APPLICATION", "\u6536\u5230\u65b0\u7684\u966a\u8bca\u7533\u8bf7",
-                (companionName == null ? "\u4e00\u4f4d\u966a\u8bca\u5e08" : companionName) + "\u7533\u8bf7\u4e86\u60a8\u7684\u966a\u8bca\u9700\u6c42\uff0c\u8bf7\u53ca\u65f6\u67e5\u770b\u3002", application.getId());
+        notifyCustomerOfApplication(sr, profile, requestId);
         return application;
     }
 
@@ -109,7 +109,14 @@ public class ApplicationService {
         return user == null ? null : user.getNickname();
     }
 
+    private void notifyCustomerOfApplication(ServiceRequest request, CompanionProfile profile, Long requestId) {
+        String companionName = profileName(profile.getUserId());
+        notificationService.send(request.getCustomerId(), "APPLICATION", "收到新的陪诊申请",
+                (companionName == null ? "一位陪诊师" : companionName) + "申请了您的陪诊需求，请及时查看。", requestId);
+    }
+
     /** 陪诊师撤回申请 */
+    @Transactional
     public void withdraw(Long userId, Long applicationId) {
         CompanionProfile profile = requireApprovedCompanion(userId);
         ServiceApplication application = applicationMapper.selectById(applicationId);
@@ -123,6 +130,12 @@ public class ApplicationService {
             throw new ForbiddenException("当前状态不允许撤回");
         }
         applicationMapper.updateStatus(applicationId, "WITHDRAWN");
+        ServiceRequest request = serviceRequestMapper.selectById(application.getRequestId());
+        if (request != null) {
+            String companionName = profileName(profile.getUserId());
+            notificationService.send(request.getCustomerId(), "APPLICATION_WITHDRAWN", "陪诊申请已撤回",
+                    (companionName == null ? "一位陪诊师" : companionName) + "撤回了对您需求的申请。", request.getId());
+        }
     }
 
     /** 陪诊师查看自己的申请 */
@@ -157,14 +170,22 @@ public class ApplicationService {
             if (!"PENDING".equals(application.getStatus())) {
                 throw new ForbiddenException("该申请当前状态不可接受");
             }
+            List<ApplicationVO> candidates = applicationMapper.selectByRequest(application.getRequestId());
             ServiceOrder order = orderService.createFromApplication(
                     userId, application.getRequestId(), application.getCompanionId(), servicePrice);
             applicationMapper.updateStatus(applicationId, "ACCEPTED");
             applicationMapper.rejectOthers(application.getRequestId(), applicationId);
             CompanionProfile profile = companionProfileMapper.selectById(application.getCompanionId());
             if (profile != null) {
-                notificationService.send(profile.getUserId(), "APPLICATION_ACCEPTED", "\u7533\u8bf7\u5df2\u88ab\u60a3\u8005\u63a5\u53d7",
-                        "\u60a3\u8005\u5df2\u63a5\u53d7\u60a8\u7684\u966a\u8bca\u7533\u8bf7\uff0c\u8ba2\u5355\u5df2\u751f\u6210\uff0c\u8bf7\u53ca\u65f6\u67e5\u770b\u8ba2\u5355\u3002", order.getId());
+                notificationService.send(profile.getUserId(), "APPLICATION_ACCEPTED", "申请已被客户接受",
+                        "客户已接受您的陪诊申请，订单已生成，现在可以开始私信沟通。", order.getId());
+            }
+            for (ApplicationVO candidate : candidates) {
+                if (!candidate.getId().equals(applicationId) && "PENDING".equals(candidate.getStatus())
+                        && candidate.getCompanionUserId() != null) {
+                    notificationService.send(candidate.getCompanionUserId(), "APPLICATION_AUTO_REJECTED", "本次申请未被选中",
+                            "该需求已选择其他陪诊师，您可以继续查看需求广场。", application.getRequestId());
+                }
             }
             return order;
         } finally {
@@ -173,6 +194,7 @@ public class ApplicationService {
     }
 
     /** 客户拒绝某申请 */
+    @Transactional
     public void reject(Long userId, Long applicationId) {
         ServiceApplication application = applicationMapper.selectById(applicationId);
         if (application == null) {
@@ -186,5 +208,10 @@ public class ApplicationService {
             throw new ForbiddenException("该申请当前状态不可拒绝");
         }
         applicationMapper.updateStatus(applicationId, "REJECTED");
+        CompanionProfile profile = companionProfileMapper.selectById(application.getCompanionId());
+        if (profile != null) {
+            notificationService.send(profile.getUserId(), "APPLICATION_REJECTED", "陪诊申请未被接受",
+                    "客户暂未接受您对该需求的申请，您可以继续查看其他需求。", application.getRequestId());
+        }
     }
 }

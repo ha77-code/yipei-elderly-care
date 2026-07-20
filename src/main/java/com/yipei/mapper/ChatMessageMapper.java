@@ -55,7 +55,7 @@ public interface ChatMessageMapper {
             "LEFT JOIN chat_message lm ON lm.id = " +
             "(SELECT m2.id FROM chat_message m2 WHERE m2.order_id = o.id ORDER BY m2.created_at DESC, m2.id DESC LIMIT 1) " +
             "WHERE (o.customer_id = #{userId} OR cp.user_id = #{userId}) " +
-            "AND o.status IN ('ACCEPTED','IN_SERVICE','PENDING_CONFIRM','COMPLETED','COMPLAINT') " +
+            "AND o.status IN ('ACCEPTED','IN_SERVICE','PENDING_CONFIRM','COMPLETED','CANCELLED','COMPLAINT') " +
             "ORDER BY (lm.created_at IS NULL) ASC, lm.created_at DESC, o.id DESC")
     List<ChatConversationVO> selectConversations(@Param("userId") Long userId);
 }

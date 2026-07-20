@@ -30,6 +30,7 @@ SET NAMES utf8mb4;
 -- （service_request 无业务唯一键，ON DUPLICATE KEY 无法去重，故统一先清空）
 -- ============================================================================
 SET FOREIGN_KEY_CHECKS = 0;
+TRUNCATE TABLE user_notification;
 TRUNCATE TABLE chat_message;
 TRUNCATE TABLE service_application;
 TRUNCATE TABLE report_record;

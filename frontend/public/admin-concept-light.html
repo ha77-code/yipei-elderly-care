@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>益陪养老 · 管理后台（浅色）</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<link rel="stylesheet" href="concept-functional.css">
 <style>
 /* ═══ 浅色主题 · 白瓷磨砂 + 深墨绿字 ═══ */
 :root{
@@ -440,5 +441,10 @@ document.querySelectorAll('a,.btn-action,.btn-sm,.cs-trigger,.cs-opt,.filter-str
 document.addEventListener('mousemove',function(e){navZone.classList.toggle('nav-glow',e.clientX<navZone.getBoundingClientRect().right+40)})
 })();
 </script>
+<script src="concept-runtime.js"></script>
+<script src="admin-base.js"></script>
+<script src="admin-manage.js"></script>
+<script src="admin-operations.js"></script>
+<script src="concept-live.js"></script>
 </body>
 </html>

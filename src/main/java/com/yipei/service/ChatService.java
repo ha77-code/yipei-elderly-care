@@ -14,6 +14,7 @@ import com.yipei.mapper.CompanionProfileMapper;
 import com.yipei.mapper.ServiceOrderMapper;
 import com.yipei.mapper.SysUserMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Set;
@@ -24,6 +25,7 @@ public class ChatService {
     private final ServiceOrderMapper serviceOrderMapper;
     private final CompanionProfileMapper companionProfileMapper;
     private final SysUserMapper sysUserMapper;
+    private final UserNotificationService notificationService;
 
     /** 聊天开启的订单状态：撮合达成后、服务结束前 */
     private static final Set<String> OPEN_STATUSES = Set.of("ACCEPTED", "IN_SERVICE", "PENDING_CONFIRM");
@@ -31,11 +33,13 @@ public class ChatService {
     public ChatService(ChatMessageMapper chatMessageMapper,
                        ServiceOrderMapper serviceOrderMapper,
                        CompanionProfileMapper companionProfileMapper,
-                       SysUserMapper sysUserMapper) {
+                       SysUserMapper sysUserMapper,
+                       UserNotificationService notificationService) {
         this.chatMessageMapper = chatMessageMapper;
         this.serviceOrderMapper = serviceOrderMapper;
         this.companionProfileMapper = companionProfileMapper;
         this.sysUserMapper = sysUserMapper;
+        this.notificationService = notificationService;
     }
 
     private ServiceOrder requireOrder(Long orderId) {
@@ -71,6 +75,7 @@ public class ChatService {
     }
 
     /** 发送消息（仅参与者、仅聊天开启状态） */
+    @Transactional
     public ChatMessageVO send(Long orderId, Long fromUserId, String content) {
         if (content == null || content.isBlank()) {
             throw new ForbiddenException("消息内容不能为空");
@@ -105,6 +110,12 @@ public class ChatService {
             vo.setFromName(sender.getNickname());
             vo.setFromAvatar(sender.getAvatar());
         }
+        String senderName = sender != null && sender.getNickname() != null
+                ? sender.getNickname() : "订单联系人";
+        String preview = message.getContent().length() > 80
+                ? message.getContent().substring(0, 80) + "..." : message.getContent();
+        notificationService.send(toUserId, "CHAT_MESSAGE", "收到新的私信",
+                senderName + "在订单 #" + orderId + " 中发来消息：" + preview, orderId);
         return vo;
     }
 

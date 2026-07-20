@@ -1033,7 +1033,7 @@ function renderDropdown(){
       const action=item.dataset.action
       if(action==='login'){if(isLoggedIn())window.location.href='/?skip=1';else window.location.href='login.html'}
       else if(action==='register') window.location.href='login.html'
-      else if(action==='profile') window.location.href='/profile'
+      else if(action==='profile') window.location.href='/?skip=1'
       else if(action==='switch'){localStorage.removeItem('yipei_user');window.location.href='login.html'}
       else if(action==='logout'){
         localStorage.removeItem('yipei_user')

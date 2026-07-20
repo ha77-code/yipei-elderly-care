@@ -31,6 +31,9 @@ public interface ServiceApplicationMapper {
     @Update("UPDATE service_application SET status = #{status}, updated_at = NOW() WHERE id = #{id}")
     int updateStatus(@Param("id") Long id, @Param("status") String status);
 
+    @Update("UPDATE service_application SET message = #{message}, status = 'PENDING', updated_at = NOW() WHERE id = #{id}")
+    int resubmit(@Param("id") Long id, @Param("message") String message);
+
     /** 接受某申请时，把同一需求下其他 PENDING 申请置为 REJECTED */
     @Update("UPDATE service_application SET status = 'REJECTED', updated_at = NOW() " +
             "WHERE request_id = #{requestId} AND id <> #{acceptedId} AND status = 'PENDING'")

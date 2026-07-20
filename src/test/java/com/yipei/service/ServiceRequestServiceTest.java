@@ -36,6 +36,9 @@ class ServiceRequestServiceTest {
     @Mock
     private AiSummaryService aiSummaryService;
 
+    @Mock
+    private UserNotificationService notificationService;
+
     @InjectMocks
     private ServiceRequestService serviceRequestService;
 
@@ -60,6 +63,8 @@ class ServiceRequestServiceTest {
         assertEquals("门诊陪诊", requestCaptor.getValue().getServiceType());
         verify(serviceRequestMapper).updateAiSummary(
                 eq(100L), eq("按时到院完成检查陪同，注意行动不便。"));
+        verify(notificationService).sendToRole(eq(RoleConstants.ADMIN), eq("REQUEST_AUDIT_PENDING"),
+                any(), any(), eq(100L));
     }
 
     @Test
