@@ -27,6 +27,8 @@ const MyRequests = () => import('@/views/customer/MyRequests.vue')
 const CompanionProfile = () => import('@/views/companion/CompanionProfile.vue')
 const AvailableOrders = () => import('@/views/companion/AvailableOrders.vue')
 const ServiceRecords = () => import('@/views/companion/ServiceRecords.vue')
+const MyEvaluations = () => import('@/views/companion/MyEvaluations.vue')
+const IncomeStats = () => import('@/views/companion/IncomeStats.vue')
 
 /* ===== 懒加载：管理员端 ===== */
 const AdminDashboard = () => import('@/views/admin/AdminDashboard.vue')
@@ -139,6 +141,18 @@ const routes = [
         name: 'ServiceRecords',
         component: ServiceRecords,
         meta: { title: '服务记录', role: ROLES.COMPANION }
+      },
+      {
+        path: 'companion/evaluations',
+        name: 'MyEvaluations',
+        component: MyEvaluations,
+        meta: { title: '我的评价', role: ROLES.COMPANION }
+      },
+      {
+        path: 'companion/income',
+        name: 'IncomeStats',
+        component: IncomeStats,
+        meta: { title: '收入统计', role: ROLES.COMPANION }
       },
 
       /* ---------- 管理员端 ADMIN ---------- */

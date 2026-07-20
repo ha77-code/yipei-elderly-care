@@ -63,4 +63,7 @@ public interface CompanionProfileMapper {
 
     @Update("UPDATE companion_profile SET rating = #{rating} WHERE id = #{id}")
     int updateRating(@Param("id") Long id, @Param("rating") double rating);
+
+    @Update("UPDATE companion_profile SET completed_count = completed_count + 1, updated_at = NOW() WHERE id = #{id}")
+    int incrementCompletedCount(@Param("id") Long id);
 }

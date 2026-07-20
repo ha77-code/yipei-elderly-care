@@ -195,10 +195,8 @@ export default {
       }).catch(() => {})
     },
     goCreateOrder(row) {
-      this.$router.push({
-        path: '/customer/request/create',
-        query: { requestId: row.id }
-      })
+      this.$router.push('/customer/companions')
+      this.$message.info('请选择一位陪诊师为您服务')
     },
     formatDate(dateStr) {
       if (!dateStr) return '-'

@@ -59,6 +59,20 @@
           <p class="introduction">{{ profile.introduction || '暂无介绍' }}</p>
         </div>
 
+        <!-- 用户评价 -->
+        <div class="detail-section" v-if="evaluations.length > 0">
+          <h3 class="section-title">用户评价 ({{ evaluations.length }})</h3>
+          <div class="eval-list">
+            <div v-for="ev in evaluations.slice(0, 5)" :key="ev.id" class="eval-item">
+              <div class="eval-header">
+                <span class="eval-stars">{{ '★'.repeat(ev.score) }}{{ '☆'.repeat(5 - ev.score) }}</span>
+                <span class="eval-time">{{ fmtDate(ev.createdAt || ev.created_at) }}</span>
+              </div>
+              <p class="eval-text">{{ ev.content || '未填写评价内容' }}</p>
+            </div>
+          </div>
+        </div>
+
         <!-- 操作按钮 -->
         <div class="detail-actions" v-if="profile.auditStatus === 1">
           <el-button v-if="canCreateOrder" type="primary" size="medium" round @click="goCreateOrder">
@@ -80,6 +94,7 @@
 
 <script>
 import { getCompanionDetail } from '@/api/companion'
+import { getCompanionEvaluations } from '@/api/evaluation'
 import { getUserRole, ROLES } from '@/utils/auth'
 import TtsPlayer from '@/components/TtsPlayer.vue'
 
@@ -89,6 +104,7 @@ export default {
   data() {
     return {
       profile: null,
+      evaluations: [],
       loading: false
     }
   },
@@ -128,15 +144,26 @@ export default {
       try {
         const res = await getCompanionDetail(id)
         this.profile = res.data || res
+        this.fetchEvaluations(id)
       } catch {
         this.profile = null
       } finally {
         this.loading = false
       }
     },
+    async fetchEvaluations(companionId) {
+      try {
+        const res = await getCompanionEvaluations(companionId)
+        this.evaluations = res.data || res || []
+      } catch { this.evaluations = [] }
+    },
+    fmtDate(d) { if (!d) return ''; return d.replace('T', ' ').substring(0, 10) },
     goCreateOrder() {
       if (!this.canCreateOrder) return
-      this.$router.push('/customer/request/create')
+      this.$router.push({
+        path: '/customer/request/create',
+        query: { companionId: this.profile.id }
+      })
     }
   }
 }
@@ -170,6 +197,13 @@ export default {
 .type-tag { margin-right: 8px; margin-bottom: 4px; background: rgba(122,154,126,0.08); border-color: rgba(122,154,126,0.15); color: #3d6b42; border-radius: 20px; }
 
 .introduction { font-size: 15px; color: #444; line-height: 1.9; margin: 0; white-space: pre-wrap; padding: 16px 20px; background: rgba(122,154,126,0.04); border-radius: 10px; border-left: 3px solid rgba(122,154,126,0.3); }
+
+.eval-list { display: flex; flex-direction: column; gap: 12px; }
+.eval-item { padding: 12px 16px; background: #fafaf8; border-radius: 8px; border: 1px solid rgba(0,0,0,0.04); }
+.eval-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.eval-stars { color: #E6A23C; font-size: 13px; letter-spacing: 1px; }
+.eval-time { font-size: 12px; color: #999; }
+.eval-text { font-size: 13px; color: #555; margin: 0; line-height: 1.6; }
 
 .detail-actions { padding: 24px 36px 32px; border-top: 1px solid rgba(0,0,0,0.04); display: flex; gap: 12px; }
 

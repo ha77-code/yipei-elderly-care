@@ -1,5 +1,6 @@
 package com.yipei.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -9,6 +10,7 @@ public class ServiceRequest {
     private Long id;
     private Long customerId;
     private String serviceType;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime serviceDate;
     private String hospitalName;
     private String department;

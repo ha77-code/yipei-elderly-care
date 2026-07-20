@@ -66,6 +66,8 @@ const T = {
   myOrders: '\u6211\u7684\u8ba2\u5355',
   companionProfile: '\u5165\u9a7b\u8d44\u6599',
   serviceRecords: '\u670d\u52a1\u8bb0\u5f55',
+  myEvaluations: '\u6211\u7684\u8bc4\u4ef7',
+  incomeStats: '\u6536\u5165\u7edf\u8ba1',
   userManage: '\u7528\u6237\u7ba1\u7406',
   companionReview: '\u966a\u8bca\u5e08\u5ba1\u6838',
   requestManage: '\u9700\u6c42\u7ba1\u7406',
@@ -101,7 +103,9 @@ const SIDE_MAP = {
     { label: T.companionProfile, path: '/companion/profile', icon: 'el-icon-postcard' },
     { label: T.availableOrders, path: '/companion/available-orders', icon: 'el-icon-s-claim' },
     { label: T.myOrders, path: '/companion/orders', icon: 'el-icon-s-order' },
-    { label: T.serviceRecords, path: '/companion/service-records', icon: 'el-icon-tickets' }
+    { label: T.serviceRecords, path: '/companion/service-records', icon: 'el-icon-tickets' },
+    { label: T.myEvaluations, path: '/companion/evaluations', icon: 'el-icon-chat-dot-round' },
+    { label: T.incomeStats, path: '/companion/income', icon: 'el-icon-coin' }
   ],
   ADMIN: [
     { label: T.userManage, path: '/admin/users', icon: 'el-icon-user' },
