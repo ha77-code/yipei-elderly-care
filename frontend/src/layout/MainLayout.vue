@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="main-layout">
     <!-- 背景 -->
     <div class="bg-layer" :style="{backgroundImage: 'url(/img/bg-bamboo-soft.webp)'}"></div>
@@ -12,9 +12,9 @@
       </div>
 
       <nav class="top-nav">
-        <a v-for="item in topItems" :key="item.path"
-          href="#" class="nav-link"
-          @click.prevent="goHome">{{ item.label }}</a>
+        <router-link v-for="item in topItems" :key="item.path"
+          :to="item.path" class="nav-link"
+          exact-active-class="nav-link--active">{{ item.label }}</router-link>
       </nav>
 
       <el-dropdown trigger="click" @command="handleUserCommand">
@@ -33,13 +33,7 @@
 
     <div class="layout-body">
       <aside class="side-bar">
-        <div class="side-title">{{ text.workbench }}</div>
-        <el-menu :default-active="activeMenu" :unique-opened="true" background-color="transparent" text-color="rgba(60,75,45,0.78)" active-text-color="rgba(120,175,85,0.95)" class="side-menu" @select="handleSideSelect">
-          <el-menu-item v-for="item in sideItems" :key="item.path" :index="item.path">
-            <i :class="item.icon"></i><span>{{ item.label }}</span>
-            <el-badge v-if="item.badge && unreadTotal > 0" :value="unreadTotal" class="menu-badge" />
-          </el-menu-item>
-        </el-menu>
+        <ArcNav :items="arcItems" />
       </aside>
 
       <main class="main-content">
@@ -52,6 +46,7 @@
 <script>
 import { getUser, clearUser, ROLES, ROLE_LABELS } from '@/utils/auth'
 import { getUnreadTotal } from '@/api/chat'
+import ArcNav from '@/components/ArcNav.vue'
 
 const T = {
   brandSymbol: '益', brandName: '益陪养老', workbench: '工作台',
@@ -77,7 +72,36 @@ const TOP_MAP = {
   ],
   ADMIN: [
     { label: T.home, path: '/' },
-    { label: T.admin, path: '/admin' }
+    { label: T.admin, path: '/admin/users' }
+  ]
+}
+
+const ARC_MAP = {
+  CUSTOMER: [
+    { label: '首页', path: '/', icon: '⌂' },
+    { label: '陪诊师', path: '/customer/companions', icon: '☺' },
+    { label: '订单', path: '/customer/orders', icon: '☰' },
+    { label: '需求', path: '/customer/requests', icon: '✎' },
+    { label: '聊天', path: '/customer/messages', icon: '💬' }
+  ],
+  COMPANION: [
+    { label: '首页', path: '/', icon: '⌂' },
+    { label: '广场', path: '/companion/pool', icon: '☑' },
+    { label: '接单', path: '/companion/available-orders', icon: '☰' },
+    { label: '订单', path: '/companion/orders', icon: '□' },
+    { label: '聊天', path: '/companion/messages', icon: '💬' },
+    { label: '记录', path: '/companion/service-records', icon: '📋' },
+    { label: '评价', path: '/companion/evaluations', icon: '★' },
+    { label: '收入', path: '/companion/income', icon: '◆' }
+  ],
+  ADMIN: [
+    { label: '用户', path: '/admin/users', icon: '☺' },
+    { label: '审核', path: '/admin/companion-review', icon: '✓' },
+    { label: '头像', path: '/admin/avatar-review', icon: '🖼' },
+    { label: '需求审', path: '/admin/request-review', icon: '✎' },
+    { label: '订单', path: '/admin/orders', icon: '☰' },
+    { label: '投诉', path: '/admin/reports', icon: '⚠' },
+    { label: '统计', path: '/admin/statistics', icon: '◆' }
   ]
 }
 
@@ -91,6 +115,7 @@ const SIDE_MAP = {
   ],
   COMPANION: [
     { label: T.companionProfile, path: '/companion/profile', icon: 'el-icon-postcard' },
+    { label: '需求广场', path: '/companion/pool', icon: 'el-icon-s-grid' },
     { label: T.availableOrders, path: '/companion/available-orders', icon: 'el-icon-s-claim' },
     { label: T.myOrders, path: '/companion/orders', icon: 'el-icon-s-order' },
     { label: T.messages, path: '/companion/messages', icon: 'el-icon-message', badge: true },
@@ -103,6 +128,8 @@ const SIDE_MAP = {
     { label: T.companionReview, path: '/admin/companion-review', icon: 'el-icon-finished' },
     { label: T.avatarReview, path: '/admin/avatar-review', icon: 'el-icon-picture-outline' },
     { label: T.requestReview, path: '/admin/request-review', icon: 'el-icon-s-check' },
+    { label: T.avatarReview, path: '/admin/avatar-review', icon: 'el-icon-picture-outline' },
+    { label: T.requestReview, path: '/admin/request-review', icon: 'el-icon-s-check' },
     { label: T.requestManage, path: '/admin/requests', icon: 'el-icon-document-copy' },
     { label: T.orderManage, path: '/admin/orders', icon: 'el-icon-s-order' },
     { label: T.reportManage, path: '/admin/reports', icon: 'el-icon-warning-outline' },
@@ -112,6 +139,7 @@ const SIDE_MAP = {
 
 export default {
   name: 'MainLayout',
+  components: { ArcNav },
   data() {
     const user = getUser() || {}
     return {
@@ -126,7 +154,8 @@ export default {
     roleLabel() { return ROLE_LABELS[this.userRole] || ROLE_LABELS.CUSTOMER },
     activeMenu() { return this.$route.path },
     topItems() { return TOP_MAP[this.userRole] || TOP_MAP.CUSTOMER },
-    sideItems() { return SIDE_MAP[this.userRole] || SIDE_MAP.CUSTOMER }
+    sideItems() { return SIDE_MAP[this.userRole] || SIDE_MAP.CUSTOMER },
+    arcItems() { return ARC_MAP[this.userRole] || ARC_MAP.CUSTOMER }
   },
   created() {
     if (this.userRole !== ROLES.ADMIN) {
@@ -150,15 +179,8 @@ export default {
       } catch { /* 忽略 */ }
     },
     goHome() {
-      const map = { CUSTOMER: '/customer-concept-light.html', COMPANION: '/companion-concept-light.html', ADMIN: '/admin-concept-light.html' }
-      window.location.href = map[this.userRole] || '/customer-concept-light.html'
-    },
-    handleSideSelect(path) {
-      if (path.startsWith('/admin')) {
-        window.location.href = '/admin-concept-light.html'
-        return
-      }
-      this.$router.push(path).catch(() => {})
+      const map = { CUSTOMER: '/', COMPANION: '/', ADMIN: '/admin/users' }
+      this.$router.push(map[this.userRole] || '/').catch(() => {})
     },
     handleUserCommand(command) {
       if (command === 'profile') this.$router.push('/profile')
@@ -187,7 +209,7 @@ export default {
 .bg-layer::after{content:'';position:absolute;inset:0;background:linear-gradient(155deg,rgba(255,252,240,0.15),rgba(240,246,228,0.08) 48%,rgba(224,234,208,0.2))}
 .bg-corners{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(circle 280px at 0% 0%,rgba(255,245,210,0.18),transparent 62%),radial-gradient(circle 320px at 100% 100%,rgba(210,225,180,0.15),transparent 62%),linear-gradient(90deg,transparent 0 16%,rgba(255,225,140,0.04) 16.1% 16.25%,transparent 16.6% 36%,rgba(255,225,140,0.03) 36.1% 36.25%,transparent 36.6%),radial-gradient(ellipse at 24% 0%,rgba(240,215,150,0.16),transparent 34%)}
 /* 顶栏（白瓷磨砂） */
-.top-bar{height:66px;display:flex;align-items:center;justify-content:space-between;gap:24px;padding:0 28px;background:linear-gradient(180deg,rgba(255,255,255,0.72),rgba(248,250,240,0.6));backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(var(--warm-line),0.2);position:sticky;top:0;z-index:20;box-shadow:0 2px 20px -8px rgba(60,70,40,0.12)}
+.top-bar{height:66px;display:flex;align-items:center;justify-content:space-between;gap:24px;padding:0 28px;background:linear-gradient(180deg,rgba(255,255,255,0.72),rgba(248,250,240,0.6));backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(var(--warm-line),0.2);position:fixed;top:0;left:0;right:0;z-index:20;box-shadow:0 2px 20px -8px rgba(60,70,40,0.12)}
 .brand-lockup{display:flex;align-items:center;gap:12px;cursor:pointer;min-width:170px}
 .brand-symbol{width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:10px;border:1px solid rgba(var(--accent),0.35);color:rgba(var(--accent-deep),0.85);font-family:'Noto Serif SC',serif;font-size:20px;font-weight:800;background:rgba(255,255,255,0.7)}
 .brand-text{color:rgba(var(--accent-deep),0.9);font-family:'Noto Serif SC',serif;font-size:18px;font-weight:800}
@@ -203,16 +225,10 @@ export default {
 .role-tag--companion{background:rgba(245,215,140,0.2);color:rgba(170,130,60,0.92)}
 .role-tag--admin{background:rgba(180,175,160,0.18);color:rgba(110,110,95,0.85)}
 /* 侧栏（白瓷磨砂） */
-.layout-body{flex:1;display:flex;min-height:0;position:relative;z-index:3}
-.side-bar{width:236px;flex:0 0 236px;padding:22px 12px;border-right:1px solid rgba(var(--warm-line),0.16);background:linear-gradient(180deg,rgba(255,255,255,0.45),rgba(248,250,240,0.28));backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);overflow-y:auto}
-.side-title{padding:0 14px 12px;color:rgba(var(--accent-deep),0.55);font-size:12px;font-weight:800;letter-spacing:0.05em}
-.side-menu{border:0}
-.side-menu ::v-deep .el-menu-item{height:44px;line-height:44px;margin-bottom:6px;border-radius:10px;font-size:14px;font-weight:700;transition:all 0.22s ease}
-.side-menu ::v-deep .el-menu-item i{color:inherit;margin-right:8px}
-.side-menu ::v-deep .el-menu-item:hover{background:rgba(var(--accent),0.1);color:rgba(var(--accent-deep),0.9) !important;box-shadow:inset 0 0 20px -8px rgba(var(--accent),0.1)}
-.side-menu ::v-deep .el-menu-item.is-active{background:rgba(var(--accent),0.14);color:rgba(var(--accent-deep),0.95) !important;box-shadow:inset 3px 0 0 rgba(var(--accent),0.6)}
+.layout-body{flex:1;display:flex;min-height:0;position:relative;z-index:3;overflow:hidden;padding-top:66px}
+.side-bar{width:280px;padding:0;border-right:1px solid rgba(var(--warm-line),0.16);background:linear-gradient(180deg,rgba(255,255,255,0.45),rgba(248,250,240,0.28));backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);overflow:hidden;position:fixed;left:0;top:66px;bottom:0;z-index:10}
 /* 主内容区 */
-.main-content{flex:1;min-width:0;overflow-y:auto;background:rgba(255,255,255,0.06);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+.main-content{flex:1;min-width:0;overflow-y:auto;margin-left:280px;background:rgba(255,255,255,0.06);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
 /* 卡片 */
 .main-content ::v-deep .el-card,.main-content ::v-deep .filter-card,.main-content ::v-deep .list-card,.main-content ::v-deep .form-card,.main-content ::v-deep .detail-card,.main-content ::v-deep .content-card,.main-content ::v-deep .profile-card,.main-content ::v-deep .companion-card,.main-content ::v-deep .request-card,.main-content ::v-deep .order-card,.main-content ::v-deep .stat-card {
   background:rgba(255,255,255,0.62) !important; backdrop-filter:blur(14px) !important; -webkit-backdrop-filter:blur(14px) !important;
@@ -231,7 +247,8 @@ export default {
 .main-content ::v-deep .el-button--primary:hover{background:linear-gradient(135deg,rgba(160,210,110,1),rgba(135,190,85,1)) !important;box-shadow:0 6px 18px -6px rgba(140,195,90,0.5),0 0 26px -2px rgba(200,225,140,0.55) !important}
 .main-content ::v-deep .el-button--default{background:rgba(255,255,255,0.6) !important;border-color:rgba(150,140,110,0.25) !important;color:rgba(78,106,56,0.85) !important;border-radius:9px !important}
 .main-content ::v-deep .el-button--default:hover{background:linear-gradient(135deg,rgba(255,252,240,0.96),rgba(245,220,140,0.2)) !important;border-color:rgba(240,210,130,0.5) !important;box-shadow:0 4px 14px -4px rgba(200,180,130,0.35),0 0 22px -2px rgba(245,220,135,0.4) !important}
-.main-content ::v-deep .el-button--danger{color:rgba(170,90,75,0.85) !important;border-color:rgba(190,120,105,0.28) !important}
+.main-content ::v-deep .el-button--danger{color:#fff !important;background:#c0392b !important;border-color:#c0392b !important}
+.main-content ::v-deep .el-button--danger:hover{background:#e74c3c !important;border-color:#e74c3c !important}
 .main-content ::v-deep .el-button--text{color:rgba(78,106,56,0.8) !important}
 .main-content ::v-deep .el-pagination.is-background .el-pager li:not(.disabled).active{background:rgba(108,140,80,0.85) !important;box-shadow:0 0 10px rgba(140,195,90,0.35) !important}
 .main-content ::v-deep .el-tag--success{background:rgba(185,220,135,0.18) !important;border-color:rgba(170,210,120,0.4) !important;color:rgba(130,185,80,0.88) !important}
@@ -248,9 +265,9 @@ export default {
 @media (max-width:860px){
   .top-bar{padding:0 14px;gap:12px}
   .brand-text,.top-nav{display:none}
-  .side-bar{width:72px;flex-basis:72px;padding:16px 8px}
-  .side-title,.side-menu ::v-deep .el-menu-item span{display:none}
-  .side-menu ::v-deep .el-menu-item{padding:0 !important;display:flex;justify-content:center}
-  .side-menu ::v-deep .el-menu-item i{margin:0}
+  .side-bar{width:72px;flex-basis:72px}
+  
+  
+  
 }
 </style>

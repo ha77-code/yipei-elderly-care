@@ -111,7 +111,8 @@ a { color: inherit; }
 .el-button--primary:hover, .el-button--primary:focus { background: rgba(240, 210, 175, 0.96); border-color: rgba(240, 210, 175, 0.96); color: #0e0c06; box-shadow: 0 0 0 4px rgba(255, 210, 140, 0.14); }
 .el-button--success { background: #2d5a3a; border-color: #2d5a3a; }
 .el-button--warning { background: #b99163; border-color: #b99163; }
-.el-button--danger { background: #b86658; border-color: #b86658; }
+.el-button--danger { background: #c0392b; border-color: #c0392b; color: #fff; }
+.el-button--danger:hover { background: #e74c3c; border-color: #e74c3c; }
 
 .el-input__inner, .el-textarea__inner {
   font-size: 16px;
