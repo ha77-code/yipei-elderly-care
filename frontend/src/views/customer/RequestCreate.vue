@@ -138,11 +138,17 @@
       :visible.sync="recommendVisible"
       width="720px"
       :close-on-click-modal="false"
+      append-to-body
       class="recommend-dialog"
     >
       <div class="recommend-summary" v-if="form.aiSummary">
         <span class="recommend-summary-label">需求摘要</span>
         <p>{{ form.aiSummary }}</p>
+      </div>
+
+      <div class="recommend-budget-tip" v-if="!(form.budget > 0)">
+        <i class="el-icon-warning-outline"></i>
+        指定陪诊师需先设置预算：请关闭本弹窗，在表单「预算」处填写大于 0 的金额后再选择。
       </div>
 
       <div class="recommend-grid" v-loading="recommendLoading">
@@ -179,7 +185,7 @@
       <span slot="footer" class="dialog-footer">
         <el-button @click="recommendVisible = false">暂不选择，直接发布</el-button>
         <el-button type="primary" :disabled="!selectedCompanion" @click="selectAndCreate">
-          选择该陪诊师并创建订单
+          指定该陪诊师并提交需求
         </el-button>
       </span>
     </el-dialog>
@@ -288,22 +294,16 @@ export default {
         this.recommendLoading = false
       }
     },
+    // 从推荐弹窗选定某陪诊师 → 作为指定需求提交（审核通过后后端自动生成待接单订单）
     selectAndCreate() {
       const cid = this.selectedCompanion
       if (!cid) return
+      if (!(this.form.budget > 0)) {
+        this.$message.warning('指定陪诊师时请先填写大于 0 的预算')
+        return
+      }
       this.recommendVisible = false
-      // Navigate to create order with selected companion
-      this.$router.push({
-        path: '/customer/request/create',
-        query: { companionId: cid, ...this.$route.query }
-      })
-      // Need to also create the request first
-      this.handleSubmit().then(() => {
-        if (cid) {
-          // After creating request, navigate to order creation
-          this.$message.success('需求已创建，请填写订单信息')
-        }
-      }).catch(() => {})
+      this.submitDirected(cid)
     },
     async handleSubmit() {
       try {
@@ -312,23 +312,39 @@ export default {
         return
       }
 
-      if (this.isOrderMode && !(this.form.budget > 0)) {
-        this.$message.warning('指定陪诊师时请填写大于 0 的预算')
+      // 指定下单模式（从陪诊师详情/直接带 companionId 进入）
+      if (this.isOrderMode) {
+        if (!(this.form.budget > 0)) {
+          this.$message.warning('指定陪诊师时请填写大于 0 的预算')
+          return
+        }
+        this.submitDirected(Number(this.$route.query.companionId))
         return
       }
 
+      // 普通公开发布
       this.submitting = true
       try {
-        const payload = { ...this.form }
-        if (this.isOrderMode) {
-          // 指定下单：提交带指定陪诊师的需求，管理员审核通过后后端自动生成待接单订单。
-          payload.preferredCompanionId = Number(this.$route.query.companionId)
-          await createRequest(payload)
-          this.$message.success('指定需求已提交，待管理员审核通过后将自动向该陪诊师发送订单')
-        } else {
-          await createRequest(payload)
-          this.$message.success('需求发布成功')
-        }
+        await createRequest({ ...this.form })
+        this.$message.success('需求发布成功')
+        this.$router.push('/customer/requests')
+      } catch {
+        /* 错误已统一处理 */
+      } finally {
+        this.submitting = false
+      }
+    },
+    // 提交带指定陪诊师的需求：不直接建单，管理员审核通过后后端自动生成待接单订单
+    async submitDirected(companionId) {
+      try {
+        await this.$refs.requestForm.validate()
+      } catch {
+        return
+      }
+      this.submitting = true
+      try {
+        await createRequest({ ...this.form, preferredCompanionId: companionId })
+        this.$message.success('指定需求已提交，待管理员审核通过后将自动向该陪诊师发送订单')
         this.$router.push('/customer/requests')
       } catch {
         /* 错误已统一处理 */
@@ -412,6 +428,7 @@ export default {
 }
 .recommend-summary-label { font-size: 12px; font-weight: 700; color: rgba(78,106,56,0.8); }
 .recommend-summary p { margin: 6px 0 0; font-size: 13px; color: rgba(46,60,38,0.8); line-height: 1.6; }
+.recommend-budget-tip { display: flex; align-items: center; gap: 6px; margin-bottom: 16px; padding: 10px 14px; background: rgba(230,162,60,0.1); border-radius: 8px; font-size: 13px; color: #B88230; }
 .recommend-empty { text-align: center; color: rgba(130,140,116,0.7); padding: 40px 16px; font-size: 14px; }
 .recommend-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; min-height: 200px; }
 .recommend-card {

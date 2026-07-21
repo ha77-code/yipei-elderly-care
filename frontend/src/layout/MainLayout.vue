@@ -231,8 +231,10 @@ export default {
 /* 侧栏（白瓷磨砂） */
 .layout-body{flex:1;display:flex;min-height:0;position:relative;z-index:3;overflow:hidden;padding-top:66px}
 .side-bar{width:280px;padding:0;border-right:1px solid var(--border-soft);background:var(--bg-panel-gradient);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);overflow:hidden;position:fixed;left:0;top:66px;bottom:0;z-index:10}
-/* 主内容区 */
-.main-content{flex:1;min-width:0;overflow-y:auto;margin-left:280px;background:rgba(var(--brand-accent),0.04);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+/* 主内容区 —— 注意：不要在此加 backdrop-filter/filter/transform，
+   否则会成为 position:fixed 的包含块，把 el-dialog 弹窗困在内容区内、
+   被 body 上的遮罩盖住导致点不动（只能 ESC）。弹窗遮罩挂在 body 上。 */
+.main-content{flex:1;min-width:0;overflow-y:auto;margin-left:280px;background:rgba(var(--brand-accent),0.04)}
 /* 卡片 */
 .main-content ::v-deep .el-card,.main-content ::v-deep .filter-card,.main-content ::v-deep .list-card,.main-content ::v-deep .form-card,.main-content ::v-deep .detail-card,.main-content ::v-deep .content-card,.main-content ::v-deep .profile-card,.main-content ::v-deep .companion-card,.main-content ::v-deep .request-card,.main-content ::v-deep .order-card,.main-content ::v-deep .stat-card {
   background:var(--bg-card) !important; backdrop-filter:blur(14px) !important; -webkit-backdrop-filter:blur(14px) !important;
