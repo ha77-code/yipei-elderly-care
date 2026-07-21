@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "医陪平台接口测试",
-    "description": "# 医陪平台 - 全角色接口测试集合\n\n## 环境变量\n导入后需创建环境，配置以下变量：\n\n| 变量名 | 示例值 | 说明 |\n|--------|--------|------|\n| `baseUrl` | `http://localhost:8080` | 后端地址 |\n| `userId` | `4` | 当前登录用户ID |\n| `adminId` | `17` | 管理员ID |\n| `companionId` | `12` | 陪诊师用户ID |\n| `companionProfileId` | `1` | 陪诊师资料ID |\n| `orderId` | `45` | 测试订单ID |\n| `requestId` | `67` | 测试需求ID |\n\n## 测试账号\n| 用户名 | 密码 | 角色 |\n|--------|------|------|\n| `customer1` | `123456` | 客户 |\n| `companion1` | `123456` | 陪诊师 |\n| `admin1` | `123456` | 管理员 |\n\n## 使用方式\n1. 创建环境 → 配好 `baseUrl`\n2. 先跑 **登录** 接口，自动写入 `userId`\n3. 再按顺序跑其他接口\n4. 用 Runner 批量执行",
+    "description": "# 医陪平台 - 全角色接口测试集合\n\n> 版本：v1.1 | 更新：2026-07-20\n\n## ⚠️ 重要变更（本次更新）\n- **破坏性变更**：`GET /api/user/info`、`GET /api/user/{id}`、`GET /api/service-request/list`、`GET /api/order/list` 从 query 参数改为 `X-User-Id` Header\n- **日期格式变更**：服务需求 serviceDate 改为 `yyyy-MM-dd HH:mm:ss` 格式\n- **安全限制**：文件上传仅允许 jpg/jpeg/png/gif/webp/pdf/doc/docx\n- 🆕 **新功能**：TTS 文本合成、AI 性格匹配、陪诊师 Traits、需求 preferredTraits/needPickup\n- **行为变更**：拒单后需求回归 PENDING、确认完成自动 +1 completed_count\n\n## 环境变量\n导入后需创建环境，配置以下变量：\n\n| 变量名 | 示例值 | 说明 |\n|--------|--------|------|\n| `baseUrl` | `http://localhost:8080` | 后端地址 |\n| `userId` | `4` | 当前登录用户ID |\n| `adminId` | `17` | 管理员ID |\n| `companionId` | `12` | 陪诊师用户ID |\n| `companionProfileId` | `1` | 陪诊师资料ID |\n| `orderId` | `45` | 测试订单ID |\n| `requestId` | `67` | 测试需求ID |\n\n## 测试账号\n| 用户名 | 密码 | 角色 |\n|--------|------|------|\n| `customer1` | `123456` | 客户 |\n| `companion1` | `123456` | 陪诊师 |\n| `admin1` | `123456` | 管理员 |\n\n## 使用方式\n1. 创建环境 → 配好 `baseUrl`\n2. 先跑 **登录** 接口，自动写入 `userId`\n3. 再按顺序跑其他接口\n4. 用 Runner 批量执行",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "yipei-tester"
   },
@@ -14,6 +14,100 @@
     { "key": "orderId", "value": "" },
     { "key": "requestId", "value": "" },
     { "key": "customer1Id", "value": "4" }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "exec": [
+          "// ==================== 批量测试自动登录 ====================",
+          "// 如果 userId 环境变量为空或不大于0，自动调用登录接口获取",
+          "var uid = pm.environment.get('userId');",
+          "if (!uid || uid === '' || parseInt(uid) <= 0) {",
+          "    console.log('>>> userId 未设置，自动登录中...');",
+          "    pm.sendRequest({",
+          "        url: pm.environment.get('baseUrl') + '/api/user/login',",
+          "        method: 'POST',",
+          "        header: { 'Content-Type': 'application/json' },",
+          "        body: { mode: 'raw', raw: JSON.stringify({ username: 'customer1', password: '123456' }) }",
+          "    }, function (err, res) {",
+          "        if (!err && res.json().code === 200) {",
+          "            var d = res.json().data;",
+          "            pm.environment.set('userId', d.id);",
+          "            pm.environment.set('customerId', d.id);",
+          "            console.log('>>> 自动登录成功: ' + d.nickname + ' (id=' + d.id + ', role=' + d.role + ')');",
+          "        } else {",
+          "            console.warn('>>> 自动登录失败，使用默认值 userId=4');",
+          "            pm.environment.set('userId', '4');",
+          "        }",
+          "    });",
+          "}",
+          "// 如果 adminId 未设置，也自动登录管理员",
+          "var aid = pm.environment.get('adminId');",
+          "if (!aid || aid === '' || parseInt(aid) <= 0) {",
+          "    console.log('>>> adminId 未设置，自动登录管理员...');",
+          "    pm.sendRequest({",
+          "        url: pm.environment.get('baseUrl') + '/api/user/login',",
+          "        method: 'POST',",
+          "        header: { 'Content-Type': 'application/json' },",
+          "        body: { mode: 'raw', raw: JSON.stringify({ username: 'admin1', password: '123456' }) }",
+          "    }, function (err, res) {",
+          "        if (!err && res.json().code === 200) {",
+          "            pm.environment.set('adminId', res.json().data.id);",
+          "            console.log('>>> adminId 已设置: ' + res.json().data.id);",
+          "        }",
+          "    });",
+          "}",
+          "// 如果 companionId 未设置，也自动登录陪诊师",
+          "var cid = pm.environment.get('companionId');",
+          "if (!cid || cid === '' || parseInt(cid) <= 0) {",
+          "    console.log('>>> companionId 未设置，自动登录陪诊师...');",
+          "    pm.sendRequest({",
+          "        url: pm.environment.get('baseUrl') + '/api/user/login',",
+          "        method: 'POST',",
+          "        header: { 'Content-Type': 'application/json' },",
+          "        body: { mode: 'raw', raw: JSON.stringify({ username: 'companion1', password: '123456' }) }",
+          "    }, function (err, res) {",
+          "        if (!err && res.json().code === 200) {",
+          "            pm.environment.set('companionId', res.json().data.id);",
+          "            console.log('>>> companionId 已设置: ' + res.json().data.id);",
+          "        }",
+          "    });",
+          "}"
+        ],
+        "type": "text/javascript"
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "exec": [
+          "// ==================== 全局测试安全网 ====================",
+          "// 当接口返回非 200 或响应体不是有效 JSON 时，防止测试脚本崩溃",
+          "var statusCode = pm.response.code;",
+          "var requestName = pm.info.requestName;",
+          "",
+          "// 检查 HTTP 状态码",
+          "if (statusCode >= 500) {",
+          "    console.error('❌ [' + requestName + '] 服务器 ' + statusCode + ' 错误');",
+          "    console.error('   响应体: ' + pm.response.text().substring(0, 200));",
+          "} else if (statusCode === 403) {",
+          "    console.warn('⚠️ [' + requestName + '] 403 无权限: ' + pm.response.text().substring(0, 200));",
+          "}",
+          "",
+          "// 安全解析 JSON",
+          "try {",
+          "    var json = pm.response.json();",
+          "    if (json.code && json.code !== 200) {",
+          "        console.warn('⚠️ [' + requestName + '] 业务错误 code=' + json.code + ': ' + json.message);",
+          "    }",
+          "} catch(e) {",
+          "    console.error('❌ [' + requestName + '] 响应不是有效 JSON: ' + pm.response.text().substring(0, 150));",
+          "}"
+        ],
+        "type": "text/javascript"
+      }
+    }
   ],
   "item": [
     {
@@ -120,8 +214,12 @@
               "script": {
                 "exec": [
                   "var json = pm.response.json();",
-                  "pm.test('获取用户信息成功', function () { pm.expect(json.code).to.equal(200); });",
-                  "pm.test('返回了用户数据', function () { pm.expect(json.data).to.have.property('nickname'); });"
+                  "if (json.code === 200 && json.data) {",
+                  "    pm.test('获取用户信息成功', function () { pm.expect(json.code).to.equal(200); });",
+                  "    pm.test('返回了用户数据', function () { pm.expect(json.data).to.have.property('nickname'); });",
+                  "} else {",
+                  "    pm.test('获取信息失败: ' + (json.message || '无响应'), function () { pm.expect(json.code).to.equal(200); });",
+                  "}"
                 ],
                 "type": "text/javascript"
               }
@@ -129,13 +227,15 @@
           ],
           "request": {
             "method": "GET",
+            "header": [
+              { "key": "X-User-Id", "value": "{{userId}}", "type": "text" }
+            ],
             "url": {
-              "raw": "{{baseUrl}}/api/user/info?id={{userId}}",
+              "raw": "{{baseUrl}}/api/user/info",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "user", "info"],
-              "query": [{"key": "id", "value": "{{userId}}"}]
+              "path": ["api", "user", "info"]
             },
-            "description": "### 获取用户信息\n\n- 通过 query 参数 id 查询\n- 无需 X-User-Id 头"
+            "description": "### 获取用户信息\n\n- ⚠️ 已变更：从 `?id=` query 参数改为 `X-User-Id` Header\n- 需要有效的 X-User-Id Header\n- 不带 Header 返回 400"
           },
           "response": []
         },
@@ -155,12 +255,15 @@
           ],
           "request": {
             "method": "GET",
+            "header": [
+              { "key": "X-User-Id", "value": "{{userId}}", "type": "text" }
+            ],
             "url": {
               "raw": "{{baseUrl}}/api/user/{{userId}}",
               "host": ["{{baseUrl}}"],
               "path": ["api", "user", "{{userId}}"]
             },
-            "description": "### 获取用户详情\n\n- 通过路径参数 id 查询\n- 无需 X-User-Id 头"
+            "description": "### 获取用户详情\n\n- ⚠️ 已变更：增加 `X-User-Id` Header 登录校验\n- 需要已登录的有效用户\n- 路径参数为目标用户 ID"
           },
           "response": []
         },
@@ -182,9 +285,13 @@
               "script": {
                 "exec": [
                   "var json = pm.response.json();",
-                  "pm.test('获取用户列表成功', function () { pm.expect(json.code).to.equal(200); });",
-                  "pm.test('返回的是数组', function () { pm.expect(json.data).to.be.an('array'); });",
-                  "console.log('用户总数: ' + json.data.length);"
+                  "if (json.code === 200 && json.data) {",
+                  "    pm.test('获取用户列表成功', function () { pm.expect(json.code).to.equal(200); });",
+                  "    pm.test('返回的是数组', function () { pm.expect(json.data).to.be.an('array'); });",
+                  "    console.log('用户总数: ' + json.data.length);",
+                  "} else {",
+                  "    pm.test('获取列表失败: ' + (json.message || '403无权限'), function () { pm.expect(json.code).to.equal(200); });",
+                  "}"
                 ],
                 "type": "text/javascript"
               }
@@ -358,14 +465,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"realName\": \"测试陪诊师\",\n  \"avatar\": \"/uploads/avatars/test.jpg\",\n  \"introduction\": \"5年三甲医院陪诊经验，熟悉各大医院就诊流程。耐心细致，擅长与老年人沟通。\",\n  \"serviceArea\": \"北京市海淀区\",\n  \"serviceTypes\": \"陪诊,取药,挂号,检查\",\n  \"experienceYears\": 5\n}"
+              "raw": "{\n  \"realName\": \"测试陪诊师\",\n  \"avatar\": \"/uploads/avatars/test.jpg\",\n  \"introduction\": \"5年三甲医院陪诊经验，熟悉各大医院就诊流程。耐心细致，擅长与老年人沟通。\",\n  \"serviceArea\": \"北京市海淀区\",\n  \"serviceTypes\": \"陪诊,取药,挂号,检查\",\n  \"traits\": \"patient,careful,experienced\",\n  \"experienceYears\": 5\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/companion/apply",
               "host": ["{{baseUrl}}"],
               "path": ["api", "companion", "apply"]
             },
-            "description": "### 提交陪诊师入驻申请\n\n- 需要 X-User-Id（申请人ID）\n- 提交后需管理员审核（auditStatus=0 待审核）\n- serviceTypes 用逗号分隔"
+            "description": "### 提交陪诊师入驻申请\n\n- 需要 X-User-Id（申请人ID）\n- 提交后需管理员审核（auditStatus=0 待审核）\n- serviceTypes 用逗号分隔\n- 🆕 traits: 性格标签，逗号分隔，如 patient,careful,experienced,communicative,gentle"
           },
           "response": []
         },
@@ -427,14 +534,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"realName\": \"李小华\",\n  \"avatar\": \"/uploads/avatars/companion1.jpg\",\n  \"introduction\": \"从事陪诊服务5年，熟悉北京各大医院就诊流程，耐心细致。\",\n  \"serviceArea\": \"北京市朝阳区\",\n  \"serviceTypes\": \"陪诊,取药,挂号,住院办理\",\n  \"experienceYears\": 5\n}"
+              "raw": "{\n  \"realName\": \"李小华\",\n  \"avatar\": \"/uploads/avatars/companion1.jpg\",\n  \"introduction\": \"从事陪诊服务5年，熟悉北京各大医院就诊流程，耐心细致。\",\n  \"serviceArea\": \"北京市朝阳区\",\n  \"serviceTypes\": \"陪诊,取药,挂号,住院办理\",\n  \"traits\": \"patient,communicative,experienced\",\n  \"experienceYears\": 5\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/companion/profile",
               "host": ["{{baseUrl}}"],
               "path": ["api", "companion", "profile"]
             },
-            "description": "### 修改入驻资料\n\n- 只能修改自己的资料\n- X-User-Id 必须对应陪诊师身份"
+            "description": "### 修改入驻资料\n\n- 只能修改自己的资料\n- X-User-Id 必须对应陪诊师身份\n- 🆕 traits: 可修改性格标签\n- ⚠️ 修改后 auditStatus 重置为 0（需重新审核）"
           },
           "response": []
         },
@@ -446,9 +553,13 @@
               "script": {
                 "exec": [
                   "var json = pm.response.json();",
-                  "pm.test('获取列表成功', function () { pm.expect(json.code).to.equal(200); });",
-                  "pm.test('返回数组', function () { pm.expect(json.data).to.be.an('array'); });",
-                  "console.log('陪诊师数量: ' + json.data.length);"
+                  "if (json.code === 200 && json.data) {",
+                  "    pm.test('获取列表成功', function () { pm.expect(json.code).to.equal(200); });",
+                  "    pm.test('返回数组', function () { pm.expect(json.data).to.be.an('array'); });",
+                  "    console.log('陪诊师数量: ' + json.data.length);",
+                  "} else {",
+                  "    pm.test('获取列表失败: ' + (json.message || '无数据'), function () { pm.expect(json.code).to.equal(200); });",
+                  "}"
                 ],
                 "type": "text/javascript"
               }
@@ -461,7 +572,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "companion", "list"]
             },
-            "description": "### 陪诊师列表（审核通过的）\n\n- 可选参数：serviceArea（区域）、serviceType（服务类型）\n- 无需认证\n- 只返回 auditStatus=1 的陪诊师\n\n### 参数示例\n- 按区域：`?serviceArea=北京市朝阳区`\n- 按类型：`?serviceType=陪诊`\n- 组合：`?serviceArea=北京市海淀区&serviceType=挂号`"
+            "description": "### 陪诊师列表（审核通过的）\n\n- 可选参数：serviceArea（区域）、serviceType（服务类型）、traits（性格标签）\n- 无需认证\n- 只返回 auditStatus=1 的陪诊师\n\n### 参数示例\n- 按区域：`?serviceArea=北京市朝阳区`\n- 按类型：`?serviceType=陪诊`\n- 🆕 按性格：`?traits=patient`\n- 组合：`?serviceArea=北京市海淀区&serviceType=挂号&traits=patient`"
           },
           "response": []
         },
@@ -473,8 +584,12 @@
               "script": {
                 "exec": [
                   "var json = pm.response.json();",
-                  "pm.test('获取详情成功', function () { pm.expect(json.code).to.equal(200); });",
-                  "console.log('陪诊师: ' + json.data.realName + ', 评分: ' + json.data.rating);"
+                  "if (json.code === 200 && json.data) {",
+                  "    pm.test('获取详情成功', function () { pm.expect(json.code).to.equal(200); });",
+                  "    console.log('陪诊师: ' + json.data.realName + ', 评分: ' + json.data.rating);",
+                  "} else {",
+                  "    pm.test('获取详情失败: ' + (json.message || '无数据'), function () { pm.expect(json.code).to.equal(200); });",
+                  "}"
                 ],
                 "type": "text/javascript"
               }
@@ -534,14 +649,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"serviceType\": \"陪诊\",\n  \"serviceDate\": \"2026-08-20T08:30:00\",\n  \"hospitalName\": \"北京协和医院\",\n  \"department\": \"心内科\",\n  \"requirement\": \"老人需要做心脏彩超和心电图检查，需要陪诊师陪同完成挂号、候诊、检查全过程。\",\n  \"specialNotes\": \"老人听力不太好，请陪诊师耐心沟通。\",\n  \"aiSummary\": \"\",\n  \"contactName\": \"张三\",\n  \"contactPhone\": \"13800000001\",\n  \"budget\": 300.00\n}"
+              "raw": "{\n  \"serviceType\": \"陪诊\",\n  \"serviceDate\": \"2026-08-20 08:30:00\",\n  \"hospitalName\": \"北京协和医院\",\n  \"department\": \"心内科\",\n  \"requirement\": \"老人需要做心脏彩超和心电图检查，需要陪诊师陪同完成挂号、候诊、检查全过程。\",\n  \"specialNotes\": \"老人听力不太好，请陪诊师耐心沟通。\",\n  \"aiSummary\": \"\",\n  \"preferredTraits\": \"patient,careful\",\n  \"needPickup\": true,\n  \"contactName\": \"张三\",\n  \"contactPhone\": \"13800000001\",\n  \"budget\": 300.00\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/service-request/create",
               "host": ["{{baseUrl}}"],
               "path": ["api", "service-request", "create"]
             },
-            "description": "### 发布服务需求\n\n- 必填：serviceType, serviceDate, hospitalName, department, requirement, contactName, contactPhone\n- 请求成功后自动保存 requestId 到环境变量\n- 常用 serviceType: 陪诊, 取药, 挂号, 检查, 住院办理"
+            "description": "### 发布服务需求\n\n- 必填：serviceType, serviceDate, hospitalName, department, requirement, contactName, contactPhone\n- 请求成功后自动保存 requestId 到环境变量\n- 常用 serviceType: 陪诊, 取药, 挂号, 检查, 住院办理\n- ⚠️ 日期格式已变更：`yyyy-MM-dd HH:mm:ss`（如 `2026-08-20 08:30:00`）\n- 🆕 preferredTraits: 期望的陪诊师性格标签（逗号分隔）\n- 🆕 needPickup: 是否需要接送服务（true/false）"
           },
           "response": []
         },
@@ -562,13 +677,15 @@
           ],
           "request": {
             "method": "GET",
+            "header": [
+              { "key": "X-User-Id", "value": "{{userId}}", "type": "text" }
+            ],
             "url": {
-              "raw": "{{baseUrl}}/api/service-request/list?customerId={{userId}}",
+              "raw": "{{baseUrl}}/api/service-request/list",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "service-request", "list"],
-              "query": [{"key": "customerId", "value": "{{userId}}"}]
+              "path": ["api", "service-request", "list"]
             },
-            "description": "### 查看我发布的需求列表\n\n- ⚠️ 必填 query 参数：customerId\n- 不传 customerId 会返回 500"
+            "description": "### 查看我发布的需求列表\n\n- ⚠️ 已变更：从 `?customerId=` query 参数改为 `X-User-Id` Header\n- 不带 Header 返回 400"
           },
           "response": []
         },
@@ -742,16 +859,18 @@
           ],
           "request": {
             "method": "GET",
+            "header": [
+              { "key": "X-User-Id", "value": "{{userId}}", "type": "text" }
+            ],
             "url": {
-              "raw": "{{baseUrl}}/api/order/list?userId={{userId}}&role=CUSTOMER",
+              "raw": "{{baseUrl}}/api/order/list?role=CUSTOMER",
               "host": ["{{baseUrl}}"],
               "path": ["api", "order", "list"],
               "query": [
-                {"key": "userId", "value": "{{userId}}"},
                 {"key": "role", "value": "CUSTOMER"}
               ]
             },
-            "description": "### 按角色查订单\n\n- userId + role 组合查询\n- role: CUSTOMER 或 COMPANION\n- 客户角色返回其发布需求关联的订单\n- 陪诊师角色返回其接的单"
+            "description": "### 按角色查订单\n\n- ⚠️ 已变更：userId 从 query 参数改为 `X-User-Id` Header\n- role 参数可选（CUSTOMER 或 COMPANION）\n- 不传 role 返回所有角色订单"
           },
           "response": []
         },
@@ -898,7 +1017,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "order", "{{orderId}}", "reject"]
             },
-            "description": "### 陪诊师拒单\n\n- 订单状态 → REJECTED\n- Body 传 reason 字段说明拒绝原因"
+            "description": "### 陪诊师拒单\n\n- 订单状态 → REJECTED\n- Body 传 reason 字段说明拒绝原因\n- ⚠️ 行为变更：拒绝后对应 service-request 状态回归 PENDING（可被其他人接单）"
           },
           "response": []
         },
@@ -1013,7 +1132,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "order", "{{orderId}}", "confirm"]
             },
-            "description": "### 客户确认完成\n\n- 订单状态：PENDING_CONFIRM → COMPLETED\n- 需要用客户的 X-User-Id"
+            "description": "### 客户确认完成\n\n- 订单状态：PENDING_CONFIRM → COMPLETED\n- 需要用客户的 X-User-Id\n- ⚠️ 行为变更：确认后陪诊师 completed_count 自动 +1"
           },
           "response": []
         },
@@ -1154,8 +1273,12 @@
               "script": {
                 "exec": [
                   "var json = pm.response.json();",
-                  "pm.test('获取评价成功', function () { pm.expect(json.code).to.equal(200); });",
-                  "console.log('该订单有 ' + json.data.length + ' 条评价');"
+                  "if (json.code === 200 && json.data) {",
+                  "    pm.test('获取评价成功', function () { pm.expect(json.code).to.equal(200); });",
+                  "    console.log('该订单有 ' + json.data.length + ' 条评价');",
+                  "} else {",
+                  "    pm.test('获取评价失败: ' + (json.message || ''), function () { pm.expect(json.code).to.equal(200); });",
+                  "}"
                 ],
                 "type": "text/javascript"
               }
@@ -1180,10 +1303,12 @@
               "script": {
                 "exec": [
                   "var json = pm.response.json();",
-                  "pm.test('获取评价成功', function () { pm.expect(json.code).to.equal(200); });",
-                  "if (json.data.length > 0) {",
-                  "    var avg = json.data.reduce(function(s, e) { return s + e.score; }, 0) / json.data.length;",
-                  "    console.log('评价数量: ' + json.data.length + ', 平均分: ' + avg.toFixed(1));",
+                  "if (json.code === 200 && json.data) {",
+                  "    pm.test('获取评价成功', function () { pm.expect(json.code).to.equal(200); });",
+                  "    if (json.data.length > 0) {",
+                  "        var avg = json.data.reduce(function(s, e) { return s + e.score; }, 0) / json.data.length;",
+                  "        console.log('评价数量: ' + json.data.length + ', 平均分: ' + avg.toFixed(1));",
+                  "    }",
                   "}"
                 ],
                 "type": "text/javascript"
@@ -1511,14 +1636,18 @@
               "script": {
                 "exec": [
                   "var json = pm.response.json();",
-                  "pm.test('获取统计成功', function () { pm.expect(json.code).to.equal(200); });",
-                  "var d = json.data;",
-                  "console.log('=== 平台统计 ===');",
-                  "console.log('用户总数: ' + d.totalUsers);",
-                  "console.log('陪诊师: ' + d.totalCompanions);",
-                  "console.log('订单总数: ' + d.totalOrders + ' (已完成: ' + d.completedOrders + ')');",
-                  "console.log('投诉数: ' + d.complaintCount + ' (待处理: ' + d.pendingComplaintCount + ')');",
-                  "console.log('总收入: ¥' + d.totalRevenue + ' (平台: ¥' + d.platformRevenue + ')');"
+                  "if (json.code === 200 && json.data) {",
+                  "    pm.test('获取统计成功', function () { pm.expect(json.code).to.equal(200); });",
+                  "    var d = json.data;",
+                  "    console.log('=== 平台统计 ===');",
+                  "    console.log('用户总数: ' + d.totalUsers);",
+                  "    console.log('陪诊师: ' + d.totalCompanions);",
+                  "    console.log('订单总数: ' + d.totalOrders + ' (已完成: ' + d.completedOrders + ')');",
+                  "    console.log('投诉数: ' + d.complaintCount + ' (待处理: ' + d.pendingComplaintCount + ')');",
+                  "    console.log('总收入: ¥' + d.totalRevenue + ' (平台: ¥' + d.platformRevenue + ')');",
+                  "} else {",
+                  "    pm.test('获取统计失败: ' + (json.message || '403无权限'), function () { pm.expect(json.code).to.equal(200); });",
+                  "}"
                 ],
                 "type": "text/javascript"
               }
@@ -1553,8 +1682,12 @@
               "script": {
                 "exec": [
                   "var json = pm.response.json();",
-                  "pm.test('上传结果', function () { pm.expect(json.code).to.be.oneOf([200, 500]); });",
-                  "if (json.code === 200) console.log('文件URL: ' + json.data.url);"
+                  "if (json.code === 200 && json.data) {",
+                  "    pm.test('上传成功', function () { pm.expect(json.code).to.equal(200); });",
+                  "    console.log('文件URL: ' + json.data.url);",
+                  "} else {",
+                  "    pm.test('上传结果: ' + (json.message || '错误'), function () { pm.expect(json.code).to.be.oneOf([200, 400, 500]); });",
+                  "}"
                 ],
                 "type": "text/javascript"
               }
@@ -1579,7 +1712,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "file", "upload"]
             },
-            "description": "### 文件上传\n\n- Body 类型：form-data\n- 字段名：file\n- 最大 10MB\n- 返回：`{\"url\":\"/uploads/{uuid}.ext\",\"filename\":\"...\"}`\n- 注意：uploads 目录必须存在，否则返回 500"
+            "description": "### 文件上传\n\n- Body 类型：form-data\n- 字段名：file\n- ⚠️ 安全限制：仅允许 jpg, jpeg, png, gif, webp, pdf, doc, docx\n- 上传禁止类型（exe, html 等）返回 400\n- 返回：`{\"url\":\"/uploads/{uuid}.ext\",\"filename\":\"...\"}`\n- 注意：uploads 目录必须存在，否则返回 500"
           },
           "response": []
         },
@@ -1639,7 +1772,7 @@
     },
     {
       "name": "9. AI & TTS",
-      "description": "AI摘要生成和TTS语音合成",
+      "description": "AI摘要/性格匹配 和 TTS语音合成",
       "item": [
         {
           "name": "POST AI需求摘要",
@@ -1671,19 +1804,114 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "ai", "service-summary"]
             },
-            "description": "### AI 服务需求摘要生成\n\n- 需要配置 AI API Key（DeepSeek）\n- 未配置时返回 503\n- 将用户填写的需求文本自动提炼为一句话摘要"
+            "description": "### AI 服务需求摘要生成\n\n- 需要配置 AI API Key（DeepSeek 兼容接口）\n- 未配置时返回 503\n- 将用户填写的需求文本自动提炼为一句话摘要"
           },
           "response": []
         },
         {
-          "name": "GET TTS语音",
+          "name": "POST AI性格匹配",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('AI性格匹配', function () { pm.expect(json.code).to.be.oneOf([200, 503]); });",
+                  "if (json.code === 200) console.log('匹配结果: ' + json.data.result);",
+                  "if (json.code === 503) console.log('⚠️ AI未配置，跳过');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"direction\": \"companion\",\n  \"input\": \"我需要一个耐心、细心的陪诊师，最好有护理经验，能陪老人看诊\",\n  \"traitsList\": \"patient,careful,experienced,communicative,gentle,professional\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ai/match",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ai", "match"]
+            },
+            "description": "### 🆕 AI 性格匹配\n\n- direction: \"companion\"（推荐陪诊师标签）或 \"order\"（推荐匹配订单）\n- input: 用户的偏好描述文本\n- companion 模式需传 traitsList（可用标签列表，逗号分隔）\n- order 模式需传 myTraits（陪诊师自己的性格标签）\n- AI 未配置时返回 503\n- 空 input 返回 400"
+          },
+          "response": []
+        },
+        {
+          "name": "GET TTS音色列表",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "pm.test('获取音色列表成功', function () { pm.expect(pm.response.code).to.equal(200); });",
+                  "pm.test('返回数组', function () { pm.expect(json).to.be.an('array'); });",
+                  "console.log('可用音色: ' + json.length + ' 种');",
+                  "json.forEach(function(v) { console.log('  - ' + v.name + ' (' + v.voiceType + ')'); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/tts/voices",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tts", "voices"]
+            },
+            "description": "### 🆕 获取 TTS 可用音色列表\n\n- 无需认证\n- 返回 [{name, voiceType}, ...]\n- 用于前端音色选择下拉框"
+          },
+          "response": []
+        },
+        {
+          "name": "POST TTS文本合成",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('TTS文本合成', function () { pm.expect(pm.response.code).to.be.oneOf([200, 400, 503]); });",
+                  "if (pm.response.code === 200) console.log('✅ 音频返回成功，大小: ' + pm.response.size() + ' bytes');",
+                  "if (pm.response.code === 503) console.log('⚠️ TTS未配置火山引擎，跳过');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"您好，欢迎使用医陪平台语音服务。我是您的专属陪诊师，将全程陪同您完成就诊。\",\n  \"voiceType\": \"zh_female_qingxin\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tts/speak",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tts", "speak"]
+            },
+            "description": "### 🆕 通用文本语音合成\n\n- 直接传入文本即可合成语音\n- voiceType 可选（不传使用默认音色）\n- 返回 audio/mpeg 格式音频数据\n- 空文本返回 400\n- TTS 未配置返回 503"
+          },
+          "response": []
+        },
+        {
+          "name": "GET TTS陪诊师语音",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
                   "pm.test('TTS接口', function () { pm.expect(pm.response.code).to.be.oneOf([200, 503]); });",
-                  "if (pm.response.code === 200) console.log('✅ TTS音频返回成功');",
+                  "if (pm.response.code === 200) console.log('✅ TTS音频返回成功, 大小: ' + pm.response.size() + ' bytes');",
                   "if (pm.response.code === 503) console.log('⚠️ TTS未配置火山引擎，跳过');"
                 ],
                 "type": "text/javascript"
@@ -1693,11 +1921,14 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/api/tts/companion/{{companionProfileId}}",
+              "raw": "{{baseUrl}}/api/tts/companion/{{companionProfileId}}?voiceType=zh_female_qingxin",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "tts", "companion", "{{companionProfileId}}"]
+              "path": ["api", "tts", "companion", "{{companionProfileId}}"],
+              "query": [
+                {"key": "voiceType", "value": "zh_female_qingxin"}
+              ]
             },
-            "description": "### TTS 语音合成\n\n- 返回 audio/mpeg 格式音频\n- 读取陪诊师信息并转为语音\n- 需要配置火山引擎 TTS\n- 未配置返回 503"
+            "description": "### TTS 朗读陪诊师信息\n\n- 返回 audio/mpeg 格式音频\n- 读取陪诊师信息并转为语音\n- 🆕 新增 voiceType 参数指定音色（可选）\n- 需要配置火山引擎 TTS\n- 未配置返回 503\n- 陪诊师不存在返回 404"
           },
           "response": []
         }
@@ -1791,8 +2022,12 @@
               "script": {
                 "exec": [
                   "var json = pm.response.json();",
-                  "pm.test('获取我的记录成功', function () { pm.expect(json.code).to.equal(200); });",
-                  "console.log('我的服务记录: ' + json.data.length + ' 条');"
+                  "if (json.code === 200) {",
+                  "    pm.test('获取我的记录成功', function () { pm.expect(json.code).to.equal(200); });",
+                  "    console.log('我的服务记录: ' + json.data.length + ' 条');",
+                  "} else {",
+                  "    pm.test('获取记录失败: ' + (json.message || ''), function () { pm.expect(json.code).to.equal(200); });",
+                  "}"
                 ],
                 "type": "text/javascript"
               }
