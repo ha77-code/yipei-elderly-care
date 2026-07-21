@@ -1,5 +1,6 @@
 package com.yipei.service;
 
+import com.yipei.constant.RoleConstants;
 import com.yipei.entity.ReportCreateRequest;
 import com.yipei.entity.ReportRecord;
 import com.yipei.entity.ServiceOrder;
@@ -10,6 +11,7 @@ import com.yipei.mapper.ReportRecordMapper;
 import com.yipei.mapper.ServiceOrderMapper;
 import com.yipei.mapper.CompanionProfileMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -18,16 +20,20 @@ public class ReportService {
     private final ReportRecordMapper reportRecordMapper;
     private final ServiceOrderMapper serviceOrderMapper;
     private final CompanionProfileMapper companionProfileMapper;
+    private final UserNotificationService notificationService;
 
     public ReportService(ReportRecordMapper reportRecordMapper,
                          ServiceOrderMapper serviceOrderMapper,
-                         CompanionProfileMapper companionProfileMapper) {
+                         CompanionProfileMapper companionProfileMapper,
+                         UserNotificationService notificationService) {
         this.reportRecordMapper = reportRecordMapper;
         this.serviceOrderMapper = serviceOrderMapper;
         this.companionProfileMapper = companionProfileMapper;
+        this.notificationService = notificationService;
     }
 
     /** 发起投诉 */
+    @Transactional
     public ReportRecord create(Long userId, ReportCreateRequest request) {
         ServiceOrder order = serviceOrderMapper.selectById(request.getOrderId());
         if (order == null) {
@@ -46,6 +52,8 @@ public class ReportService {
         report.setContent(request.getContent());
         report.setStatus("PENDING");
         reportRecordMapper.insert(report);
+        notificationService.sendToRole(RoleConstants.ADMIN, "REPORT_CREATED", "有新的投诉待处理",
+                "订单 #" + request.getOrderId() + " 收到新的投诉，请及时处理。", report.getId());
         return report;
     }
 
@@ -55,6 +63,7 @@ public class ReportService {
     }
 
     /** 处理投诉 */
+    @Transactional
     public void handle(Long id, Long handlerId, String status, String remark) {
         ReportRecord report = reportRecordMapper.selectById(id);
         if (report == null) {
@@ -64,5 +73,9 @@ public class ReportService {
             throw new ForbiddenException("处理状态只能为 PROCESSING、RESOLVED 或 REJECTED");
         }
         reportRecordMapper.updateHandle(id, status, handlerId, remark);
+        String suffix = remark == null || remark.isBlank() ? "" : " 处理说明：" + remark.trim();
+        notificationService.send(report.getReporterId(), "REPORT_STATUS", "投诉处理状态已更新",
+                "您对订单 #" + report.getOrderId() + " 的投诉状态已更新为 " + status + "。" + suffix,
+                report.getOrderId());
     }
 }

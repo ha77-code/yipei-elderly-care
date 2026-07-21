@@ -16,6 +16,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -43,8 +44,17 @@ class OrderServiceTest {
     @Mock
     private SubmitLock submitLock;
 
+    @Mock
+    private UserNotificationService notificationService;
+
     @InjectMocks
     private OrderService orderService;
+
+    @Test
+    void createDirectedOrderRequiresPositivePrice() {
+        assertThrows(ForbiddenException.class,
+                () -> orderService.createDirectedOrder(1L, 2L, 3L, BigDecimal.ZERO));
+    }
 
     @Test
     void getDetailAllowsOrderParticipant() {

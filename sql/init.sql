@@ -1,5 +1,15 @@
--- YiPei local database bootstrap.
--- Safe to run multiple times: tables are created if missing, seed users are upserted.
+-- ============================================================================
+-- YiPei 数据库一键初始化脚本（全新克隆后运行此文件即可）
+--   mysql -uroot -p < sql/init.sql
+--
+-- 包含：建库 + 全部表结构（已含所有最新字段）+ 种子账号/演示数据。
+-- 可重复执行：表用 CREATE TABLE IF NOT EXISTS，种子数据用 upsert / 存在即跳过。
+--
+-- 说明：
+--   - 全新环境：只需本文件，无需再跑 sql/*.sql 或 sql/migrations/*.sql。
+--   - 已有旧库升级：本文件不改动已存在的表结构，请改用 sql/migrations/ 下的增量脚本。
+-- 种子账号密码统一为 123456（customer1 / companion1 / admin1）。
+-- ============================================================================
 
 CREATE DATABASE IF NOT EXISTS yipei
     CHARACTER SET utf8mb4
@@ -13,6 +23,9 @@ CREATE TABLE IF NOT EXISTS sys_user (
     password VARCHAR(255) NOT NULL,
     nickname VARCHAR(100),
     phone VARCHAR(20),
+    avatar VARCHAR(500),
+    pending_avatar VARCHAR(500),
+    avatar_audit_status TINYINT,
     role VARCHAR(20) NOT NULL DEFAULT 'CUSTOMER',
     status TINYINT NOT NULL DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -41,19 +54,6 @@ CREATE TABLE IF NOT EXISTS companion_profile (
     INDEX idx_companion_rating (rating)
 );
 
-
-SET @traits_column_exists = (
-    SELECT COUNT(*) FROM information_schema.columns
-    WHERE table_schema = DATABASE() AND table_name = 'companion_profile' AND column_name = 'traits'
-);
-SET @traits_migration_sql = IF(
-    @traits_column_exists = 0,
-    'ALTER TABLE companion_profile ADD COLUMN traits VARCHAR(255) AFTER service_types',
-    'SELECT 1'
-);
-PREPARE traits_migration_statement FROM @traits_migration_sql;
-EXECUTE traits_migration_statement;
-DEALLOCATE PREPARE traits_migration_statement;
 CREATE TABLE IF NOT EXISTS service_request (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     customer_id BIGINT NOT NULL,
@@ -70,6 +70,9 @@ CREATE TABLE IF NOT EXISTS service_request (
     contact_phone VARCHAR(20) NOT NULL,
     budget DECIMAL(10,2),
     status VARCHAR(30) NOT NULL DEFAULT 'PENDING' COMMENT 'PENDING, MATCHED, CANCELLED, CLOSED',
+    audit_status TINYINT NOT NULL DEFAULT 0 COMMENT '0待审 1通过 2拒绝',
+    audit_remark VARCHAR(500),
+    preferred_companion_id BIGINT COMMENT '通道B客户指定的陪诊师(companion_profile.id)，审核通过后据此生成订单',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_service_request_customer
@@ -78,48 +81,6 @@ CREATE TABLE IF NOT EXISTS service_request (
     INDEX idx_request_status_date (status, service_date),
     INDEX idx_request_service_type (service_type)
 );
-
-SET @ai_summary_column_exists = (
-    SELECT COUNT(*)
-    FROM information_schema.columns
-    WHERE table_schema = DATABASE()
-      AND table_name = 'service_request'
-      AND column_name = 'ai_summary'
-);
-SET @ai_summary_migration_sql = IF(
-    @ai_summary_column_exists = 0,
-    'ALTER TABLE service_request ADD COLUMN ai_summary VARCHAR(1000) AFTER special_notes',
-    'SELECT 1'
-);
-PREPARE ai_summary_migration_statement FROM @ai_summary_migration_sql;
-EXECUTE ai_summary_migration_statement;
-DEALLOCATE PREPARE ai_summary_migration_statement;
-
-SET @preferred_traits_column_exists = (
-    SELECT COUNT(*) FROM information_schema.columns
-    WHERE table_schema = DATABASE() AND table_name = 'service_request' AND column_name = 'preferred_traits'
-);
-SET @preferred_traits_migration_sql = IF(
-    @preferred_traits_column_exists = 0,
-    'ALTER TABLE service_request ADD COLUMN preferred_traits VARCHAR(255) AFTER ai_summary',
-    'SELECT 1'
-);
-PREPARE preferred_traits_migration_statement FROM @preferred_traits_migration_sql;
-EXECUTE preferred_traits_migration_statement;
-DEALLOCATE PREPARE preferred_traits_migration_statement;
-
-SET @need_pickup_column_exists = (
-    SELECT COUNT(*) FROM information_schema.columns
-    WHERE table_schema = DATABASE() AND table_name = 'service_request' AND column_name = 'need_pickup'
-);
-SET @need_pickup_migration_sql = IF(
-    @need_pickup_column_exists = 0,
-    'ALTER TABLE service_request ADD COLUMN need_pickup TINYINT NOT NULL DEFAULT 0 AFTER preferred_traits',
-    'SELECT 1'
-);
-PREPARE need_pickup_migration_statement FROM @need_pickup_migration_sql;
-EXECUTE need_pickup_migration_statement;
-DEALLOCATE PREPARE need_pickup_migration_statement;
 
 CREATE TABLE IF NOT EXISTS service_order (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -187,7 +148,6 @@ CREATE TABLE IF NOT EXISTS evaluation (
     score TINYINT NOT NULL,
     content VARCHAR(1000),
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT ck_evaluation_score CHECK (score BETWEEN 1 AND 5),
     CONSTRAINT fk_evaluation_order
         FOREIGN KEY (order_id) REFERENCES service_order (id),
     CONSTRAINT fk_evaluation_from_user
@@ -234,8 +194,56 @@ CREATE TABLE IF NOT EXISTS report_record (
     INDEX idx_report_reporter (reporter_id)
 );
 
+CREATE TABLE IF NOT EXISTS service_application (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    request_id BIGINT NOT NULL,
+    companion_id BIGINT NOT NULL COMMENT 'companion_profile.id',
+    message VARCHAR(500),
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING' COMMENT 'PENDING, ACCEPTED, REJECTED, WITHDRAWN',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_application_request
+        FOREIGN KEY (request_id) REFERENCES service_request (id),
+    CONSTRAINT fk_application_companion
+        FOREIGN KEY (companion_id) REFERENCES companion_profile (id),
+    UNIQUE KEY uk_application_request_companion (request_id, companion_id),
+    INDEX idx_application_request (request_id, status),
+    INDEX idx_application_companion (companion_id, status)
+);
+
+CREATE TABLE IF NOT EXISTS chat_message (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    order_id BIGINT NOT NULL,
+    from_user_id BIGINT NOT NULL,
+    to_user_id BIGINT NOT NULL,
+    content VARCHAR(1000) NOT NULL,
+    is_read TINYINT NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_chat_order
+        FOREIGN KEY (order_id) REFERENCES service_order (id),
+    CONSTRAINT fk_chat_from
+        FOREIGN KEY (from_user_id) REFERENCES sys_user (id),
+    CONSTRAINT fk_chat_to
+        FOREIGN KEY (to_user_id) REFERENCES sys_user (id),
+    INDEX idx_chat_order (order_id, created_at),
+    INDEX idx_chat_to_unread (to_user_id, is_read)
+);
+
 -- Password for all seed users: 123456
 -- Format matches com.yipei.util.PasswordUtil: base64(salt):base64(sha256(salt + rawPassword)).
+CREATE TABLE IF NOT EXISTS user_notification (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    type VARCHAR(30) NOT NULL,
+    title VARCHAR(100) NOT NULL,
+    content VARCHAR(500) NOT NULL,
+    related_id BIGINT,
+    is_read TINYINT NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_notification_user FOREIGN KEY (user_id) REFERENCES sys_user (id),
+    INDEX idx_notification_user_read (user_id, is_read, created_at)
+);
+
 INSERT INTO sys_user(username, password, nickname, phone, role, status, created_at, updated_at)
 VALUES
     ('customer1', 'eWlwZWktY3VzdG9tZXItMQ==:eJtfcMKaWA9YU1earQo/dYCpEXeKwJRa2zONf8N8pa8=', 'Zhang San', '13800000001', 'CUSTOMER', 1, NOW(), NOW()),

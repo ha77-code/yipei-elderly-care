@@ -37,17 +37,21 @@
             <span :class="['status-tag', statusClass(row.status)]">{{ statusMap[row.status] || row.status || '-' }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="260" align="center" fixed="right">
+        <el-table-column label="操作" width="320" align="center" fixed="right">
           <template slot-scope="{ row }">
             <el-button type="text" size="small" @click="goDetail(row)">详情</el-button>
             <el-button v-if="row.status === 'PENDING_CONFIRM' && isCustomer" type="text" size="small" @click="handleConfirm(row)">确认完成</el-button>
             <el-button v-if="canCancel(row.status) && isCustomer" type="text" size="small" class="text-danger" @click="handleCancel(row)">取消</el-button>
             <el-button v-if="row.status === 'ACCEPTED' && isCompanion" type="text" size="small" @click="handleServiceAction(row, 'start')">开始服务</el-button>
             <el-button v-if="row.status === 'IN_SERVICE' && isCompanion" type="text" size="small" @click="handleServiceAction(row, 'complete')">完成服务</el-button>
+            <el-button v-if="!isAdmin && canChat(row.status)" type="text" size="small" @click="openChat(row)">
+              {{ isChatOpen(row.status) ? '聊天' : '聊天记录' }}
+            </el-button>
             <el-button type="text" size="small" @click="goServiceRecord(row)">服务记录</el-button>
           </template>
         </el-table-column>
       </el-table>
+      <chat-dialog ref="chat" :order-id="chatOrderId" :chat-open="chatOpenState" />
 
       <div class="table-footer" v-if="total > pageSize">
         <el-pagination
@@ -73,6 +77,7 @@ import {
   completeService
 } from '@/api/order'
 import { getUser, ROLES } from '@/utils/auth'
+import ChatDialog from '@/components/ChatDialog.vue'
 
 const STATUS_MAP = {
   PENDING_ACCEPT: '待接单',
@@ -87,6 +92,7 @@ const STATUS_MAP = {
 
 export default {
   name: 'OrderList',
+  components: { ChatDialog },
   data() {
     const user = getUser() || {}
     return {
@@ -98,7 +104,9 @@ export default {
       total: 0,
       filterStatus: '',
       statusMap: STATUS_MAP,
-      statusOptions: Object.keys(STATUS_MAP).map(key => ({ value: key, label: STATUS_MAP[key] }))
+      statusOptions: Object.keys(STATUS_MAP).map(key => ({ value: key, label: STATUS_MAP[key] })),
+      chatOrderId: null,
+      chatOpenState: false
     }
   },
   computed: {
@@ -183,6 +191,18 @@ export default {
     },
     canCancel(status) {
       return ['PENDING_ACCEPT', 'ACCEPTED'].includes(status)
+    },
+    isChatOpen(status) {
+      return ['ACCEPTED', 'IN_SERVICE', 'PENDING_CONFIRM'].includes(status)
+    },
+    canChat(status) {
+      // 撮合达成后即可聊天；完成/取消/拒绝后仍可查看历史
+      return ['ACCEPTED', 'IN_SERVICE', 'PENDING_CONFIRM', 'COMPLETED', 'COMPLAINT'].includes(status)
+    },
+    openChat(row) {
+      this.chatOrderId = row.id
+      this.chatOpenState = this.isChatOpen(row.status)
+      this.$nextTick(() => this.$refs.chat.show())
     },
     goDetail(row) {
       this.$router.push(`/order/${row.id}`)

@@ -10,6 +10,9 @@ public class LoginVO {
     private String username;
     private String nickname;
     private String phone;
+    private String avatar;
+    private String pendingAvatar;
+    private Integer avatarAuditStatus;
     private String role;
     private Integer status;
     private LocalDateTime createAt;

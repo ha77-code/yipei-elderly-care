@@ -53,9 +53,31 @@ public class AdminController {
     public ApiResponse<List<ServiceRequest>> listServiceRequests(
             @RequestHeader("X-User-Id") Long adminId,
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) String serviceType) {
+            @RequestParam(required = false) String serviceType,
+            @RequestParam(required = false) Integer auditStatus) {
         userService.requireAdmin(adminId);
-        return ApiResponse.success(serviceRequestService.listAll(status, serviceType));
+        return ApiResponse.success(serviceRequestService.listAll(status, serviceType, auditStatus));
+    }
+
+    /** 待审核需求列表 */
+    @GetMapping("/service-request/pending")
+    public ApiResponse<List<ServiceRequest>> listPendingRequests(
+            @RequestHeader("X-User-Id") Long adminId) {
+        userService.requireAdmin(adminId);
+        return ApiResponse.success(serviceRequestService.listPendingAudit());
+    }
+
+    /** 审核需求（auditStatus：1 通过 / 2 拒绝） */
+    @PutMapping("/service-request/{id}/audit")
+    public ApiResponse<Void> auditRequest(
+            @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long auditorId,
+            @RequestBody Map<String, Object> body) {
+        userService.requireAdmin(auditorId);
+        Integer auditStatus = (Integer) body.get("auditStatus");
+        String remark = (String) body.get("remark");
+        serviceRequestService.audit(id, auditorId, auditStatus, remark);
+        return ApiResponse.success();
     }
 
     /** 订单 */
@@ -107,6 +129,25 @@ public class AdminController {
         Integer auditStatus = (Integer) body.get("auditStatus");
         String remark = (String) body.get("remark");
         companionService.audit(id, auditorId, auditStatus, remark);
+        return ApiResponse.success();
+    }
+
+    /** 待审核头像列表 */
+    @GetMapping("/avatar/pending")
+    public ApiResponse<List<com.yipei.entity.UserVO>> listPendingAvatars(
+            @RequestHeader("X-User-Id") Long adminId) {
+        return ApiResponse.success(userService.listPendingAvatars(adminId));
+    }
+
+    /** 审核用户头像（auditStatus：1 通过 / 2 拒绝） */
+    @PutMapping("/avatar/{userId}/audit")
+    public ApiResponse<Void> auditAvatar(
+            @PathVariable Long userId,
+            @RequestHeader("X-User-Id") Long auditorId,
+            @RequestBody Map<String, Object> body) {
+        Integer auditStatus = (Integer) body.get("auditStatus");
+        String remark = (String) body.get("remark");
+        userService.auditAvatar(userId, auditorId, auditStatus, remark);
         return ApiResponse.success();
     }
 

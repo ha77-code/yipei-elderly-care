@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -71,7 +72,16 @@ public class UserController {
     public ApiResponse<UserVO> updateInfo(
             @RequestHeader("X-User-Id") Long userId,
             @Valid @RequestBody UpdateUserInfoRequest request) {
-        return ApiResponse.success(userService.updateUserInfo(userId, request.getNickname(), request.getPhone()));
+        return ApiResponse.success(userService.updateUserInfo(
+                userId, request.getNickname(), request.getPhone(), request.getAvatar()));
+    }
+
+    /** 上传当前用户头像 */
+    @PostMapping("/avatar")
+    public ApiResponse<UserVO> uploadAvatar(
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestParam("file") MultipartFile file) {
+        return ApiResponse.success(userService.uploadAvatar(userId, file));
     }
 
     /** 管理员修改用户状态 */

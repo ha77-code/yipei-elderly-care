@@ -18,6 +18,11 @@
     <div class="content-card">
       <el-table :data="list" v-loading="loading" stripe class="warm-table" empty-text="暂无用户">
         <el-table-column prop="id" label="ID" width="80" align="center" />
+        <el-table-column label="头像" width="70" align="center">
+          <template slot-scope="{ row }">
+            <el-avatar :size="36" :src="row.avatar || undefined" icon="el-icon-user-solid" />
+          </template>
+        </el-table-column>
         <el-table-column prop="username" label="用户名" min-width="110" />
         <el-table-column prop="nickname" label="昵称" min-width="100">
           <template slot-scope="{ row }">{{ row.nickname || '-' }}</template>

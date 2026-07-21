@@ -31,6 +31,18 @@
           <el-option label="取药送药" value="取药送药" />
           <el-option label="夜间陪护" value="夜间陪护" />
         </el-select>
+
+        <el-select
+          v-model="filterAudit"
+          placeholder="全部审核状态"
+          clearable
+          size="medium"
+          @change="handleFilter"
+        >
+          <el-option label="待审核" :value="0" />
+          <el-option label="已通过" :value="1" />
+          <el-option label="已拒绝" :value="2" />
+        </el-select>
       </div>
 
       <el-button icon="el-icon-refresh" size="medium" round @click="resetFilter">
@@ -67,6 +79,11 @@
             <span v-else class="text-muted">-</span>
           </template>
         </el-table-column>
+        <el-table-column label="审核" width="90" align="center">
+          <template slot-scope="{ row }">
+            <span :class="['audit-tag', `audit--${row.auditStatus}`]">{{ auditMap[row.auditStatus] || '待审核' }}</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="status" label="状态" width="100" align="center">
           <template slot-scope="{ row }">
             <span :class="['status-tag', `status--${row.status?.toLowerCase()}`]">
@@ -79,10 +96,28 @@
             {{ formatDate(row.createdAt || row.created_at) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="100" align="center" fixed="right">
+        <el-table-column label="操作" width="180" align="center" fixed="right">
           <template slot-scope="{ row }">
             <el-button type="text" size="small" @click="showDetail(row)">
               详情
+            </el-button>
+            <el-button
+              v-if="row.auditStatus === 0"
+              type="text"
+              size="small"
+              class="text-success"
+              @click="handleAudit(row, 1)"
+            >
+              通过
+            </el-button>
+            <el-button
+              v-if="row.auditStatus === 0"
+              type="text"
+              size="small"
+              class="text-danger"
+              @click="openReject(row)"
+            >
+              拒绝
             </el-button>
           </template>
         </el-table-column>
@@ -159,17 +194,39 @@
           <span class="detail-label">需求内容</span>
           <span class="detail-value detail-content">{{ current.requirement }}</span>
         </div>
+        <div class="detail-item" v-if="current.preferredCompanionId">
+          <span class="detail-label">指定陪诊师</span>
+          <span class="detail-value">{{ current.preferredCompanionName || ('#' + current.preferredCompanionId) }}（通过后自动生成订单）</span>
+        </div>
         <div class="detail-item detail-full" v-if="current.specialNotes">
           <span class="detail-label">特殊说明</span>
           <span class="detail-value detail-content">{{ current.specialNotes }}</span>
         </div>
+        <div class="detail-item detail-full" v-if="current.auditStatus === 2 && current.auditRemark">
+          <span class="detail-label">审核未通过原因</span>
+          <span class="detail-value detail-content text-danger">{{ current.auditRemark }}</span>
+        </div>
       </div>
+    </el-dialog>
+
+    <!-- 拒绝需求弹窗 -->
+    <el-dialog title="拒绝需求" :visible.sync="rejectVisible" width="420px" class="warm-dialog">
+      <el-form label-width="70px" size="medium">
+        <el-form-item label="原因">
+          <el-input v-model="rejectRemark" type="textarea" :rows="3" placeholder="请填写拒绝原因（选填，客户可见）" />
+        </el-form-item>
+      </el-form>
+      <span slot="footer">
+        <el-button @click="rejectVisible = false">取消</el-button>
+        <el-button type="danger" :loading="auditing" @click="confirmReject">确认拒绝</el-button>
+      </span>
     </el-dialog>
   </div>
 </template>
 
 <script>
 import { getAllRequests } from '@/api/serviceRequest'
+import { auditRequest } from '@/api/admin'
 
 const STATUS_MAP = {
   PENDING: '待处理',
@@ -177,6 +234,8 @@ const STATUS_MAP = {
   CANCELLED: '已取消',
   CLOSED: '已关闭'
 }
+
+const AUDIT_MAP = { 0: '待审核', 1: '已通过', 2: '已拒绝' }
 
 export default {
   name: 'AdminRequests',
@@ -189,9 +248,15 @@ export default {
       total: 0,
       filterStatus: '',
       filterType: '',
+      filterAudit: '',
       statusMap: STATUS_MAP,
+      auditMap: AUDIT_MAP,
       detailVisible: false,
-      current: null
+      current: null,
+      rejectVisible: false,
+      rejectRemark: '',
+      currentRow: null,
+      auditing: false
     }
   },
   created() {
@@ -207,6 +272,7 @@ export default {
         }
         if (this.filterStatus) params.status = this.filterStatus
         if (this.filterType) params.serviceType = this.filterType
+        if (this.filterAudit !== '' && this.filterAudit !== null) params.auditStatus = this.filterAudit
 
         const res = await getAllRequests(params)
         const data = res.data || res
@@ -225,12 +291,41 @@ export default {
     resetFilter() {
       this.filterStatus = ''
       this.filterType = ''
+      this.filterAudit = ''
       this.currentPage = 1
       this.fetchList()
     },
     showDetail(row) {
       this.current = row
       this.detailVisible = true
+    },
+    handleAudit(row, status) {
+      const tip = row.preferredCompanionId
+        ? '确认通过该指定需求？通过后将自动为客户指定的陪诊师生成待接单订单。'
+        : '确认通过该需求？通过后将进入陪诊师需求广场。'
+      this.$confirm(tip, '确认通过', { type: 'success' }).then(async () => {
+        try {
+          await auditRequest(row.id, { auditStatus: status })
+          this.$message.success('已通过')
+          this.fetchList()
+        } catch { /* 错误已统一处理 */ }
+      }).catch(() => {})
+    },
+    openReject(row) {
+      this.currentRow = row
+      this.rejectRemark = ''
+      this.rejectVisible = true
+    },
+    async confirmReject() {
+      this.auditing = true
+      try {
+        await auditRequest(this.currentRow.id, { auditStatus: 2, remark: this.rejectRemark })
+        this.$message.success('已拒绝')
+        this.rejectVisible = false
+        this.fetchList()
+      } catch { /* 错误已统一处理 */ } finally {
+        this.auditing = false
+      }
     },
     formatDate(dateStr) {
       if (!dateStr) return '-'
@@ -328,6 +423,21 @@ export default {
   background: rgba(100, 130, 180, 0.1);
   color: #5577AA;
 }
+
+/* 审核标签 */
+.audit-tag {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.audit--0 { background: rgba(230, 162, 60, 0.1); color: #B88230; }
+.audit--1 { background: rgba(122, 154, 126, 0.12); color: #5C7A60; }
+.audit--2 { background: rgba(224, 96, 96, 0.1); color: #C05050; }
+
+.text-success { color: #5C7A60 !important; }
+.text-danger { color: #E06060 !important; }
 
 /* 分页 */
 .table-footer {

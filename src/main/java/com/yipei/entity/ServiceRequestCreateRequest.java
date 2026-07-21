@@ -40,4 +40,10 @@ public class ServiceRequestCreateRequest {
     private String contactPhone;
 
     private BigDecimal budget;
+
+    /**
+     * 通道B：客户指定的陪诊师 companion_profile.id。
+     * 不为空表示这是指定下单需求，同样需管理员审核，通过后自动生成待接单订单。
+     */
+    private Long preferredCompanionId;
 }

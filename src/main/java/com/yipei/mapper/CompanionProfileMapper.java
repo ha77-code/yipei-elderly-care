@@ -24,7 +24,7 @@ public interface CompanionProfileMapper {
     CompanionProfile selectByUserId(@Param("userId") Long userId);
 
     @Select("<script>" +
-            "SELECT cp.id, cp.user_id, cp.real_name, cp.avatar, cp.introduction, cp.service_area, " +
+            "SELECT cp.id, cp.user_id, cp.real_name, u.avatar, cp.introduction, cp.service_area, " +
             "cp.service_types, cp.experience_years, cp.rating, cp.completed_count, cp.traits, cp.audit_status, " +
             "u.nickname, u.phone, cp.created_at " +
             "FROM companion_profile cp " +
@@ -39,7 +39,11 @@ public interface CompanionProfileMapper {
                                      @Param("serviceType") String serviceType,
                                      @Param("traits") String traits);
 
-    @Select("SELECT " + SELECT_COLS + "FROM companion_profile WHERE audit_status = 0 ORDER BY created_at DESC")
+    @Select("SELECT cp.id, cp.user_id, cp.real_name, u.avatar, cp.introduction, cp.service_area, " +
+            "cp.service_types, cp.experience_years, cp.rating, cp.completed_count, cp.traits, " +
+            "cp.audit_status, cp.created_at, cp.updated_at " +
+            "FROM companion_profile cp LEFT JOIN sys_user u ON cp.user_id = u.id " +
+            "WHERE cp.audit_status = 0 ORDER BY cp.created_at DESC")
     List<CompanionProfile> selectPending();
 
     @Insert("INSERT INTO companion_profile(user_id, real_name, avatar, introduction, service_area, " +

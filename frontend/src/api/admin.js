@@ -28,6 +28,26 @@ export function getStatistics() {
   return request({ url: '/api/admin/statistics', method: 'get' })
 }
 
+/** 获取待审核头像列表 */
+export function getPendingAvatars() {
+  return request({ url: '/api/admin/avatar/pending', method: 'get' })
+}
+
+/** 审核用户头像（auditStatus：1 通过 / 2 拒绝） */
+export function auditAvatar(userId, data) {
+  return request({ url: `/api/admin/avatar/${userId}/audit`, method: 'put', data })
+}
+
+/** 获取待审核需求列表 */
+export function getPendingRequests() {
+  return request({ url: '/api/admin/service-request/pending', method: 'get' })
+}
+
+/** 审核需求（auditStatus：1 通过 / 2 拒绝） */
+export function auditRequest(id, data) {
+  return request({ url: `/api/admin/service-request/${id}/audit`, method: 'put', data })
+}
+
 /** 获取投诉列表（管理员） */
 export function getAllReports(params) {
   return request({ url: '/api/admin/report/list', method: 'get', params })

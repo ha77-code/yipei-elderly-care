@@ -17,6 +17,7 @@ import com.yipei.mapper.ServiceRequestMapper;
 import com.yipei.mapper.SysUserMapper;
 import com.yipei.util.SubmitLock;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -30,6 +31,7 @@ public class OrderService {
     private final OrderStatusLogMapper orderStatusLogMapper;
     private final CompanionProfileMapper companionProfileMapper;
     private final SubmitLock submitLock;
+    private final UserNotificationService notificationService;
 
     private static final BigDecimal PLATFORM_RATE = new BigDecimal("0.1");
 
@@ -38,16 +40,19 @@ public class OrderService {
                         SysUserMapper sysUserMapper,
                         OrderStatusLogMapper orderStatusLogMapper,
                         CompanionProfileMapper companionProfileMapper,
-                        SubmitLock submitLock) {
+                        SubmitLock submitLock,
+                        UserNotificationService notificationService) {
         this.serviceOrderMapper = serviceOrderMapper;
         this.serviceRequestMapper = serviceRequestMapper;
         this.sysUserMapper = sysUserMapper;
         this.orderStatusLogMapper = orderStatusLogMapper;
         this.companionProfileMapper = companionProfileMapper;
         this.submitLock = submitLock;
+        this.notificationService = notificationService;
     }
 
     /** 创建订单 */
+    @Transactional
     public ServiceOrder create(Long customerId, OrderCreateRequest request) {
         if (!submitLock.tryLock("order_create", customerId, 10)) {
             throw new ForbiddenException("请勿重复提交，稍后再试");
@@ -67,39 +72,118 @@ public class OrderService {
         if (!sr.getCustomerId().equals(customerId)) {
             throw new ForbiddenException("只能基于自己的服务需求创建订单");
         }
-        int existCount = serviceRequestMapper.countOrdersByRequestId(request.getRequestId());
+        if (sr.getAuditStatus() == null || sr.getAuditStatus() != 1) {
+            throw new ForbiddenException("该需求尚未通过审核，暂不能创建订单");
+        }
+        return buildPendingOrder(customerId, request.getRequestId(), request.getCompanionId(),
+                request.getServicePrice(), "客户创建订单");
+    }
+
+    /**
+     * 通道B：指定下单需求审核通过后，自动为客户选定的陪诊师生成待接单订单。
+     * 价格取需求预算；指定陪诊师时必须设置大于 0 的有效服务金额。
+     */
+    @Transactional
+    public ServiceOrder createDirectedOrder(Long customerId, Long requestId, Long companionProfileId,
+                                            BigDecimal budget) {
+        BigDecimal price = budget != null ? budget : BigDecimal.ZERO;
+        return buildPendingOrder(customerId, requestId, companionProfileId, price,
+                "指定需求审核通过，自动生成订单");
+    }
+
+    /** 生成 PENDING_ACCEPT 订单的共用逻辑（通道B 客户指定下单） */
+    private ServiceOrder buildPendingOrder(Long customerId, Long requestId, Long companionProfileId,
+                                           BigDecimal servicePrice, String logRemark) {
+        if (servicePrice == null || servicePrice.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new ForbiddenException("指定陪诊师时请设置有效的服务金额");
+        }
+        int existCount = serviceRequestMapper.countOrdersByRequestId(requestId);
         if (existCount > 0) {
             throw new ForbiddenException("该需求已生成订单，不能重复创建");
         }
         // companionId 是 companion_profile.id
-        CompanionProfile profile = companionProfileMapper.selectById(request.getCompanionId());
+        CompanionProfile profile = companionProfileMapper.selectById(companionProfileId);
         if (profile == null || profile.getAuditStatus() == null || profile.getAuditStatus() != 1) {
-            throw new NotFoundException("陪诊师不存在或未通过审核，ID: " + request.getCompanionId());
+            throw new NotFoundException("陪诊师不存在或未通过审核，ID: " + companionProfileId);
         }
         SysUser companion = sysUserMapper.selectById(profile.getUserId());
         if (companion == null || !RoleConstants.COMPANION.equals(companion.getRole())) {
             throw new NotFoundException("陪诊师用户异常，ID: " + profile.getUserId());
         }
-        BigDecimal platformFee = request.getServicePrice()
+        BigDecimal platformFee = servicePrice
                 .multiply(PLATFORM_RATE).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal companionIncome = request.getServicePrice().subtract(platformFee);
+        BigDecimal companionIncome = servicePrice.subtract(platformFee);
 
         ServiceOrder order = new ServiceOrder();
-        order.setRequestId(request.getRequestId());
+        order.setRequestId(requestId);
         order.setCustomerId(customerId);
         order.setCompanionId(profile.getId());
-        order.setServicePrice(request.getServicePrice());
+        order.setServicePrice(servicePrice);
         order.setPlatformFee(platformFee);
         order.setCompanionIncome(companionIncome);
         order.setStatus("PENDING_ACCEPT");
         serviceOrderMapper.insert(order);
-        serviceRequestMapper.updateStatus(sr.getId(), "MATCHED");
+        serviceRequestMapper.updateStatus(requestId, "MATCHED");
 
         OrderStatusLog log = new OrderStatusLog();
         log.setOrderId(order.getId());
         log.setToStatus("PENDING_ACCEPT");
         log.setOperatorId(customerId);
-        log.setRemark("客户创建订单");
+        log.setRemark(logRemark);
+        orderStatusLogMapper.insert(log);
+        notificationService.send(profile.getUserId(), "NEW_DIRECTED_ORDER", "收到新的指定订单",
+                "客户向您指定了订单 #" + order.getId() + "，请及时确认接单。", order.getId());
+
+        return order;
+    }
+
+    /**
+     * 通道A：客户接受陪诊师申请，直接生成「已接单」订单（双方已达成，无需再走 PENDING_ACCEPT）。
+     * 价格取客户预算；若传入 servicePrice 则以其为准（用于预算为空时客户补价）。
+     * 返回创建的订单，供上层开启聊天等后续处理。
+     */
+    @Transactional
+    public ServiceOrder createFromApplication(Long customerId, Long requestId, Long companionProfileId,
+                                              BigDecimal servicePrice) {
+        ServiceRequest sr = serviceRequestMapper.selectById(requestId);
+        if (sr == null) {
+            throw new NotFoundException("服务需求不存在，ID: " + requestId);
+        }
+        if (!sr.getCustomerId().equals(customerId)) {
+            throw new ForbiddenException("只能基于自己的服务需求接受申请");
+        }
+        int existCount = serviceRequestMapper.countOrdersByRequestId(requestId);
+        if (existCount > 0) {
+            throw new ForbiddenException("该需求已生成订单，不能重复接受");
+        }
+        CompanionProfile profile = companionProfileMapper.selectById(companionProfileId);
+        if (profile == null || profile.getAuditStatus() == null || profile.getAuditStatus() != 1) {
+            throw new NotFoundException("陪诊师不存在或未通过审核，ID: " + companionProfileId);
+        }
+        BigDecimal price = servicePrice != null ? servicePrice : sr.getBudget();
+        if (price == null || price.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new ForbiddenException("请先为该需求设置有效的服务金额");
+        }
+        BigDecimal platformFee = price.multiply(PLATFORM_RATE).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal companionIncome = price.subtract(platformFee);
+
+        ServiceOrder order = new ServiceOrder();
+        order.setRequestId(requestId);
+        order.setCustomerId(customerId);
+        order.setCompanionId(profile.getId());
+        order.setServicePrice(price);
+        order.setPlatformFee(platformFee);
+        order.setCompanionIncome(companionIncome);
+        order.setStatus("ACCEPTED");
+        serviceOrderMapper.insert(order);
+        serviceOrderMapper.markAcceptedNow(order.getId());
+        serviceRequestMapper.updateStatus(requestId, "MATCHED");
+
+        OrderStatusLog log = new OrderStatusLog();
+        log.setOrderId(order.getId());
+        log.setToStatus("ACCEPTED");
+        log.setOperatorId(customerId);
+        log.setRemark("客户接受陪诊师申请，订单达成");
         orderStatusLogMapper.insert(log);
 
         return order;
@@ -108,6 +192,7 @@ public class OrderService {
     /* ===== 陪诊师操作 ===== */
 
     /** 接单 */
+    @Transactional
     public void accept(Long orderId, Long userId) {
         ServiceOrder order = serviceOrderMapper.selectById(orderId);
         if (order == null) {
@@ -130,9 +215,13 @@ public class OrderService {
         log.setOperatorId(userId);
         log.setRemark("陪诊师接单");
         orderStatusLogMapper.insert(log);
+        notificationService.send(order.getCustomerId(), "ORDER_ACCEPTED", "\u966a\u8bca\u5e08\u5df2\u63a5\u5355",
+                "\u60a8\u6307\u5b9a\u7684\u966a\u8bca\u5e08\u5df2\u63a5\u5355\uff0c\u8bf7\u5728\u8ba2\u5355\u4e2d\u67e5\u770b\u670d\u52a1\u5b89\u6392\u3002", orderId);
+
     }
 
     /** 拒绝订单 */
+    @Transactional
     public void reject(Long orderId, Long userId, String reason) {
         ServiceOrder order = serviceOrderMapper.selectById(orderId);
         if (order == null) {
@@ -146,7 +235,7 @@ public class OrderService {
             throw new ForbiddenException("当前状态不允许拒绝");
         }
         serviceOrderMapper.updateStatus(orderId, "REJECTED", reason);
-        serviceRequestMapper.updateStatus(order.getRequestId(), "PENDING");
+        serviceRequestMapper.updateStatus(order.getRequestId(), "CLOSED");
 
         OrderStatusLog log = new OrderStatusLog();
         log.setOrderId(orderId);
@@ -155,9 +244,13 @@ public class OrderService {
         log.setOperatorId(userId);
         log.setRemark(reason != null ? reason : "陪诊师拒绝订单");
         orderStatusLogMapper.insert(log);
+        String suffix = reason == null || reason.isBlank() ? "" : " 原因：" + reason.trim();
+        notificationService.send(order.getCustomerId(), "ORDER_REJECTED", "指定订单已被拒绝",
+                "陪诊师未接受订单 #" + orderId + "。" + suffix, orderId);
     }
 
     /** 开始服务 */
+    @Transactional
     public void start(Long orderId, Long userId) {
         ServiceOrder order = serviceOrderMapper.selectById(orderId);
         if (order == null) {
@@ -179,9 +272,12 @@ public class OrderService {
         log.setOperatorId(userId);
         log.setRemark("陪诊师开始服务");
         orderStatusLogMapper.insert(log);
+        notificationService.send(order.getCustomerId(), "ORDER_STARTED", "陪诊服务已开始",
+                "订单 #" + orderId + " 已由陪诊师开始服务。", orderId);
     }
 
     /** 提交服务完成 */
+    @Transactional
     public void complete(Long orderId, Long userId) {
         ServiceOrder order = serviceOrderMapper.selectById(orderId);
         if (order == null) {
@@ -203,11 +299,14 @@ public class OrderService {
         log.setOperatorId(userId);
         log.setRemark("陪诊师提交服务完成，等待客户确认");
         orderStatusLogMapper.insert(log);
+        notificationService.send(order.getCustomerId(), "ORDER_PENDING_CONFIRM", "服务完成待确认",
+                "陪诊师已提交订单 #" + orderId + " 的服务完成，请及时确认。", orderId);
     }
 
     /* ===== 客户操作 ===== */
 
     /** 确认完成 */
+    @Transactional
     public void confirm(Long orderId, Long userId) {
         ServiceOrder order = serviceOrderMapper.selectById(orderId);
         if (order == null) {
@@ -230,9 +329,15 @@ public class OrderService {
         log.setOperatorId(userId);
         log.setRemark("客户确认服务完成");
         orderStatusLogMapper.insert(log);
+        CompanionProfile profile = companionProfileMapper.selectById(order.getCompanionId());
+        if (profile != null) {
+            notificationService.send(profile.getUserId(), "ORDER_COMPLETED", "订单已确认完成",
+                    "客户已确认订单 #" + orderId + " 服务完成。", orderId);
+        }
     }
 
     /** 取消订单（仅未开始订单） */
+    @Transactional
     public void cancel(Long orderId, Long userId, String reason) {
         ServiceOrder order = serviceOrderMapper.selectById(orderId);
         if (order == null) {
@@ -256,6 +361,12 @@ public class OrderService {
         log.setOperatorId(userId);
         log.setRemark(reason != null ? reason : "客户取消订单");
         orderStatusLogMapper.insert(log);
+        CompanionProfile profile = companionProfileMapper.selectById(order.getCompanionId());
+        if (profile != null) {
+            String suffix = reason == null || reason.isBlank() ? "" : " 原因：" + reason.trim();
+            notificationService.send(profile.getUserId(), "ORDER_CANCELLED", "订单已取消",
+                    "客户已取消订单 #" + orderId + "。" + suffix, orderId);
+        }
     }
 
     /* ===== 管理员操作 ===== */
