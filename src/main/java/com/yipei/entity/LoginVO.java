@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 
 @Data
 public class LoginVO {
+    private String token;
     private long id;
     private String username;
     private String nickname;
