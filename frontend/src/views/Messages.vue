@@ -130,6 +130,75 @@ export default {
       if (!n.isRead) {
         try { await markNotificationRead(n.id); n.isRead = 1; this.notificationUnread = Math.max(0, this.notificationUnread - 1) } catch {}
       }
+      this.routeNotification(n)
+    },
+    // 依据通知 type + relatedId 跳到对应界面
+    routeNotification(n) {
+      if (!n || !n.relatedId) return
+      const role = (getUser() || {}).role
+      // 私信 / 订单相关：relatedId 是订单号，聊天类直接在本页打开会话，其余去订单详情
+      const chatTypes = ['CHAT_MESSAGE', 'ORDER_ACCEPTED', 'ORDER_COMPLETED']
+      const orderTypes = ['NEW_DIRECTED_ORDER', 'ORDER_REJECTED', 'ORDER_STARTED',
+        'ORDER_PENDING_CONFIRM', 'ORDER_CANCELLED', 'REPORT_STATUS', 'REPORT_CREATED']
+      if (chatTypes.includes(n.type)) {
+        this.openConversationByOrderId(n.relatedId)
+        return
+      }
+      if (orderTypes.includes(n.type)) {
+        this.$router.push(`/order/${n.relatedId}`)
+        return
+      }
+      // 申请类：relatedId 是需求号
+      if (n.type === 'APPLICATION' || n.type === 'APPLICATION_WITHDRAWN') {
+        this.$router.push(`/customer/request/${n.relatedId}/applications`)
+        return
+      }
+      if (n.type === 'APPLICATION_ACCEPTED') {
+        // 申请被接受，relatedId 是订单号，打开与客户的会话
+        this.openConversationByOrderId(n.relatedId)
+        return
+      }
+      if (n.type === 'APPLICATION_REJECTED' || n.type === 'APPLICATION_AUTO_REJECTED') {
+        this.$router.push('/companion/pool')
+        return
+      }
+      // 需求审核结果：relatedId 是需求号
+      if (n.type === 'REQUEST_AUDIT_APPROVED' || n.type === 'REQUEST_AUDIT_REJECTED') {
+        this.$router.push('/customer/requests')
+        return
+      }
+      // 管理员待办
+      if (n.type === 'REQUEST_AUDIT_PENDING') { this.$router.push('/admin/request-review'); return }
+      if (n.type === 'COMPANION_AUDIT_PENDING') { this.$router.push('/admin/companion-review'); return }
+      if (n.type === 'AVATAR_AUDIT_PENDING') { this.$router.push('/admin/avatar-review'); return }
+      // 陪诊师资料/头像审核结果
+      if (n.type === 'COMPANION_AUDIT_APPROVED' || n.type === 'COMPANION_AUDIT_REJECTED') {
+        this.$router.push('/companion/profile'); return
+      }
+      if (n.type === 'AVATAR_AUDIT_APPROVED' || n.type === 'AVATAR_AUDIT_REJECTED') {
+        this.$router.push('/profile'); return
+      }
+      // 其他未知类型：如是管理员点投诉待办
+      if (role === 'ADMIN' && n.type === 'REPORT_CREATED') this.$router.push('/admin/reports')
+    },
+    async openConversationByOrderId(orderId) {
+      const oid = Number(orderId)
+      let hit = this.conversations.find(c => c.orderId === oid)
+      if (!hit) {
+        // 会话列表可能还没这条（刚达成），刷新一次再找
+        await this.fetchConversations()
+        hit = this.conversations.find(c => c.orderId === oid)
+      }
+      if (hit) {
+        this.selectConversation(hit)
+        this.$nextTick(() => {
+          const el = this.$el.querySelector('.chat-center')
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+        })
+      } else {
+        // 兜底：会话不可用（如订单已取消无聊天入口），跳订单详情
+        this.$router.push(`/order/${oid}`)
+      }
     },
     async markAllRead() {
       try { await markAllNotificationsRead(); this.notifications.forEach(n => { n.isRead = 1 }); this.notificationUnread = 0 } catch {}

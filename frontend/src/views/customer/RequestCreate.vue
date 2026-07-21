@@ -3,10 +3,10 @@
     <h2 class="page-title">{{ isOrderMode ? '创建订单' : '发布服务需求' }}</h2>
 
     <div class="content-card">
-      <!-- 匹配信息提示（从我的需求跳转来创建订单时） -->
-      <div class="match-banner" v-if="isOrderMode && matchedRequest">
+      <!-- 指定下单提示（从陪诊师详情/智能推荐指定 TA 跳转而来） -->
+      <div class="match-banner" v-if="isOrderMode">
         <i class="el-icon-info"></i>
-        <span>已匹配陪诊师，请确认需求信息并创建订单</span>
+        <span>指定下单模式：填写需求并设置预算，提交后经管理员审核，通过即自动向该陪诊师发送订单。</span>
       </div>
 
       <el-form
@@ -73,7 +73,7 @@
           <el-switch v-model="form.needPickup" active-text="需要陪诊师上门接送" inactive-text="自己前往医院" />
         </el-form-item>
 
-        <el-form-item label="预算（元）" prop="budget">
+        <el-form-item :label="isOrderMode ? '预算（元）*' : '预算（元）'" prop="budget">
           <el-input-number
             v-model="form.budget"
             :min="0"
@@ -82,7 +82,7 @@
             placeholder="请输入预算金额"
             style="width:280px"
           />
-          <span class="form-hint">选填，设置预算有助于更快匹配</span>
+          <span class="form-hint">{{ isOrderMode ? '指定下单必填，将作为订单服务金额' : '选填，设置预算有助于更快匹配' }}</span>
         </el-form-item>
 
         <el-form-item label="需求内容" prop="requirement">
@@ -155,7 +155,6 @@
 
 <script>
 import { createRequest } from '@/api/serviceRequest'
-import { createOrder } from '@/api/order'
 import { generateServiceSummary } from '@/api/ai'
 import { recommendCompanions } from '@/api/serviceRequest'
 
@@ -272,24 +271,24 @@ export default {
         return
       }
 
+      if (this.isOrderMode && !(this.form.budget > 0)) {
+        this.$message.warning('指定陪诊师时请填写大于 0 的预算')
+        return
+      }
+
       this.submitting = true
       try {
         const payload = { ...this.form }
         if (this.isOrderMode) {
-          const res = await createRequest(payload)
-          const requestData = res.data || res
-          await createOrder({
-            requestId: requestData.id,
-            companionId: this.$route.query.companionId,
-            servicePrice: payload.budget || 0
-          })
-          this.$message.success('订单创建成功，等待陪诊师接单')
-          this.$router.push('/customer/orders')
+          // 指定下单：提交带指定陪诊师的需求，管理员审核通过后后端自动生成待接单订单。
+          payload.preferredCompanionId = Number(this.$route.query.companionId)
+          await createRequest(payload)
+          this.$message.success('指定需求已提交，待管理员审核通过后将自动向该陪诊师发送订单')
         } else {
           await createRequest(payload)
           this.$message.success('需求发布成功')
-          this.$router.push('/customer/requests')
         }
+        this.$router.push('/customer/requests')
       } catch {
         /* 错误已统一处理 */
       } finally {

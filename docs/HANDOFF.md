@@ -13,7 +13,48 @@
 - `frontend/src/**` 的 **Vue SPA**（vue-cli，`npm run serve` 默认端口 3001，`/api` 代理到 8080；`npm run build` 产出到 `frontend/dist`）。
 2026-07-21 实测**用户实际运行的是 Vue SPA**（`RequestPool.vue`/`RequestCreate.vue` 等），此前 HANDOFF 记的"正式前端是 concept-light 轮盘页"已与现状不符。新增前端功能前先问清楚跑的是哪一套，避免改错目标（我就踩过：把智能推荐先加到了 public 静态页，用户在 Vue SPA 里看不到）。
 
-## 2026-07-21 本次会话更新（最高优先级）
+## 2026-07-21 精读修复：两条撮合通道在 Vue SPA 里断链（最高优先级）
+
+精读代码+文档后发现：后端与 concept-light 静态页都正常，但**用户实际运行的 Vue SPA（`frontend/src/**`）里两条核心撮合通道都跑不通**。本次已修复，并补了后端护栏与测试。
+
+### 修复 1 — 通道B「指定下单」在 SPA 里必然失败（严重）
+- **根因**：`views/customer/RequestCreate.vue` 指定模式（`isOrderMode`，即带 `?companionId=`）先发布需求（`audit_status=0`），紧接着直接调 `POST /api/order/create`。后端 `OrderService.doCreate` 校验 `audit_status==1`，未过审直接抛「该需求尚未通过审核」；而且请求体里从未带 `preferredCompanionId`。这与现行后端设计（指定订单在管理员审核通过时由 `ServiceRequestService.audit → OrderService.createDirectedOrder` 自动生成）完全脱节。
+- **改法**：指定模式改为提交带 `preferredCompanionId` 的需求（`Number(companionId)`），**不再**调 `createOrder`；要求预算 > 0；提交后跳「我的需求」并提示「待管理员审核通过后自动发送订单」。移除对 `@/api/order` 的无用引用；预算字段在指定模式下标注必填并改文案；顶部横幅改为「指定下单模式」说明。
+
+### 修复 2 — 通道A「需求广场申请」在客户侧断头（严重）
+- **根因**：`views/customer/RequestApplications.vue`（客户查看/接受申请页）与路由 `/customer/request/:requestId/applications` 都存在，但**全站没有任何入口链接到它**——`MyRequests.vue` 没有「查看申请」按钮。于是陪诊师能申请，客户永远看不到、无法接受，通道A 走不到生成订单那步。
+- **改法**：`MyRequests.vue` 操作列新增「查看申请」按钮（仅 `status=PENDING && auditStatus=1 && 非指定` 显示）跳转该页；新增「审核」状态列（待审核/已通过/未通过）；把 `MATCHED` 那颗会误导去陪诊师列表的「创建订单」按钮改为「查看订单」跳 `/customer/orders`；详情弹窗补充审核状态、指定陪诊师、未通过时的审核意见。
+
+### 修复 3 — 指定需求预算为空会把需求永久卡死（后端护栏）
+- **根因**：`budget` 可空，指定需求带空预算也能创建；但审核通过时 `createDirectedOrder → buildPendingOrder` 对 `price<=0` 抛异常，导致**整个审核事务回滚**，需求永远停在 `audit_status=0`，管理员反复点通过都失败。
+- **改法**：`ServiceRequestService.create` 里当 `preferredCompanionId != null` 时，前置校验预算 > 0 且指定陪诊师存在且已过审（否则 4xx 业务错误）。新增两条单测覆盖（`ServiceRequestServiceTest`，共 4 条）。
+
+### 修复 4 — 订单详情页没有私信入口（用户反馈）
+- **现象**：客户与陪诊师达成订单后，在「订单详情」页找不到聊天入口。此前私信入口只在 `OrderList.vue`（我的订单列表）和 `Messages.vue`（聊天中心）里有，`OrderDetail.vue` 完全没有。
+- **改法**：`OrderDetail.vue` 操作栏新增「私信沟通 / 查看聊天记录」按钮 + 引入 `ChatDialog` 组件。仅订单参与方、且状态可聊天时显示：`ACCEPTED/IN_SERVICE/PENDING_CONFIRM` 可发消息，`COMPLETED/COMPLAINT` 只读历史（与后端 `ChatService.OPEN_STATUSES` 一致）。
+
+### 修复 5 — 点击通知无跳转（用户反馈）
+- **现象**：陪诊师/客户收到「订单已接单/审核通过/收到新私信」等通知后点击，只标记已读、不跳转，看不到对应聊天或订单。
+- **改法**：`Messages.vue` 的 `readNotification` 新增 `routeNotification`，按 `type + relatedId` 分发：
+  - 私信/接单/完成类（`CHAT_MESSAGE/ORDER_ACCEPTED/ORDER_COMPLETED/APPLICATION_ACCEPTED`）→ 在本页直接打开对应订单会话（`openConversationByOrderId`，会话列表没有则刷新一次，再兜底跳订单详情）；
+  - 其他订单/投诉类 → 订单详情 `/order/{id}`；
+  - 申请类（`APPLICATION`）→ `/customer/request/{requestId}/applications`；未选中 → 需求广场；
+  - 需求审核结果 → `/customer/requests`；管理员待办 → 对应审核页；资料/头像审核结果 → `/companion/profile`、`/profile`。
+- 说明：通知面板在 `Messages.vue` 内（`/customer/messages`、`/companion/messages`，侧栏「聊天」入口），点通知即在同页打开会话，符合「点通知→看到聊天界面」的诉求。
+
+### 仍未处理（记录待办，未改动）
+- **`COMPLAINT` 订单状态是死代码**：schema/seed/前端标签都有，但没有任何 Java 会设置它——`ReportService.create` 只写投诉记录、不改 `order.status`。要接通有风险：`COMPLAINT` 不在 `ChatService.OPEN_STATUSES` 内、且每个订单流转都精确校验前置状态，贸然置为 COMPLAINT 会让订单卡死（没有 resolve→恢复原状态的路径）。需先定方案再接。
+- **SPA 无全局通知铃铛**：通知已可在「聊天」页查看并点击跳转，但 `MainLayout.vue` 顶栏仍只有聊天未读红点，没有独立的通知铃铛下拉。若想在任意页面第一时间看到「收到新申请/审核通过」等非私信通知，建议后续加顶栏铃铛（复用 `api/notification.js` + 上面的 `routeNotification` 逻辑）。
+
+### 验证
+- `mvnw compile` 通过；`mvnw test` 11 条全绿（原 9 + 新 2）；`npm run build` 生产构建成功。
+
+### 附：`application.yaml`（工作区改动，非本次逻辑修复）
+- DB/Redis 连接与 AI/TTS 配置改为 `${ENV:default}` 形式，去掉硬编码密码。这是工作区已有改动，本次一并保留。
+
+---
+
+## 2026-07-21 本次会话更新（历史）
 
 ### A. 页面切换叠加 Bug 修复
 

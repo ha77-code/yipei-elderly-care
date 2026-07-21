@@ -1,6 +1,7 @@
 package com.yipei.service;
 
 import com.yipei.entity.AuditRecord;
+import com.yipei.entity.CompanionProfile;
 import com.yipei.entity.CompanionVO;
 import com.yipei.entity.RequestPoolVO;
 import com.yipei.entity.ServiceRequest;
@@ -56,6 +57,17 @@ public class ServiceRequestService {
         }
         if (!RoleConstants.CUSTOMER.equals(user.getRole())) {
             throw new ForbiddenException("仅客户角色可发布服务需求");
+        }
+        // 指定下单（通道B）：审核通过后会按预算自动生成订单，若此时预算无效会导致审核事务回滚、
+        // 需求永远卡在待审核。所以在发布阶段就要求有效预算 + 指定的陪诊师已通过审核。
+        if (request.getPreferredCompanionId() != null) {
+            if (request.getBudget() == null || request.getBudget().compareTo(BigDecimal.ZERO) <= 0) {
+                throw new ForbiddenException("指定陪诊师时请填写大于 0 的预算");
+            }
+            CompanionProfile preferred = companionProfileMapper.selectById(request.getPreferredCompanionId());
+            if (preferred == null || preferred.getAuditStatus() == null || preferred.getAuditStatus() != 1) {
+                throw new NotFoundException("指定的陪诊师不存在或未通过审核");
+            }
         }
         ServiceRequest sr = new ServiceRequest();
         sr.setCustomerId(customerId);
