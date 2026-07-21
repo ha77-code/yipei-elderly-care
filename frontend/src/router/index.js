@@ -23,9 +23,11 @@ const Messages = () => import('@/views/Messages.vue')
 const Companions = () => import('@/views/customer/Companions.vue')
 const RequestCreate = () => import('@/views/customer/RequestCreate.vue')
 const MyRequests = () => import('@/views/customer/MyRequests.vue')
+const RequestApplications = () => import('@/views/customer/RequestApplications.vue')
 
 /* ===== 懒加载：陪诊师端 ===== */
 const CompanionProfile = () => import('@/views/companion/CompanionProfile.vue')
+const RequestPool = () => import('@/views/companion/RequestPool.vue')
 const AvailableOrders = () => import('@/views/companion/AvailableOrders.vue')
 const ServiceRecords = () => import('@/views/companion/ServiceRecords.vue')
 const MyEvaluations = () => import('@/views/companion/MyEvaluations.vue')
@@ -81,9 +83,11 @@ const routes = [
       { path: 'customer/requests', name: 'MyRequests', component: MyRequests, meta: { title: '我的需求', role: ROLES.CUSTOMER } },
       { path: 'customer/orders', name: 'CustomerOrders', component: OrderList, meta: { title: '我的订单', role: ROLES.CUSTOMER } },
       { path: 'customer/messages', name: 'CustomerMessages', component: Messages, meta: { title: '我的消息', role: ROLES.CUSTOMER } },
+      { path: 'customer/request/:requestId/applications', name: 'RequestApplications', component: RequestApplications, props: true, meta: { title: '陪诊师申请', role: ROLES.CUSTOMER } },
 
       /* ---------- 陪诊师端 COMPANION ---------- */
       { path: 'companion/profile', name: 'CompanionProfile', component: CompanionProfile, meta: { title: '入驻资料', role: ROLES.COMPANION } },
+      { path: 'companion/pool', name: 'RequestPool', component: RequestPool, meta: { title: '需求广场', role: ROLES.COMPANION } },
       { path: 'companion/available-orders', name: 'AvailableOrders', component: AvailableOrders, meta: { title: '可接订单', role: ROLES.COMPANION } },
       { path: 'companion/orders', name: 'CompanionOrders', component: OrderList, meta: { title: '我的订单', role: ROLES.COMPANION } },
       { path: 'companion/messages', name: 'CompanionMessages', component: Messages, meta: { title: '我的消息', role: ROLES.COMPANION } },
@@ -117,16 +121,10 @@ const router = new VueRouter({
   routes
 })
 
-const roleConcept = {
-  [ROLES.CUSTOMER]: '/customer-concept-light.html',
-  [ROLES.COMPANION]: '/companion-concept-light.html',
-  [ROLES.ADMIN]: '/admin-concept-light.html'
-}
-
 const roleHome = {
-  [ROLES.CUSTOMER]: '/customer-concept-light.html',
-  [ROLES.COMPANION]: '/companion-concept-light.html',
-  [ROLES.ADMIN]: '/admin-concept-light.html'
+  [ROLES.CUSTOMER]: '/',
+  [ROLES.COMPANION]: '/',
+  [ROLES.ADMIN]: '/admin/users'
 }
 
 /* ===== 全局路由守卫 ===== */
@@ -139,41 +137,36 @@ router.beforeEach((to, from, next) => {
     : to.meta
   const isPublic = deepMeta.public === true
 
-  // ① 公开路由：已登录访问 /login /register → 重定向概念页
+  // ① 公开路由：已登录访问 /login /register → 跳首页
   if (isPublic) {
     if (loggedIn && (to.path === '/login' || to.path === '/register')) {
-      window.location.href = roleConcept[user.role] || '/customer-concept-light.html'
-      return
+      return next(roleHome[user.role] || '/')
     }
     return next()
   }
 
-  // ② 未登录 → 跳转登录页或落地页
+  // ② 未登录访问 / → 品牌落地页
+  if (to.path === '/' && !loggedIn) {
+    window.location.href = '/landing.html'
+    return
+  }
+
+  // ③ 未登录 → 跳转登录页
   if (!loggedIn) {
-    if (to.path === '/') {
-      window.location.href = '/landing.html'
-      return
-    }
     return next({ path: '/login', query: { redirect: to.fullPath } })
   }
 
-  // ③ 已登录访问 / → 跳到角色概念页（除非 ?app=1）
-  if (to.path === '/' && to.query.app !== '1') {
-    window.location.href = roleConcept[user.role] || '/customer-concept-light.html'
-    return
+  // ④ 管理员访问首页 → 跳管理后台
+  if (to.path === '/' && user.role === ROLES.ADMIN) {
+    return next('/admin/users')
   }
 
-  // ④ /admin/* /customer/* /companion/* → 跳到概念页（除非 ?app=1）
-  if ((to.path.startsWith('/admin') || to.path.startsWith('/customer') || to.path.startsWith('/companion')) && to.query.app !== '1') {
-    window.location.href = roleConcept[user.role] || '/customer-concept-light.html'
-    return
-  }
-
-  // ⑤ 角色检查
+  // ⑤ 角色权限检查
   const requiredRole = to.matched.reduce((acc, r) => acc || r.meta.role, null)
-  if (requiredRole && user.role !== requiredRole && user.role !== ROLES.ADMIN) {
-    window.location.href = roleConcept[user.role] || '/customer-concept-light.html'
-    return
+  if (requiredRole) {
+    if (user.role !== requiredRole && user.role !== ROLES.ADMIN) {
+      return next(roleHome[user.role] || '/')
+    }
   }
 
   next()

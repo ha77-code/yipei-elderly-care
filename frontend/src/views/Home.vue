@@ -1,33 +1,30 @@
 <template>
-  <div class="home-page">
-    <section class="hero-section">
-      <div class="hero-copy">
-        <p class="eyebrow">{{ greeting }}</p>
-        <h1>{{ userNickname }}{{ text.welcomeSuffix }}</h1>
-        <p>{{ text.heroDesc }}</p>
+  <div class="frosted-page">
+    <section class="frosted-card" style="display:flex;justify-content:space-between;align-items:center;padding:36px 44px;margin-bottom:24px">
+      <div>
+        <p style="color:rgba(130,140,116,0.8);font-size:13px;font-weight:600;margin-bottom:6px">{{ greeting }}</p>
+        <h1 style="font-size:26px;font-weight:700;color:rgba(46,60,38,0.92);margin:0 0 6px;font-family:'PingFang SC','Microsoft YaHei',sans-serif">{{ userNickname }}{{ text.welcomeSuffix }}</h1>
+        <p style="font-size:14px;color:rgba(96,110,82,0.75);margin:0">{{ text.heroDesc }}</p>
       </div>
-      <div class="hero-stats">
-        <div v-for="item in statItems" :key="item.label" class="stat-card">
-          <span class="stat-value">{{ item.value }}</span>
-          <span class="stat-label">{{ item.label }}</span>
+      <div style="display:flex;gap:36px">
+        <div v-for="item in statItems" :key="item.label" style="text-align:center;padding:0 20px;border-right:1px solid rgba(150,140,110,0.15)" :style="item === statItems[statItems.length-1] ? {borderRight:'none'} : {}">
+          <span style="display:block;font-size:24px;font-weight:700;color:rgba(78,106,56,0.88)">{{ item.value }}</span>
+          <span style="display:block;font-size:12px;color:rgba(130,140,116,0.7);margin-top:4px">{{ item.label }}</span>
         </div>
       </div>
     </section>
 
-    <section class="quick-section">
-      <div class="section-head">
-        <p>Quick Access</p>
-        <h2>{{ text.quickTitle }}</h2>
-      </div>
-      <div class="quick-grid">
-        <button v-for="item in quickItems" :key="item.path" type="button" class="quick-card" @click="$router.push(item.path)">
+    <section>
+      <h2 class="frosted-title" style="margin-bottom:16px">{{ text.quickTitle }}</h2>
+      <div class="entry-grid">
+        <div v-for="item in quickItems" :key="item.path" class="entry-card" @click="$router.push(item.path)" style="display:flex;align-items:center;gap:14px;min-height:80px">
           <span :class="['quick-icon', item.tone]"><i :class="item.icon"></i></span>
-          <span class="quick-info">
-            <strong>{{ item.title }}</strong>
-            <small>{{ item.desc }}</small>
+          <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
+            <strong style="color:rgba(46,60,38,0.88)">{{ item.title }}</strong>
+            <small style="color:rgba(130,140,116,0.65);font-size:12px">{{ item.desc }}</small>
           </span>
-          <i class="el-icon-arrow-right quick-arrow"></i>
-        </button>
+          <i class="el-icon-arrow-right" style="color:rgba(150,140,110,0.35)"></i>
+        </div>
       </div>
     </section>
   </div>
@@ -164,33 +161,8 @@ export default {
 </script>
 
 <style scoped>
-.home-page { width: min(1180px, 100%); padding: 32px; color: var(--brand-cream-100); animation: reveal-up 0.7s var(--ease-smooth) both; }
-.hero-section { display: flex; justify-content: space-between; align-items: center; background: rgba(255, 248, 238, 0.94); border: 1px solid rgba(230, 200, 160, 0.1); border-radius: 14px; padding: 40px 48px; margin-bottom: 32px; box-shadow: 0 16px 40px rgba(7, 16, 7, 0.16); position: relative; overflow: hidden; }
-.hero-section::after { content: ''; position: absolute; right: -60px; top: -60px; width: 240px; height: 240px; background: radial-gradient(circle, rgba(122, 154, 126, 0.06) 0%, transparent 70%); border-radius: 50%; pointer-events: none; }
-.hero-copy { position: relative; z-index: 1; }
-.eyebrow { color: #7a9a7e; font-size: 13px; font-weight: 650; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.08em; }
-.hero-copy h1 { font-size: 30px; font-weight: 700; color: #1a1a1a; margin: 0 0 8px; font-family: var(--font-sans); }
-.hero-copy p:last-child { font-size: 15px; color: #6b6b6b; }
-.hero-stats { display: flex; gap: 40px; position: relative; z-index: 1; }
-.stat-card { text-align: center; padding: 0 24px; border-right: 1px solid rgba(0,0,0,0.08); }
-.stat-card:last-child { border-right: none; }
-.stat-value { display: block; font-size: 28px; font-weight: 700; color: #5c7a60; letter-spacing: -0.02em; }
-.stat-label { display: block; font-size: 13px; color: #888; margin-top: 4px; }
-.quick-section { margin-top: 30px; }
-.section-head { margin-bottom: 16px; }
-.section-head p { color: rgba(210, 190, 160, 0.56); font-size: 12px; font-weight: 800; margin-bottom: 4px; }
-.section-head h2 { font-family: var(--font-serif); font-size: 26px; color: var(--brand-cream-100); }
-.quick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
-.quick-card { min-height: 112px; display: flex; align-items: center; gap: 15px; padding: 20px; border: 1px solid rgba(230, 200, 160, 0.14); border-radius: 10px; background: rgba(255, 248, 238, 0.94); color: #172615; cursor: pointer; text-align: left; box-shadow: 0 14px 34px rgba(7, 16, 7, 0.14); transition: transform 0.22s var(--ease-standard), border-color 0.22s var(--ease-standard), box-shadow 0.22s var(--ease-standard); }
-.quick-card:hover { transform: translateY(-3px); border-color: rgba(225, 195, 160, 0.46); box-shadow: 0 20px 44px rgba(7, 16, 7, 0.2); }
 .quick-icon { width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 20px; flex: 0 0 46px; }
-.tone-green { background: rgba(45, 90, 58, 0.12); color: #2d5a3a; }
-.tone-gold { background: rgba(225, 195, 160, 0.24); color: #7c5c38; }
-.quick-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-.quick-info strong { color: #172615; font-size: 15px; }
-.quick-info small { color: #555; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.quick-arrow { color: rgba(23, 38, 21, 0.28); transition: transform 0.22s var(--ease-standard), color 0.22s var(--ease-standard); }
-.quick-card:hover .quick-arrow { color: #7c5c38; transform: translateX(3px); }
-@media (max-width: 920px) { .home-page { padding: 18px; } .hero-section { flex-direction: column; text-align: center; gap: 28px; padding: 32px 24px; } .hero-copy h1 { font-size: 26px; } .hero-stats { gap: 20px; } .stat-card { padding: 0 14px; } }
-@media (max-width: 560px) { .hero-stats { flex-direction: column; } .stat-card { border-right: none; border-bottom: 1px solid rgba(0,0,0,0.08); padding: 12px 0; } .stat-card:last-child { border-bottom: none; } .quick-grid { grid-template-columns: 1fr; } }
+.tone-green { background: rgba(108,140,80,.14); color: rgba(78,106,56,0.85); }
+.tone-gold { background: rgba(245,215,140,.22); color: rgba(170,130,60,0.9); }
+@media (max-width: 920px) { .frosted-page { padding: 16px !important; } }
 </style>
