@@ -11,7 +11,6 @@ import com.yipei.exception.ForbiddenException;
 import com.yipei.exception.NotFoundException;
 import com.yipei.mapper.AuditRecordMapper;
 import com.yipei.mapper.SysUserMapper;
-import com.yipei.security.JwtTokenProvider;
 import com.yipei.util.PasswordUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,18 +22,15 @@ import java.util.stream.Collectors;
 @Service
 public class UserService {
     private final SysUserMapper sysUserMapper;
-    private final JwtTokenProvider jwtTokenProvider;
     private final FileStorageService fileStorageService;
     private final AuditRecordMapper auditRecordMapper;
     private final UserNotificationService notificationService;
 
     public UserService(SysUserMapper sysUserMapper,
-                       JwtTokenProvider jwtTokenProvider,
                        FileStorageService fileStorageService,
                        AuditRecordMapper auditRecordMapper,
                        UserNotificationService notificationService) {
         this.sysUserMapper = sysUserMapper;
-        this.jwtTokenProvider = jwtTokenProvider;
         this.fileStorageService = fileStorageService;
         this.auditRecordMapper = auditRecordMapper;
         this.notificationService = notificationService;
@@ -50,9 +46,7 @@ public class UserService {
         if (user.getStatus() != null && user.getStatus() != 1) {
             throw new ForbiddenException("账号已被禁用");
         }
-        LoginVO vo = toLoginVO(user);
-        vo.setToken(jwtTokenProvider.generateToken(user.getId(), user.getUsername(), user.getRole()));
-        return vo;
+        return toLoginVO(user);
     }
 
     /* ===== 注册 ===== */

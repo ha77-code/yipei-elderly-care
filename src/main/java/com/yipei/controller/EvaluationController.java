@@ -3,13 +3,13 @@ package com.yipei.controller;
 import com.yipei.entity.ApiResponse;
 import com.yipei.entity.Evaluation;
 import com.yipei.entity.EvaluationCreateRequest;
-import com.yipei.security.SecurityUtils;
 import com.yipei.service.EvaluationService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -27,8 +27,8 @@ public class EvaluationController {
     /** 创建评价 */
     @PostMapping("/create")
     public ApiResponse<Evaluation> create(
+            @RequestHeader("X-User-Id") Long userId,
             @Valid @RequestBody EvaluationCreateRequest request) {
-        Long userId = SecurityUtils.requireLoginUserId();
         return ApiResponse.success(evaluationService.create(userId, request));
     }
 

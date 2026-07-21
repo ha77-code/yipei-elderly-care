@@ -7,7 +7,6 @@ import com.yipei.entity.OrderDetailVO;
 import com.yipei.entity.ReportRecord;
 import com.yipei.entity.ServiceRequest;
 import com.yipei.mapper.AdminStatisticsMapper;
-import com.yipei.security.SecurityUtils;
 import com.yipei.service.CompanionService;
 import com.yipei.service.OrderService;
 import com.yipei.service.ReportService;
@@ -17,6 +16,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -51,15 +51,19 @@ public class AdminController {
     /** 服务需求 */
     @GetMapping("/service-request/list")
     public ApiResponse<List<ServiceRequest>> listServiceRequests(
+            @RequestHeader("X-User-Id") Long adminId,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String serviceType,
             @RequestParam(required = false) Integer auditStatus) {
+        userService.requireAdmin(adminId);
         return ApiResponse.success(serviceRequestService.listAll(status, serviceType, auditStatus));
     }
 
     /** 待审核需求列表 */
     @GetMapping("/service-request/pending")
-    public ApiResponse<List<ServiceRequest>> listPendingRequests() {
+    public ApiResponse<List<ServiceRequest>> listPendingRequests(
+            @RequestHeader("X-User-Id") Long adminId) {
+        userService.requireAdmin(adminId);
         return ApiResponse.success(serviceRequestService.listPendingAudit());
     }
 
@@ -67,8 +71,9 @@ public class AdminController {
     @PutMapping("/service-request/{id}/audit")
     public ApiResponse<Void> auditRequest(
             @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long auditorId,
             @RequestBody Map<String, Object> body) {
-        Long auditorId = SecurityUtils.requireLoginUserId();
+        userService.requireAdmin(auditorId);
         Integer auditStatus = (Integer) body.get("auditStatus");
         String remark = (String) body.get("remark");
         serviceRequestService.audit(id, auditorId, auditStatus, remark);
@@ -78,16 +83,20 @@ public class AdminController {
     /** 订单 */
     @GetMapping("/orders")
     public ApiResponse<List<OrderDetailVO>> listOrders(
+            @RequestHeader("X-User-Id") Long adminId,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) Long customerId,
             @RequestParam(required = false) Long companionId) {
+        userService.requireAdmin(adminId);
         return ApiResponse.success(orderService.listForAdmin(status, customerId, companionId));
     }
 
     /** 投诉列表 */
     @GetMapping("/report/list")
     public ApiResponse<List<ReportRecord>> listReports(
+            @RequestHeader("X-User-Id") Long adminId,
             @RequestParam(required = false) String status) {
+        userService.requireAdmin(adminId);
         return ApiResponse.success(reportService.listAll(status));
     }
 
@@ -95,15 +104,18 @@ public class AdminController {
     @PutMapping("/report/{id}/handle")
     public ApiResponse<Void> handleReport(
             @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long handlerId,
             @RequestBody Map<String, String> body) {
-        Long handlerId = SecurityUtils.requireLoginUserId();
+        userService.requireAdmin(handlerId);
         reportService.handle(id, handlerId, body.get("status"), body.get("remark"));
         return ApiResponse.success();
     }
 
     /** 待审核陪诊师列表 */
     @GetMapping("/companion/pending")
-    public ApiResponse<List<CompanionProfile>> listPendingCompanions() {
+    public ApiResponse<List<CompanionProfile>> listPendingCompanions(
+            @RequestHeader("X-User-Id") Long adminId) {
+        userService.requireAdmin(adminId);
         return ApiResponse.success(companionService.listPending());
     }
 
@@ -111,8 +123,9 @@ public class AdminController {
     @PutMapping("/companion/{id}/audit")
     public ApiResponse<Void> auditCompanion(
             @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long auditorId,
             @RequestBody Map<String, Object> body) {
-        Long auditorId = SecurityUtils.requireLoginUserId();
+        userService.requireAdmin(auditorId);
         Integer auditStatus = (Integer) body.get("auditStatus");
         String remark = (String) body.get("remark");
         companionService.audit(id, auditorId, auditStatus, remark);
@@ -121,8 +134,8 @@ public class AdminController {
 
     /** 待审核头像列表 */
     @GetMapping("/avatar/pending")
-    public ApiResponse<List<com.yipei.entity.UserVO>> listPendingAvatars() {
-        Long adminId = SecurityUtils.requireLoginUserId();
+    public ApiResponse<List<com.yipei.entity.UserVO>> listPendingAvatars(
+            @RequestHeader("X-User-Id") Long adminId) {
         return ApiResponse.success(userService.listPendingAvatars(adminId));
     }
 
@@ -130,8 +143,8 @@ public class AdminController {
     @PutMapping("/avatar/{userId}/audit")
     public ApiResponse<Void> auditAvatar(
             @PathVariable Long userId,
+            @RequestHeader("X-User-Id") Long auditorId,
             @RequestBody Map<String, Object> body) {
-        Long auditorId = SecurityUtils.requireLoginUserId();
         Integer auditStatus = (Integer) body.get("auditStatus");
         String remark = (String) body.get("remark");
         userService.auditAvatar(userId, auditorId, auditStatus, remark);
@@ -140,7 +153,9 @@ public class AdminController {
 
     /** 平台统计 */
     @GetMapping("/statistics")
-    public ApiResponse<AdminStatisticsVO> statistics() {
+    public ApiResponse<AdminStatisticsVO> statistics(
+            @RequestHeader("X-User-Id") Long adminId) {
+        userService.requireAdmin(adminId);
         AdminStatisticsVO vo = new AdminStatisticsVO();
         vo.setTotalUsers(adminStatisticsMapper.countUsers());
         vo.setTotalCompanions(adminStatisticsMapper.countCompanions());

@@ -7,7 +7,6 @@ import com.yipei.entity.UpdateUserInfoRequest;
 import com.yipei.entity.UserLoginRequest;
 import com.yipei.entity.UserRegisterRequest;
 import com.yipei.entity.UserVO;
-import com.yipei.security.SecurityUtils;
 import com.yipei.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,6 +14,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -46,30 +46,32 @@ public class UserController {
 
     /** 获取当前登录用户信息 */
     @GetMapping("/info")
-    public ApiResponse<UserVO> getCurrentUser() {
-        Long userId = SecurityUtils.requireLoginUserId();
+    public ApiResponse<UserVO> getCurrentUser(@RequestHeader("X-User-Id") Long userId) {
         return ApiResponse.success(userService.getCurrentUser(userId));
     }
 
-    /** 获取用户列表（管理员） */
+    /** 获取用户列表 */
     @GetMapping("/list")
-    public ApiResponse<List<UserVO>> list() {
-        SecurityUtils.requireLogin();
+    public ApiResponse<List<UserVO>> list(
+            @RequestHeader("X-User-Id") Long operatorId) {
+        userService.requireAdmin(operatorId);
         return ApiResponse.success(userService.getUserList());
     }
 
     /** 获取用户详情（需登录） */
     @GetMapping("/{id}")
-    public ApiResponse<UserVO> detail(@PathVariable Long id) {
-        SecurityUtils.requireLogin();
+    public ApiResponse<UserVO> detail(
+            @RequestHeader("X-User-Id") Long operatorId,
+            @PathVariable Long id) {
+        userService.requireLogin(operatorId);
         return ApiResponse.success(userService.getUserById(id));
     }
 
     /** 修改个人信息 */
     @PutMapping("/info")
     public ApiResponse<UserVO> updateInfo(
+            @RequestHeader("X-User-Id") Long userId,
             @Valid @RequestBody UpdateUserInfoRequest request) {
-        Long userId = SecurityUtils.requireLoginUserId();
         return ApiResponse.success(userService.updateUserInfo(
                 userId, request.getNickname(), request.getPhone(), request.getAvatar()));
     }
@@ -77,8 +79,8 @@ public class UserController {
     /** 上传当前用户头像 */
     @PostMapping("/avatar")
     public ApiResponse<UserVO> uploadAvatar(
+            @RequestHeader("X-User-Id") Long userId,
             @RequestParam("file") MultipartFile file) {
-        Long userId = SecurityUtils.requireLoginUserId();
         return ApiResponse.success(userService.uploadAvatar(userId, file));
     }
 
@@ -86,8 +88,8 @@ public class UserController {
     @PutMapping("/{id}/status")
     public ApiResponse<UserVO> updateStatus(
             @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long operatorId,
             @RequestBody Map<String, Object> body) {
-        Long operatorId = SecurityUtils.requireLoginUserId();
         Integer status = (Integer) body.get("status");
         return ApiResponse.success(userService.updateUserStatus(id, status, operatorId));
     }
@@ -95,8 +97,8 @@ public class UserController {
     /** 修改密码 */
     @PutMapping("/password")
     public ApiResponse<Void> updatePassword(
+            @RequestHeader("X-User-Id") Long userId,
             @Valid @RequestBody ChangePasswordRequest request) {
-        Long userId = SecurityUtils.requireLoginUserId();
         userService.updatePassword(userId, request.getOldPassword(), request.getNewPassword());
         return ApiResponse.success();
     }
