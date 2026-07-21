@@ -21,6 +21,15 @@ export function getMyRequests() {
   })
 }
 
+/** 智能推荐：按当前填写的需求内容即时推荐陪诊师（不落库） */
+export function recommendCompanions(data) {
+  return request({
+    url: '/api/service-request/recommend',
+    method: 'post',
+    data
+  })
+}
+
 /** 获取需求详情 */
 export function getRequestDetail(id) {
   return request({

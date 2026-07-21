@@ -21,4 +21,8 @@ public class CompanionVO {
     private String nickname;
     private String phone;
     private LocalDateTime createdAt;
+
+    /** 非持久字段：需求匹配得分与匹配理由，仅推荐接口返回时填充 */
+    private Integer matchScore;
+    private String matchReason;
 }

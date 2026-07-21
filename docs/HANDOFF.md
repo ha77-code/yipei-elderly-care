@@ -6,7 +6,12 @@
 
 ## 当前状态
 
-后端已完成普通需求申请撮合、指定陪诊师订单、订单完整状态流转、私信聊天、用户通知及管理员审核。当前正式前端不是普通 Vue 侧边栏工作台，而是 `frontend/public/*-concept-light.html` 三个原版轮盘页面；所有新增功能必须继续在原轮盘滑动面板内部扩展。
+后端已完成普通需求申请撮合、指定陪诊师订单、订单完整状态流转、私信聊天、用户通知及管理员审核。
+
+**⚠️ 前端有两套并存，务必先确认在改哪一套：**
+- `frontend/public/*-concept-light.html` + `frontend/public/*.js`：原版轮盘滑动面板（静态页）。
+- `frontend/src/**` 的 **Vue SPA**（vue-cli，`npm run serve` 默认端口 3001，`/api` 代理到 8080；`npm run build` 产出到 `frontend/dist`）。
+2026-07-21 实测**用户实际运行的是 Vue SPA**（`RequestPool.vue`/`RequestCreate.vue` 等），此前 HANDOFF 记的"正式前端是 concept-light 轮盘页"已与现状不符。新增前端功能前先问清楚跑的是哪一套，避免改错目标（我就踩过：把智能推荐先加到了 public 静态页，用户在 Vue SPA 里看不到）。
 
 ## 2026-07-21 本次会话更新（最高优先级）
 
@@ -27,6 +32,28 @@
 - 客户"陪诊师"页每张陪诊师卡片有"🔊 朗读信息"按钮 → `GET /api/tts/companion/{id}`，朗读姓名、区域、经验、擅长、介绍。
 - 客户"发布需求"表单有"🔊 朗读已填内容"按钮 → `POST /api/tts/speak`，把当前已填的服务类型/时间/医院/科室/联系人/预算/需求/特殊说明拼成文本朗读，方便核对后再提交。
 - TTS 已在 `application.yaml` 配好火山引擎（`yipei.tts`，含 17 个音色）。后端未配置时接口返回 503，前端提示"语音功能未接入"。
+- `about.html` 右侧悬浮朗读按钮 → `POST /api/tts/speak`，`voiceType: BV001_streaming`（通用女声），朗读整页介绍文案。
+- 火山 HTTP 非流式接口单次文本上限约 1024 字节，`TtsService.callVolcengineTts` 会按句末标点把长文本切成 ≤900 字节的块逐段合成，再拼接 MP3 字节返回（MP3 为帧序列可直接拼接连续播放）。about 页整段 1107 字节超限就是靠这个修复的。
+
+### E. AI 摘要修复 + 发布需求后推荐适配陪诊师
+
+- **修复**：`application.yaml` 的 `yipei.ai.api-key` 默认值结尾多了 `np`（`...638np`），导致 DeepSeek 返回 401，AI 摘要全部失败。已删掉 `np`。
+- **新增匹配推荐**：客户发布普通需求（非指定陪诊师）成功后，前端 `customer-requests.js` 的 `showMatches()` 调 `GET /api/service-request/{id}/matches`，弹出「为你推荐的陪诊师」面板，展示最多 3 个适配陪诊师及推荐理由；无合适（后端返回空数组）则不弹。
+- 匹配为规则打分（`ServiceRequestService.matchCompanions/scoreCompanion`）：服务类型 50（用 2 字子串重叠判定，兼容"门诊陪诊"↔"陪诊"用词差异）、**需求描述契合最高 40**、区域覆盖 20（区域拆市/区词根与医院名比对）、性格每个 10（上限 20）、评分最高 10、经验最高 8；总分 ≥45 才算"比较适配"。指定陪诊师的需求直接返回空。
+- **需求描述契合维度**（`textFitScore`）：把需求正文+特殊说明的中文二元词集合，与陪诊师"简介+服务类型+性格"文本比对，按落入比例 ×40 给分；命中 &lt;3 个词视为偶然重叠不计分，避免泛泛需求把所有人推过阈值。这样即使服务类型/区域都不匹配，只要需求描述与某陪诊师资历高度吻合（如客户直接照抄了简介）也能把 TA 顶到最前。
+- `CompanionVO` 加了非持久字段 `matchScore`/`matchReason`，仅推荐接口填充。
+
+### F. 发布表单“智能推荐”按钮 + 申请接单 500 加固
+
+- **智能推荐**：发布需求表单（未指定陪诊师时）操作区新增「✨ 智能推荐陪诊师」按钮。点击后 `customer-requests.js` 的 `recommend()` 收集当前表单内容 POST `/api/service-request/recommend`（不落库、复用同一套打分），弹窗展示最多 3 个推荐，每张卡片带「指定TA」可直接选中该陪诊师回填到表单（之后填预算按指定需求提交）。无匹配则提示可直接提交进需求广场。
+- 后端 `ServiceRequestController.recommend` 用表单字段构造临时 `ServiceRequest`（不含 serviceDate，避免日期解析），调 `ServiceRequestService.previewMatches`；匹配打分逻辑抽成 `rankCompanions` 供 `matchCompanions`（提交后）和 `previewMatches`（预览）共用。
+- **申请接单 500 加固**：`ApplicationController.apply` 原来 `Long.valueOf(String.valueOf(body.get("requestId")))` 在 requestId 缺失/非数字时抛 `NumberFormatException`→500。已改为显式判空+`try/catch`，返回 403 业务提示而非 500。
+
+### G. Vue SPA 需求广场 requestId 字段错位（"缺少需求ID"根因）+ Vue SPA 智能推荐
+
+- **根因**：`RequestPool.vue`（Vue SPA 需求广场）读取 `row.requestId` 和 `row.myStatus`，但后端 `RequestPoolVO` 返回的字段是 **`id`** 和 **`myApplicationStatus`**。导致 `row.requestId` 为 `undefined`，申请时发送 `{requestId:null}` → 后端报"缺少需求ID"（加固前是 500）。已把 `RequestPool.vue` 三处（`:key`、`:loading`、`doApply`）改用 `row.id`，状态标签改用 `row.myApplicationStatus`。
+- **Vue SPA 智能推荐**：在 `RequestCreate.vue` 的「AI需求摘要」区、"生成摘要"按钮旁新增「智能推荐陪诊师」按钮（仅普通发布模式显示）。点击 `handleRecommend` 用当前表单内容调 `POST /api/service-request/recommend`（`api/serviceRequest.js` 新增 `recommendCompanions`），弹 `el-dialog` 展示最多 3 个推荐，每张卡片「指定TA」跳转到 `/customer/request/create?companionId={profileId}` 走指定下单。无匹配则提示可直接发布进需求广场。
+- 之前 E/F 节把智能推荐加到了 `frontend/public/customer-requests.js`（静态轮盘页），用户跑的是 Vue SPA 所以看不到——本节是补到 Vue SPA。两套都保留。
 
 ### D. 约定
 

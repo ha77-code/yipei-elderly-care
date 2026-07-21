@@ -110,6 +110,7 @@
         <el-form-item label="AI需求摘要">
           <div class="ai-summary-tools">
             <el-button icon="el-icon-magic-stick" :loading="summaryGenerating" @click="handleGenerateSummary">生成摘要</el-button>
+            <el-button v-if="!isOrderMode" icon="el-icon-star-off" :loading="recommending" @click="handleRecommend">智能推荐陪诊师</el-button>
             <span class="form-hint">生成后可修改，提交时将展示给陪诊师。</span>
           </div>
           <el-input v-if="form.aiSummary" v-model="form.aiSummary" type="textarea" :rows="3" maxlength="800" show-word-limit class="ai-summary-input" />
@@ -131,6 +132,24 @@
         </el-form-item>
       </el-form>
     </div>
+
+    <!-- 智能推荐陪诊师 -->
+    <el-dialog title="智能推荐陪诊师" :visible.sync="recommendVisible" width="640px">
+      <p class="rec-tip">根据你填写的需求内容，为你推荐以下比较适配的陪诊师。可点「指定TA」直接前往创建指定订单。</p>
+      <div v-if="!recommendList.length" class="rec-empty">暂时没有与当前需求高度匹配的陪诊师，可直接发布需求进入需求广场，由陪诊师主动申请。</div>
+      <div v-for="c in recommendList" :key="c.id" class="rec-card">
+        <div class="rec-head">
+          <span class="rec-name">{{ c.nickname || c.realName || '陪诊师' }}</span>
+          <el-tag size="small" type="warning" effect="plain">匹配 {{ c.matchScore || 0 }}</el-tag>
+        </div>
+        <div class="rec-meta">{{ c.serviceTypes || '陪诊服务' }} · {{ c.serviceArea || '服务区域待补充' }} · {{ c.experienceYears || 0 }}年 · ★{{ Number(c.rating || 0).toFixed(1) }}</div>
+        <div class="rec-reason">推荐理由：{{ c.matchReason || '综合资历匹配' }}</div>
+        <div class="rec-actions">
+          <el-button size="mini" type="primary" round @click="pickCompanion(c)">指定TA</el-button>
+        </div>
+      </div>
+      <span slot="footer"><el-button @click="recommendVisible = false">关闭</el-button></span>
+    </el-dialog>
   </div>
 </template>
 
@@ -138,6 +157,7 @@
 import { createRequest } from '@/api/serviceRequest'
 import { createOrder } from '@/api/order'
 import { generateServiceSummary } from '@/api/ai'
+import { recommendCompanions } from '@/api/serviceRequest'
 
 export default {
   name: 'RequestCreate',
@@ -182,7 +202,10 @@ export default {
         ]
       },
       submitting: false,
-      summaryGenerating: false
+      summaryGenerating: false,
+      recommending: false,
+      recommendVisible: false,
+      recommendList: []
     }
   },
   computed: {
@@ -214,6 +237,33 @@ export default {
       } finally {
         this.summaryGenerating = false
       }
+    },
+    async handleRecommend() {
+      if (!this.form.requirement.trim()) {
+        this.$message.warning('请先填写需求内容，再看智能推荐')
+        return
+      }
+      this.recommending = true
+      try {
+        const res = await recommendCompanions({
+          serviceType: this.form.serviceType,
+          hospitalName: this.form.hospitalName,
+          department: this.form.department,
+          requirement: this.form.requirement,
+          specialNotes: this.form.specialNotes,
+          preferredTraits: this.form.preferredTraits
+        })
+        this.recommendList = res.data || res || []
+        this.recommendVisible = true
+      } catch {
+        // 错误由统一拦截器提示
+      } finally {
+        this.recommending = false
+      }
+    },
+    pickCompanion(c) {
+      this.recommendVisible = false
+      this.$router.push({ path: '/customer/request/create', query: { companionId: c.id } })
     },
     async handleSubmit() {
       try {
@@ -312,6 +362,14 @@ export default {
   font-size: 13px;
   color: var(--color-text-placeholder);
 }
-.ai-summary-tools { display: flex; align-items: center; }
+.ai-summary-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .ai-summary-input { margin-top: 10px; }
+.rec-tip { font-size: 13px; color: rgba(96,110,82,0.85); line-height: 1.7; margin: 0 0 12px; }
+.rec-empty { font-size: 13px; color: rgba(130,140,116,0.8); padding: 20px; text-align: center; background: rgba(248,250,240,0.5); border-radius: 8px; }
+.rec-card { border: 1px solid rgba(150,140,110,0.16); border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; background: rgba(255,255,255,0.6); }
+.rec-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.rec-name { font-size: 15px; font-weight: 700; color: rgba(78,106,56,0.92); }
+.rec-meta { font-size: 12.5px; color: rgba(96,110,82,0.8); margin-bottom: 4px; }
+.rec-reason { font-size: 12.5px; color: rgba(170,130,60,0.9); line-height: 1.6; margin-bottom: 10px; }
+.rec-actions { text-align: right; }
 </style>

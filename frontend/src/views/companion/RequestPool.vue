@@ -6,7 +6,7 @@
     <div class="content-card" v-loading="loading">
       <div v-if="!list.length && !loading" class="empty-tip">暂无可申请的需求，请稍后再来</div>
       <div class="pool-grid">
-        <div v-for="row in list" :key="row.requestId" class="pool-card">
+        <div v-for="row in list" :key="row.id" class="pool-card">
           <div class="pc-header">
             <div>
               <el-tag size="small" effect="plain">{{ row.serviceType }}</el-tag>
@@ -24,10 +24,10 @@
           </div>
           <div class="pc-req">{{ row.requirement || '暂无需求描述' }}</div>
           <div class="pc-footer">
-            <el-tag v-if="row.myStatus === 'PENDING'" size="mini" type="warning" effect="plain">已申请，待客户选择</el-tag>
-            <el-tag v-else-if="row.myStatus === 'ACCEPTED'" size="mini" type="success" effect="plain">已被选中</el-tag>
+            <el-tag v-if="row.myApplicationStatus === 'PENDING'" size="mini" type="warning" effect="plain">已申请，待客户选择</el-tag>
+            <el-tag v-else-if="row.myApplicationStatus === 'ACCEPTED'" size="mini" type="success" effect="plain">已被选中</el-tag>
             <template v-else>
-              <el-button size="small" type="primary" round :loading="applyingId === row.requestId" @click="doApply(row)">
+              <el-button size="small" type="primary" round :loading="applyingId === row.id" @click="doApply(row)">
                 <i class="el-icon-s-claim"></i> 申请接单
               </el-button>
             </template>
@@ -67,7 +67,7 @@ export default {
       try { const res = await getRequestPool(); this.list = res.data || res || [] } catch { this.list = [] } finally { this.loading = false }
     },
     doApply(row) {
-      this.applyReqId = row.requestId; this.applyMessage = ''; this.applyVisible = true
+      this.applyReqId = row.id; this.applyMessage = ''; this.applyVisible = true
     },
     async confirmApply() {
       this.applying = true; this.applyingId = this.applyReqId

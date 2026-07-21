@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -18,7 +19,9 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -89,13 +92,44 @@ public class TtsService {
         return sb.toString();
     }
 
-    /** 调用火山引擎语音合成 V1 HTTP 非流式接口 */
+    /** 火山 HTTP 非流式接口单次文本上限约 1024 字节，留余量取 900 */
+    private static final int MAX_CHUNK_BYTES = 900;
+
+    /**
+     * 调用火山引擎语音合成。文本过长时按句子切块逐段合成，再把 MP3 拼接为一段返回。
+     * MP3 是帧序列，直接拼接字节即可连续播放。
+     */
     private Optional<byte[]> callVolcengineTts(String text, String voiceType) {
+        String cleanText = stripPunctuation(text);
+        if (cleanText.isBlank()) {
+            log.warn("TTS text is empty after stripping punctuation");
+            return Optional.empty();
+        }
+
+        List<String> chunks = splitText(text);
+        if (chunks.isEmpty()) {
+            return Optional.empty();
+        }
+
+        ByteArrayOutputStream merged = new ByteArrayOutputStream();
+        for (String chunk : chunks) {
+            Optional<byte[]> part = synthesizeChunk(chunk, voiceType);
+            if (part.isEmpty()) {
+                return Optional.empty();
+            }
+            merged.writeBytes(part.get());
+        }
+        byte[] audioBytes = merged.toByteArray();
+        log.info("TTS generated audio, size={} bytes, chunks={}", audioBytes.length, chunks.size());
+        return audioBytes.length > 0 ? Optional.of(audioBytes) : Optional.empty();
+    }
+
+    /** 合成单个文本块 */
+    private Optional<byte[]> synthesizeChunk(String text, String voiceType) {
         try {
             String cleanText = stripPunctuation(text);
             if (cleanText.isBlank()) {
-                log.warn("TTS text is empty after stripping punctuation");
-                return Optional.empty();
+                return Optional.of(new byte[0]);
             }
 
             ObjectNode body = objectMapper.createObjectNode();
@@ -143,7 +177,6 @@ public class TtsService {
             }
 
             byte[] audioBytes = Base64.getDecoder().decode(data);
-            log.info("TTS generated audio, size={} bytes, text length={}", audioBytes.length, cleanText.length());
             return Optional.of(audioBytes);
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
@@ -153,6 +186,61 @@ public class TtsService {
             log.warn("TTS request failed: {}", exception.getMessage());
             return Optional.empty();
         }
+    }
+
+    /** 按句末标点把长文本切成不超过 MAX_CHUNK_BYTES 的块，保证每块可单次合成 */
+    private List<String> splitText(String text) {
+        List<String> chunks = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+        int length = text.length();
+        int start = 0;
+        for (int i = 0; i < length; i++) {
+            char c = text.charAt(i);
+            boolean isBoundary = c == '。' || c == '！' || c == '？' || c == '；'
+                    || c == '.' || c == '!' || c == '?' || c == ';' || c == '\n';
+            boolean isLast = i == length - 1;
+            if (isBoundary || isLast) {
+                String sentence = text.substring(start, i + 1);
+                start = i + 1;
+                // 单句本身就超限时，按字节强制截断
+                if (sentence.getBytes(StandardCharsets.UTF_8).length > MAX_CHUNK_BYTES) {
+                    flush(chunks, current);
+                    chunks.addAll(hardSplit(sentence));
+                    continue;
+                }
+                if (current.length() > 0
+                        && (current.toString() + sentence).getBytes(StandardCharsets.UTF_8).length > MAX_CHUNK_BYTES) {
+                    flush(chunks, current);
+                }
+                current.append(sentence);
+            }
+        }
+        flush(chunks, current);
+        return chunks;
+    }
+
+    private void flush(List<String> chunks, StringBuilder buffer) {
+        if (buffer.length() > 0) {
+            chunks.add(buffer.toString());
+            buffer.setLength(0);
+        }
+    }
+
+    /** 无句读的超长句，按字节窗口硬切 */
+    private List<String> hardSplit(String sentence) {
+        List<String> parts = new ArrayList<>();
+        StringBuilder buffer = new StringBuilder();
+        for (int i = 0; i < sentence.length(); i++) {
+            buffer.append(sentence.charAt(i));
+            if (buffer.toString().getBytes(StandardCharsets.UTF_8).length >= MAX_CHUNK_BYTES) {
+                parts.add(buffer.toString());
+                buffer.setLength(0);
+            }
+        }
+        if (buffer.length() > 0) {
+            parts.add(buffer.toString());
+        }
+        return parts;
     }
 
     /** BV700_streaming 不支持标点符号，替换为空格 */
