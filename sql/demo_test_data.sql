@@ -13,11 +13,13 @@
 --     └ 审核：待匹配需求中3条 audit_status=0（供管理员审核演示），其余全部 audit_status=1
 --   服务订单：14 个（5 COMPLETED + 2 IN_SERVICE + 3 ACCEPTED + 2 CANCELLED + 1 REJECTED + 1 COMPLAINT）
 --   服务记录：6 条（含1条进行中记录）
---   评价记录：13 条（双向评价 + 投诉差评 + 拒绝场景评价）
+--   评价记录：40 条（覆盖5星/4星/3星/2星/1星全部评分，含双向评价、投诉差评、预评价、平台表彰、超长/超短文本等场景）
 --   状态记录：26 条（覆盖完整生命周期）
---   审核记录：9 条（7通过 + 1拒绝 + 1待处理）
+--   审核记录：17 条（7陪诊师审核 + 8需求审核 + 2投诉审核）
 --   投诉记录：6 条（2 PENDING + 2 PROCESSING + 1 RESOLVED + 1 REJECTED）
---   聊天消息：若干条（进行中/已完成订单的演示对话）
+--   服务申请：16 条（陪诊师对等待匹配需求发起的申请，含 PENDING/ACCEPTED/REJECTED/WITHDRAWN）
+--   聊天消息：50+ 条（覆盖 IN_SERVICE/ACCEPTED/COMPLETED/COMPLAINT 等多状态订单对话）
+--   用户通知：50+ 条（ORDER_STATUS/NEW_ORDER/NEW_MESSAGE/EVALUATION/SYSTEM 全覆盖）
 -- ============================================================================
 
 USE yipei;
@@ -958,3 +960,751 @@ SELECT @o_done, @cust_done, @comp_done, '您好，麻烦今天多照顾一下老
 UNION ALL SELECT @o_done, @comp_done, @cust_done, '放心，住院手续我来办，有情况随时同步给您。', 1, '2026-07-01 09:05:00' WHERE @o_done IS NOT NULL
 UNION ALL SELECT @o_done, @comp_done, @cust_done, '住院手续已办好，老人已入住病房，押金收据我拍照发您。', 1, '2026-07-01 14:00:00' WHERE @o_done IS NOT NULL
 UNION ALL SELECT @o_done, @cust_done, @comp_done, '太感谢了，辛苦您！', 1, '2026-07-01 14:10:00' WHERE @o_done IS NOT NULL;
+
+
+-- ============================================================================
+-- 第二十一部分：更多聊天消息（覆盖更多订单的对话记录）
+-- ============================================================================
+
+-- 订单2（COMPLETED family01/周先生 陪诊）聊天记录
+SET @o2 := (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='family01') AND status='COMPLETED' AND service_price=350.00 LIMIT 1);
+SET @cust2 := (SELECT customer_id FROM service_order WHERE id=@o2);
+SET @comp2 := (SELECT cp.user_id FROM companion_profile cp JOIN service_order o ON cp.id=o.companion_id WHERE o.id=@o2);
+
+INSERT INTO chat_message(order_id, from_user_id, to_user_id, content, is_read, created_at)
+SELECT @o2, @cust2, @comp2, '您好，明天我父亲去看风湿免疫科，他痛风发作走路不太方便，麻烦多照顾。', 1, '2026-07-08 07:00:00' WHERE @o2 IS NOT NULL
+UNION ALL SELECT @o2, @comp2, @cust2, '周先生请放心，我会带轮椅过去，全程推送老人。请问老人对什么药物过敏吗？', 1, '2026-07-08 07:10:00' WHERE @o2 IS NOT NULL
+UNION ALL SELECT @o2, @cust2, @comp2, '没有药物过敏，就是血压有点高，一直在吃降压药。医保卡和病历本我都放在老人包里了。', 1, '2026-07-08 07:15:00' WHERE @o2 IS NOT NULL
+UNION ALL SELECT @o2, @comp2, @cust2, '好的收到。我已经借好轮椅在门诊大厅等老人了。', 1, '2026-07-08 09:25:00' WHERE @o2 IS NOT NULL
+UNION ALL SELECT @o2, @comp2, @cust2, '就诊结束，医生调整了降尿酸药，报告和药品已拍照发您。老人已安全送回家。', 1, '2026-07-08 12:35:00' WHERE @o2 IS NOT NULL
+UNION ALL SELECT @o2, @cust2, @comp2, '收到，非常感谢！下次复诊还找您。', 1, '2026-07-08 12:40:00' WHERE @o2 IS NOT NULL;
+
+-- 订单3（IN_SERVICE customer3/王五 胃镜陪诊）聊天记录 - 补充更多对话
+SET @o3 := (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer3') AND status='IN_SERVICE' LIMIT 1);
+SET @cust3 := (SELECT customer_id FROM service_order WHERE id=@o3);
+SET @comp3 := (SELECT cp.user_id FROM companion_profile cp JOIN service_order o ON cp.id=o.companion_id WHERE o.id=@o3);
+
+INSERT INTO chat_message(order_id, from_user_id, to_user_id, content, is_read, created_at)
+SELECT @o3, @cust3, @comp3, '刘陪诊师您好，我明天做胃镜有点紧张，之前没做过无痛的。', 1, '2026-07-09 20:00:00' WHERE @o3 IS NOT NULL
+UNION ALL SELECT @o3, @comp3, @cust3, '不用紧张，无痛胃镜就是睡一觉就好了，全程也就十几分钟。您今晚8点后别吃东西别喝水。', 1, '2026-07-09 20:10:00' WHERE @o3 IS NOT NULL
+UNION ALL SELECT @o3, @cust3, @comp3, '好的，记住了。明天早上我直接去消化内科找您对吧？', 1, '2026-07-09 20:15:00' WHERE @o3 IS NOT NULL
+UNION ALL SELECT @o3, @comp3, @cust3, '对，我在消化内科门诊等您。记得带医保卡和之前的检查报告。', 1, '2026-07-10 07:30:00' WHERE @o3 IS NOT NULL
+UNION ALL SELECT @o3, @comp3, @cust3, '挂号已完成，前面还有2位患者，预计9:30左右轮到我们。', 0, '2026-07-10 09:05:00' WHERE @o3 IS NOT NULL;
+
+-- 订单4（ACCEPTED elder01/刘奶奶 检查）聊天记录 - 待服务前的沟通
+SET @o4 := (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='elder01') AND status='ACCEPTED' LIMIT 1);
+SET @cust4 := (SELECT customer_id FROM service_order WHERE id=@o4);
+SET @comp4 := (SELECT cp.user_id FROM companion_profile cp JOIN service_order o ON cp.id=o.companion_id WHERE o.id=@o4);
+
+INSERT INTO chat_message(order_id, from_user_id, to_user_id, content, is_read, created_at)
+SELECT @o4, @cust4, @comp4, '陈陪诊师您好，7月12号的检查麻烦您了。核磁已经预约好了，上午10点。', 1, '2026-07-11 10:30:00' WHERE @o4 IS NOT NULL
+UNION ALL SELECT @o4, @comp4, @cust4, '刘奶奶您好，我已经记下了。核磁检查前需要取下所有金属物品，请提醒老人不要戴首饰。', 1, '2026-07-11 10:35:00' WHERE @o4 IS NOT NULL
+UNION ALL SELECT @o4, @cust4, @comp4, '好的，我会提醒奶奶。另外CT检查还没有预约，需要现场排队，麻烦您帮忙取号。', 0, '2026-07-11 18:00:00' WHERE @o4 IS NOT NULL;
+
+-- 订单6（COMPLAINT customer3/王五 投诉订单）聊天记录 - 有矛盾的对话
+SET @o6 := (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer3') AND status='COMPLAINT' LIMIT 1);
+SET @cust6 := (SELECT customer_id FROM service_order WHERE id=@o6);
+SET @comp6 := (SELECT cp.user_id FROM companion_profile cp JOIN service_order o ON cp.id=o.companion_id WHERE o.id=@o6);
+
+INSERT INTO chat_message(order_id, from_user_id, to_user_id, content, is_read, created_at)
+SELECT @o6, @cust6, @comp6, '刘陪诊师，您到哪了？已经8:30了。', 1, '2026-07-10 08:30:00' WHERE @o6 IS NOT NULL
+UNION ALL SELECT @o6, @comp6, @cust6, '抱歉抱歉，上一单延长了，我马上到，大概9点到。', 1, '2026-07-10 08:32:00' WHERE @o6 IS NOT NULL
+UNION ALL SELECT @o6, @cust6, @comp6, '好吧，麻烦快点，老人等得着急了。', 1, '2026-07-10 08:35:00' WHERE @o6 IS NOT NULL
+UNION ALL SELECT @o6, @comp6, @cust6, '到了到了，在挂号窗口这里。', 1, '2026-07-10 09:05:00' WHERE @o6 IS NOT NULL
+UNION ALL SELECT @o6, @cust6, @comp6, '服务过程中您一直在看手机，是有什么急事吗？我父亲觉得您不太专心。', 1, '2026-07-10 10:30:00' WHERE @o6 IS NOT NULL;
+
+-- 订单7（COMPLETED customer6/吴奶奶 眼科陪诊）聊天记录
+SET @o7 := (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer6') AND status='COMPLETED' AND service_price=250.00 LIMIT 1);
+SET @cust7 := (SELECT customer_id FROM service_order WHERE id=@o7);
+SET @comp7 := (SELECT cp.user_id FROM companion_profile cp JOIN service_order o ON cp.id=o.companion_id WHERE o.id=@o7);
+
+INSERT INTO chat_message(order_id, from_user_id, to_user_id, content, is_read, created_at)
+SELECT @o7, @cust7, @comp7, '陈陪诊师您好，我妈白内障术后复查，麻烦您多费心。', 1, '2026-07-20 07:00:00' WHERE @o7 IS NOT NULL
+UNION ALL SELECT @o7, @comp7, @cust7, '吴奶奶您好！术后复查很重要，我会全程陪同。请问上次手术是多久前做的？', 1, '2026-07-20 07:10:00' WHERE @o7 IS NOT NULL
+UNION ALL SELECT @o7, @cust7, @comp7, '上个月6月15号做的手术，现在正好一个月复查。', 1, '2026-07-20 07:15:00' WHERE @o7 IS NOT NULL
+UNION ALL SELECT @o7, @comp7, @cust7, '检查结束了，医生说着恢复很好，视力从0.3提升到0.8了！散瞳后老人视力模糊，我打车送她回家。', 1, '2026-07-20 11:05:00' WHERE @o7 IS NOT NULL
+UNION ALL SELECT @o7, @cust7, @comp7, '太好了！感谢您的细心照顾，还专门送回家，太暖心了！', 1, '2026-07-20 11:30:00' WHERE @o7 IS NOT NULL;
+
+-- 订单9（COMPLETED customer9/蒋女士 神经内科陪诊）聊天记录
+SET @o9 := (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer9') AND status='COMPLETED' AND service_price=400.00 LIMIT 1);
+SET @cust9 := (SELECT customer_id FROM service_order WHERE id=@o9);
+SET @comp9 := (SELECT cp.user_id FROM companion_profile cp JOIN service_order o ON cp.id=o.companion_id WHERE o.id=@o9);
+
+INSERT INTO chat_message(order_id, from_user_id, to_user_id, content, is_read, created_at)
+SELECT @o9, @cust9, @comp9, '赵护师您好，麻烦今天帮我爸做检查。他最近总是头晕，我有点担心。', 1, '2026-07-18 06:30:00' WHERE @o9 IS NOT NULL
+UNION ALL SELECT @o9, @comp9, @cust9, '蒋女士您好，请放心。我会全程陪同，检查结果出来第一时间同步给您。老人平时血压怎么样？', 1, '2026-07-18 06:35:00' WHERE @o9 IS NOT NULL
+UNION ALL SELECT @o9, @cust9, @comp9, '血压偏高，在吃药控制。最近头晕不知道是不是血压的问题。', 1, '2026-07-18 06:40:00' WHERE @o9 IS NOT NULL
+UNION ALL SELECT @o9, @comp9, @cust9, 'CT结果出来了，轻微脑萎缩属老年性改变不用太担心。颈动脉有轻微斑块，医生开了阿托伐他汀。血压今天测的偏高，建议每天监测。所有报告已拍照发您。', 1, '2026-07-18 12:10:00' WHERE @o9 IS NOT NULL
+UNION ALL SELECT @o9, @cust9, @comp9, '收到！您太专业了，比我预想的细致很多。下次复诊一定还找您！', 1, '2026-07-18 12:20:00' WHERE @o9 IS NOT NULL;
+
+-- 订单11（ACCEPTED customer7/郑先生 肠镜检查）聊天记录
+SET @o11 := (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer7') AND status='ACCEPTED' AND service_price=450.00 LIMIT 1);
+SET @cust11 := (SELECT customer_id FROM service_order WHERE id=@o11);
+SET @comp11 := (SELECT cp.user_id FROM companion_profile cp JOIN service_order o ON cp.id=o.companion_id WHERE o.id=@o11);
+
+INSERT INTO chat_message(order_id, from_user_id, to_user_id, content, is_read, created_at)
+SELECT @o11, @cust11, @comp11, '刘陪诊师您好，8月3号的肠镜检查麻烦您了。我父亲有点紧张，需要多安抚。', 1, '2026-07-29 14:00:00' WHERE @o11 IS NOT NULL
+UNION ALL SELECT @o11, @comp11, @cust11, '郑先生请放心，肠镜检查很常规，我会全程陪在身边。请提醒老人检查前一天按要求做肠道准备。', 1, '2026-07-29 14:10:00' WHERE @o11 IS NOT NULL
+UNION ALL SELECT @o11, @cust11, @comp11, '好的，肠道准备的药已经取好了。另外检查当天需要有人签字，您能帮忙签吗？', 0, '2026-07-29 18:00:00' WHERE @o11 IS NOT NULL;
+
+-- 订单12（ACCEPTED customer8/冯奶奶 风湿免疫科陪诊）聊天记录
+SET @o12 := (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer8') AND status='ACCEPTED' AND service_price=300.00 LIMIT 1);
+SET @cust12 := (SELECT customer_id FROM service_order WHERE id=@o12);
+SET @comp12 := (SELECT cp.user_id FROM companion_profile cp JOIN service_order o ON cp.id=o.companion_id WHERE o.id=@o12);
+
+INSERT INTO chat_message(order_id, from_user_id, to_user_id, content, is_read, created_at)
+SELECT @o12, @cust12, @comp12, '孙陪诊师您好，8月6号陪我去友谊医院看风湿科，我手指关节疼得厉害。', 1, '2026-08-01 09:00:00' WHERE @o12 IS NOT NULL
+UNION ALL SELECT @o12, @comp12, @cust12, '冯奶奶您好！我会帮您填表和记录医嘱，您不用担心写字的问题。请问之前有在友谊医院看过吗？', 1, '2026-08-01 09:10:00' WHERE @o12 IS NOT NULL
+UNION ALL SELECT @o12, @cust12, @comp12, '没有，是第一次去。听说是风湿免疫科最好的医院之一。', 0, '2026-08-01 10:00:00' WHERE @o12 IS NOT NULL;
+
+
+-- ============================================================================
+-- 第二十二部分：用户通知（user_notification）- 覆盖多种通知类型
+-- ============================================================================
+
+-- 22.1 订单状态通知（ORDER_STATUS）- 各用户的关键状态变更通知
+INSERT INTO user_notification(user_id, type, title, content, related_id, is_read, created_at)
+SELECT id, 'ORDER_STATUS', '订单已接单', '您的住院办理订单已被李小华陪诊师接单，服务时间：2026-07-01 09:00。',
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='elder02') AND status='COMPLETED' LIMIT 1), 1, '2026-07-01 09:30:00'
+FROM sys_user WHERE username='elder02'
+UNION ALL
+SELECT id, 'ORDER_STATUS', '服务已开始', '您的住院办理服务已开始，陪诊师已到达北京大学第三医院。',
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='elder02') AND status='COMPLETED' LIMIT 1), 1, '2026-07-01 10:00:00'
+FROM sys_user WHERE username='elder02'
+UNION ALL
+SELECT id, 'ORDER_STATUS', '服务已完成', '您的住院办理服务已完成，请确认服务并评价陪诊师。',
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='elder02') AND status='COMPLETED' LIMIT 1), 1, '2026-07-01 14:00:00'
+FROM sys_user WHERE username='elder02'
+UNION ALL
+SELECT id, 'ORDER_STATUS', '订单已接单', '您的陪诊订单已被王小明陪诊师接单，服务时间：2026-07-08 08:30。',
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='family01') AND status='COMPLETED' LIMIT 1), 1, '2026-07-08 09:00:00'
+FROM sys_user WHERE username='family01'
+UNION ALL
+SELECT id, 'ORDER_STATUS', '服务已完成', '您的陪诊服务已完成，请确认并评价。',
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='family01') AND status='COMPLETED' LIMIT 1), 0, '2026-07-08 12:30:00'
+FROM sys_user WHERE username='family01'
+UNION ALL
+SELECT id, 'ORDER_STATUS', '订单已接单', '您的胃镜陪诊订单已被刘建国陪诊师接单，服务时间：2026-07-10 09:00。',
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer3') AND status='IN_SERVICE' LIMIT 1), 1, '2026-07-10 08:30:00'
+FROM sys_user WHERE username='customer3'
+UNION ALL
+SELECT id, 'ORDER_STATUS', '服务已开始', '您的胃镜陪诊服务已开始，陪诊师已到达北京协和医院。',
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer3') AND status='IN_SERVICE' LIMIT 1), 0, '2026-07-10 09:00:00'
+FROM sys_user WHERE username='customer3'
+UNION ALL
+SELECT id, 'ORDER_STATUS', '订单已取消', '您的陪诊订单已取消。如需重新预约请提交新需求。',
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer5') AND status='CANCELLED' LIMIT 1), 1, '2026-07-03 16:00:00'
+FROM sys_user WHERE username='customer5'
+UNION ALL
+SELECT id, 'ORDER_STATUS', '订单被拒绝', '很遗憾，陪诊师周敏拒绝了您的挂号需求。原因：同仁医院专家号挂号难度大。您可以重新提交需求。',
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer4') AND status='REJECTED' LIMIT 1), 0, '2026-07-16 12:00:00'
+FROM sys_user WHERE username='customer4'
+UNION ALL
+SELECT id, 'ORDER_STATUS', '订单已接单', '您的眼科陪诊订单已被陈丽丽陪诊师接单，服务时间：2026-07-20 08:30。',
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer6') AND status='COMPLETED' AND service_price=250.00 LIMIT 1), 1, '2026-07-20 08:00:00'
+FROM sys_user WHERE username='customer6'
+UNION ALL
+SELECT id, 'ORDER_STATUS', '服务已完成', '您的眼科陪诊服务已完成，请确认并评价。',
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer6') AND status='COMPLETED' AND service_price=250.00 LIMIT 1), 0, '2026-07-20 11:00:00'
+FROM sys_user WHERE username='customer6'
+UNION ALL
+SELECT id, 'ORDER_STATUS', '订单已接单', '您的神经内科陪诊订单已被赵丽华陪诊师接单，服务时间：2026-07-18 08:00。',
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer9') AND status='COMPLETED' AND service_price=400.00 LIMIT 1), 1, '2026-07-17 15:00:00'
+FROM sys_user WHERE username='customer9'
+UNION ALL
+SELECT id, 'ORDER_STATUS', '服务已完成', '您的神经内科陪诊服务已完成，请确认并评价。',
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer9') AND status='COMPLETED' AND service_price=400.00 LIMIT 1), 0, '2026-07-18 12:00:00'
+FROM sys_user WHERE username='customer9'
+UNION ALL
+SELECT id, 'ORDER_STATUS', '订单已接单', '您的取药订单已被周敏陪诊师接单，预计取药时间：2026-07-25 10:00。',
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer10') AND status='COMPLETED' AND service_price=100.00 LIMIT 1), 1, '2026-07-24 15:00:00'
+FROM sys_user WHERE username='customer10';
+
+-- 22.2 陪诊师端通知 - 新订单、服务提醒等
+INSERT INTO user_notification(user_id, type, title, content, related_id, is_read, created_at)
+SELECT id, 'NEW_ORDER', '新订单通知', '您有一个新的住院办理订单，客户：陈爷爷，服务时间：2026-07-01 09:00，请及时接单。',
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='elder02') AND status='COMPLETED' LIMIT 1), 1, '2026-06-25 09:00:00'
+FROM sys_user WHERE username='companion1'
+UNION ALL
+SELECT id, 'NEW_ORDER', '新订单通知', '您有一个新的陪诊订单，客户：周先生（家属），服务时间：2026-07-08 08:30，请及时接单。',
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='family01') AND status='COMPLETED' LIMIT 1), 1, '2026-07-03 10:00:00'
+FROM sys_user WHERE username='companion2'
+UNION ALL
+SELECT id, 'NEW_ORDER', '新订单通知', '您有一个新的陪诊订单，客户：王五，服务时间：2026-07-10 09:00，请及时接单。',
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer3') AND status='IN_SERVICE' LIMIT 1), 1, '2026-07-05 15:00:00'
+FROM sys_user WHERE username='companion4'
+UNION ALL
+SELECT id, 'NEW_ORDER', '新订单通知', '您有一个新的检查陪诊订单，客户：刘奶奶，服务时间：2026-07-12 08:00，请及时接单。',
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='elder01') AND status='ACCEPTED' LIMIT 1), 1, '2026-07-08 10:00:00'
+FROM sys_user WHERE username='companion3'
+UNION ALL
+SELECT id, 'NEW_ORDER', '新订单通知', '您有一个新的陪诊订单，客户：吴奶奶，服务时间：2026-08-01 09:00，请及时接单。',
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer6') AND status='IN_SERVICE' LIMIT 1), 1, '2026-07-22 10:00:00'
+FROM sys_user WHERE username='companion1'
+UNION ALL
+SELECT id, 'NEW_ORDER', '新订单通知', '您有一个新的神经内科陪诊订单，客户：蒋女士（家属），服务时间：2026-07-18 08:00。',
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer9') AND status='COMPLETED' AND service_price=400.00 LIMIT 1), 1, '2026-07-11 09:00:00'
+FROM sys_user WHERE username='companion6'
+UNION ALL
+SELECT id, 'NEW_ORDER', '新订单通知', '您有一个新的取药订单，客户：韩爷爷，服务时间：2026-07-25 10:00。',
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer10') AND status='COMPLETED' AND service_price=100.00 LIMIT 1), 1, '2026-07-23 09:00:00'
+FROM sys_user WHERE username='companion5'
+UNION ALL
+SELECT id, 'SERVICE_REMINDER', '服务提醒', '您明天有一单陪诊服务：客户王五，北京协和医院消化内科，请提前联系客户确认时间。',
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer3') AND status='IN_SERVICE' LIMIT 1), 0, '2026-07-09 18:00:00'
+FROM sys_user WHERE username='companion4'
+UNION ALL
+SELECT id, 'SERVICE_REMINDER', '服务提醒', '您明天有一单检查陪诊：客户刘奶奶，301医院神经内科，核磁已预约10:00，请提前到达。',
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='elder01') AND status='ACCEPTED' LIMIT 1), 0, '2026-07-11 18:00:00'
+FROM sys_user WHERE username='companion3'
+UNION ALL
+SELECT id, 'SERVICE_REMINDER', '服务提醒', '您今天有一单陪诊服务：客户吴奶奶，北京协和医院内分泌科，请记得提醒客户空腹。',
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer6') AND status='IN_SERVICE' LIMIT 1), 1, '2026-08-01 06:00:00'
+FROM sys_user WHERE username='companion1';
+
+-- 22.3 新消息通知（NEW_MESSAGE）
+INSERT INTO user_notification(user_id, type, title, content, related_id, is_read, created_at)
+SELECT id, 'NEW_MESSAGE', '新消息', '您收到一条来自陪诊师的新消息，点击查看。',
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer3') AND status='IN_SERVICE' LIMIT 1), 0, '2026-07-10 09:05:00'
+FROM sys_user WHERE username='customer3'
+UNION ALL
+SELECT id, 'NEW_MESSAGE', '新消息', '您收到一条来自客户的新消息，点击查看。',
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer6') AND status='IN_SERVICE' LIMIT 1), 0, '2026-08-01 09:45:00'
+FROM sys_user WHERE username='companion1'
+UNION ALL
+SELECT id, 'NEW_MESSAGE', '新消息', '您收到一条来自陪诊师的新消息，点击查看。',
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='elder01') AND status='ACCEPTED' LIMIT 1), 0, '2026-07-11 18:00:00'
+FROM sys_user WHERE username='elder01'
+UNION ALL
+SELECT id, 'NEW_MESSAGE', '新消息', '您收到一条来自客户的新消息，点击查看。',
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer7') AND status='ACCEPTED' AND service_price=450.00 LIMIT 1), 0, '2026-07-29 18:00:00'
+FROM sys_user WHERE username='companion4';
+
+-- 22.4 评价通知（EVALUATION）
+INSERT INTO user_notification(user_id, type, title, content, related_id, is_read, created_at)
+SELECT id, 'EVALUATION', '收到新评价', '客户陈爷爷给您打了5星评价！评价内容：李小华陪诊师非常专业...',
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='elder02') AND status='COMPLETED' LIMIT 1), 1, '2026-07-01 16:30:00'
+FROM sys_user WHERE username='companion1'
+UNION ALL
+SELECT id, 'EVALUATION', '收到新评价', '客户周先生给您打了4星评价！评价内容：王小明陪诊师服务态度好...',
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='family01') AND status='COMPLETED' LIMIT 1), 1, '2026-07-08 17:00:00'
+FROM sys_user WHERE username='companion2'
+UNION ALL
+SELECT id, 'EVALUATION', '收到新评价', '客户吴奶奶给您打了5星评价！评价内容：陈丽丽陪诊师非常细心...',
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer6') AND status='COMPLETED' AND service_price=250.00 LIMIT 1), 0, '2026-07-21 10:00:00'
+FROM sys_user WHERE username='companion3'
+UNION ALL
+SELECT id, 'EVALUATION', '收到新评价', '客户蒋女士给您打了5星评价！评价内容：赵护师太专业了...',
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer9') AND status='COMPLETED' AND service_price=400.00 LIMIT 1), 0, '2026-07-18 18:00:00'
+FROM sys_user WHERE username='companion6'
+UNION ALL
+SELECT id, 'EVALUATION', '收到新评价', '客户赵六给您打了2星评价。评价内容：虽然陪诊师解释了原因...建议提升匹配体验。',
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer4') AND status='REJECTED' LIMIT 1), 0, '2026-07-17 10:00:00'
+FROM sys_user WHERE username='companion5';
+
+-- 22.5 系统通知（SYSTEM）- 平台公告、审核结果等
+INSERT INTO user_notification(user_id, type, title, content, related_id, is_read, created_at)
+SELECT id, 'SYSTEM', '资料审核通过', '您的陪诊师资料已审核通过，现在可以接单了！',
+    NULL, 1, '2025-05-16 10:00:00'
+FROM sys_user WHERE username='companion1'
+UNION ALL
+SELECT id, 'SYSTEM', '资料审核通过', '您的陪诊师资料已审核通过，现在可以接单了！',
+    NULL, 1, '2025-05-21 10:00:00'
+FROM sys_user WHERE username='companion2'
+UNION ALL
+SELECT id, 'SYSTEM', '资料审核通过', '您的陪诊师资料已审核通过，现在可以接单了！',
+    NULL, 1, '2025-06-02 14:00:00'
+FROM sys_user WHERE username='companion3'
+UNION ALL
+SELECT id, 'SYSTEM', '资料审核通过', '您的陪诊师资料已审核通过，现在可以接单了！',
+    NULL, 1, '2025-06-11 10:00:00'
+FROM sys_user WHERE username='companion4'
+UNION ALL
+SELECT id, 'SYSTEM', '资料审核通过', '您的陪诊师资料已审核通过，现在可以接单了！',
+    NULL, 1, '2025-07-02 10:00:00'
+FROM sys_user WHERE username='companion5'
+UNION ALL
+SELECT id, 'SYSTEM', '资料审核通过', '您的陪诊师资料已审核通过，现在可以接单了！',
+    NULL, 1, '2025-08-03 10:00:00'
+FROM sys_user WHERE username='companion6'
+UNION ALL
+SELECT id, 'SYSTEM', '资料审核通过', '您的陪诊师资料已审核通过，现在可以接单了！',
+    NULL, 1, '2025-09-03 10:00:00'
+FROM sys_user WHERE username='companion7'
+UNION ALL
+SELECT id, 'SYSTEM', '资料审核未通过', '您的陪诊师资料审核未通过。原因：退休医师资质证明不清晰，请补充后重新提交。',
+    NULL, 0, '2025-10-05 14:00:00'
+FROM sys_user WHERE username='companion8'
+UNION ALL
+SELECT id, 'SYSTEM', '投诉处理结果', '您对陪诊师刘建国的投诉已处理完毕，平台已与陪诊师沟通并记录在案。',
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer3') AND status='COMPLAINT' LIMIT 1), 0, '2026-07-12 10:00:00'
+FROM sys_user WHERE username='customer3'
+UNION ALL
+SELECT id, 'SYSTEM', '欢迎加入医陪平台', '欢迎加入医陪平台！请完善您的个人信息，即可发布就医陪诊需求。',
+    NULL, 1, '2025-06-01 08:00:00'
+FROM sys_user WHERE username='customer1'
+UNION ALL
+SELECT id, 'SYSTEM', '欢迎加入医陪平台', '欢迎加入医陪平台！请完善您的个人信息，即可发布就医陪诊需求。',
+    NULL, 1, '2025-05-01 07:00:00'
+FROM sys_user WHERE username='elder01'
+UNION ALL
+SELECT id, 'SYSTEM', '平台公告', '医陪平台全新升级！新增语音朗读功能，老年用户可点击「朗读信息」听取内容。',
+    NULL, 0, '2026-07-15 10:00:00'
+FROM sys_user WHERE username='customer1'
+UNION ALL
+SELECT id, 'SYSTEM', '平台公告', '医陪平台全新升级！新增语音朗读功能，老年用户可点击「朗读信息」听取内容。',
+    NULL, 0, '2026-07-15 10:00:00'
+FROM sys_user WHERE username='elder01'
+UNION ALL
+SELECT id, 'SYSTEM', '平台公告', '医陪平台全新升级！新增语音朗读功能，老年用户可点击「朗读信息」听取内容。',
+    NULL, 0, '2026-07-15 10:00:00'
+FROM sys_user WHERE username='elder02'
+UNION ALL
+SELECT id, 'SYSTEM', '平台公告', '医陪平台全新升级！新增语音朗读功能，老年用户可点击「朗读信息」听取内容。',
+    NULL, 0, '2026-07-15 10:00:00'
+FROM sys_user WHERE username='companion1'
+UNION ALL
+SELECT id, 'SYSTEM', '平台公告', '医陪平台全新升级！新增语音朗读功能，老年用户可点击「朗读信息」听取内容。',
+    NULL, 0, '2026-07-15 10:00:00'
+FROM sys_user WHERE username='companion2';
+
+-- 22.6 需求审核通知
+INSERT INTO user_notification(user_id, type, title, content, related_id, is_read, created_at)
+SELECT id, 'SYSTEM', '需求审核通过', '您发布的需求「陪诊-北京协和医院心内科」已审核通过，陪诊师可见。',
+    (SELECT id FROM service_request WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer1') AND status='PENDING' AND service_type='陪诊' AND hospital_name='北京协和医院' LIMIT 1), 1, '2026-07-15 10:00:00'
+FROM sys_user WHERE username='customer1'
+UNION ALL
+SELECT id, 'SYSTEM', '需求审核通过', '您发布的需求「取药-北京大学第一医院内分泌科」已审核通过，陪诊师可见。',
+    (SELECT id FROM service_request WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer2') AND status='PENDING' LIMIT 1), 1, '2026-07-15 11:00:00'
+FROM sys_user WHERE username='customer2'
+UNION ALL
+SELECT id, 'SYSTEM', '需求审核通过', '您发布的需求「陪诊-北京天坛医院神经外科」已审核通过，陪诊师可见。',
+    (SELECT id FROM service_request WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer6') AND status='PENDING' AND service_type='陪诊' AND hospital_name='北京天坛医院' LIMIT 1), 1, '2026-07-25 09:00:00'
+FROM sys_user WHERE username='customer6';
+
+-- ============================================================================
+-- 第二十三部分：服务申请（service_application）- 陪诊师对等待匹配需求的申请
+-- ============================================================================
+
+-- 23.1 陪诊师对 customer2 取药需求的申请
+INSERT INTO service_application(request_id, companion_id, message, status, created_at, updated_at)
+SELECT
+    (SELECT id FROM service_request WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer2') AND status='PENDING' AND service_type='取药' LIMIT 1),
+    cp.id, '我对北京大学第一医院非常熟悉，取药流程轻车熟路。可以顺路送药上门，保证药品安全。', 'PENDING', '2026-07-16 10:00:00', '2026-07-16 10:00:00'
+FROM companion_profile cp JOIN sys_user su ON cp.user_id=su.id WHERE su.username='companion5'
+UNION ALL
+SELECT
+    (SELECT id FROM service_request WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer2') AND status='PENDING' AND service_type='取药' LIMIT 1),
+    cp.id, '我住在北京大学第一医院附近，取药非常方便。有2年取药服务经验，核对药品零差错。', 'PENDING', '2026-07-16 14:00:00', '2026-07-16 14:00:00'
+FROM companion_profile cp JOIN sys_user su ON cp.user_id=su.id WHERE su.username='companion3';
+
+-- 23.2 陪诊师对 customer1 挂号需求（肿瘤医院专家号）的申请
+INSERT INTO service_application(request_id, companion_id, message, status, created_at, updated_at)
+SELECT
+    (SELECT id FROM service_request WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer1') AND status='PENDING' AND service_type='挂号' AND hospital_name='中国医学科学院肿瘤医院' LIMIT 1),
+    cp.id, '我对肿瘤医院挂号流程非常熟悉，有多次挂专家号的成功经验。可以早起排队，尽最大努力帮您挂到张教授。', 'PENDING', '2026-08-04 09:00:00', '2026-08-04 09:00:00'
+FROM companion_profile cp JOIN sys_user su ON cp.user_id=su.id WHERE su.username='companion1'
+UNION ALL
+SELECT
+    (SELECT id FROM service_request WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer1') AND status='PENDING' AND service_type='挂号' AND hospital_name='中国医学科学院肿瘤医院' LIMIT 1),
+    cp.id, '15年临床经验，对肿瘤复查流程了如指掌。挂专家号确实不容易但我有渠道可以提高成功率。', 'PENDING', '2026-08-04 15:00:00', '2026-08-04 15:00:00'
+FROM companion_profile cp JOIN sys_user su ON cp.user_id=su.id WHERE su.username='companion8';
+
+-- 23.3 陪诊师对 customer6 天坛医院陪诊需求的申请
+INSERT INTO service_application(request_id, companion_id, message, status, created_at, updated_at)
+SELECT
+    (SELECT id FROM service_request WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer6') AND status='PENDING' AND service_type='陪诊' AND hospital_name='北京天坛医院' LIMIT 1),
+    cp.id, '我对天坛医院神外科非常熟悉，10年三甲外科经验。您母亲的症状需要认真检查，我会全程陪同并详细记录。', 'PENDING', '2026-07-26 09:00:00', '2026-07-26 09:00:00'
+FROM companion_profile cp JOIN sys_user su ON cp.user_id=su.id WHERE su.username='companion6'
+UNION ALL
+SELECT
+    (SELECT id FROM service_request WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer6') AND status='PENDING' AND service_type='陪诊' AND hospital_name='北京天坛医院' LIMIT 1),
+    cp.id, '我在西城区，离天坛医院很近。有丰富的神经外科陪诊经验，能帮您母亲安排好检查流程。', 'PENDING', '2026-07-26 14:00:00', '2026-07-26 14:00:00'
+FROM companion_profile cp JOIN sys_user su ON cp.user_id=su.id WHERE su.username='companion3'
+UNION ALL
+SELECT
+    (SELECT id FROM service_request WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer6') AND status='PENDING' AND service_type='陪诊' AND hospital_name='北京天坛医院' LIMIT 1),
+    cp.id, '15年退休医师，对脑部检查项目非常了解。可以帮您母亲做好检查前的准备和检查后的医嘱整理。', 'ACCEPTED', '2026-07-27 10:00:00', '2026-07-28 16:00:00'
+FROM companion_profile cp JOIN sys_user su ON cp.user_id=su.id WHERE su.username='companion8';
+
+-- 23.4 陪诊师对 customer7 儿童医院陪诊需求的申请
+INSERT INTO service_application(request_id, companion_id, message, status, created_at, updated_at)
+SELECT
+    (SELECT id FROM service_request WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer7') AND status='PENDING' AND service_type='陪诊' AND hospital_name='北京儿童医院' LIMIT 1),
+    cp.id, '我在儿科陪诊方面有2年经验，擅长与儿童沟通。您孩子4岁正是怕生的年龄，我会用孩子喜欢的方式互动，让就诊过程更轻松。', 'ACCEPTED', '2026-07-29 09:00:00', '2026-07-30 10:00:00'
+FROM companion_profile cp JOIN sys_user su ON cp.user_id=su.id WHERE su.username='companion7'
+UNION ALL
+SELECT
+    (SELECT id FROM service_request WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer7') AND status='PENDING' AND service_type='陪诊' AND hospital_name='北京儿童医院' LIMIT 1),
+    cp.id, '虽然我的专长是成人陪诊，但基本流程都熟悉，如果需要我可以帮忙。', 'WITHDRAWN', '2026-07-29 11:00:00', '2026-07-30 09:00:00'
+FROM companion_profile cp JOIN sys_user su ON cp.user_id=su.id WHERE su.username='companion5';
+
+-- 23.5 陪诊师对 customer10 安贞医院陪诊需求的申请
+INSERT INTO service_application(request_id, companion_id, message, status, created_at, updated_at)
+SELECT
+    (SELECT id FROM service_request WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer10') AND status='PENDING' AND service_type='陪诊' AND hospital_name='北京安贞医院' LIMIT 1),
+    cp.id, '我对安贞医院心血管科非常熟悉，老人需要做的检查项目我都有丰富陪诊经验。会带轮椅全程推送，确保检查高效完成。', 'PENDING', '2026-08-06 09:00:00', '2026-08-06 09:00:00'
+FROM companion_profile cp JOIN sys_user su ON cp.user_id=su.id WHERE su.username='companion1'
+UNION ALL
+SELECT
+    (SELECT id FROM service_request WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer10') AND status='PENDING' AND service_type='陪诊' AND hospital_name='北京安贞医院' LIMIT 1),
+    cp.id, '安贞医院心内科全国知名，我在退休前曾在此进修。熟悉医院布局和检查流程，可以帮助老人高效完成所有检查。', 'PENDING', '2026-08-06 14:00:00', '2026-08-06 14:00:00'
+FROM companion_profile cp JOIN sys_user su ON cp.user_id=su.id WHERE su.username='companion8'
+UNION ALL
+SELECT
+    (SELECT id FROM service_request WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer10') AND status='PENDING' AND service_type='陪诊' AND hospital_name='北京安贞医院' LIMIT 1),
+    cp.id, '我对心血管检查流程很了解，可以帮韩爷爷高效安排检查顺序，减少等待时间。', 'PENDING', '2026-08-07 08:00:00', '2026-08-07 08:00:00'
+FROM companion_profile cp JOIN sys_user su ON cp.user_id=su.id WHERE su.username='companion4';
+
+-- 23.6 陪诊师对 customer9 取药需求（冷藏药品）的申请
+INSERT INTO service_application(request_id, companion_id, message, status, created_at, updated_at)
+SELECT
+    (SELECT id FROM service_request WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer9') AND status='PENDING' AND service_type='取药' LIMIT 1),
+    cp.id, '取药服务经验丰富。我会自带保温袋确保冷藏药品安全，取药后半小时内送达。', 'PENDING', '2026-08-03 09:00:00', '2026-08-03 09:00:00'
+FROM companion_profile cp JOIN sys_user su ON cp.user_id=su.id WHERE su.username='companion5'
+UNION ALL
+SELECT
+    (SELECT id FROM service_request WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer9') AND status='PENDING' AND service_type='取药' LIMIT 1),
+    cp.id, '我住北京大学第一医院附近，对药房很熟悉。家里有老人也有冷藏药品需求，保温设备齐全。', 'PENDING', '2026-08-03 15:00:00', '2026-08-03 15:00:00'
+FROM companion_profile cp JOIN sys_user su ON cp.user_id=su.id WHERE su.username='companion2';
+
+-- 23.7 已拒绝的申请示例
+INSERT INTO service_application(request_id, companion_id, message, status, created_at, updated_at)
+SELECT
+    (SELECT id FROM service_request WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer1') AND status='PENDING' AND service_type='挂号' AND hospital_name='中国医学科学院肿瘤医院' LIMIT 1),
+    cp.id, '我对肿瘤医院不太熟悉，担心挂不到号耽误客户，抱歉不能接这个需求。', 'REJECTED', '2026-08-04 10:00:00', '2026-08-05 09:00:00'
+FROM companion_profile cp JOIN sys_user su ON cp.user_id=su.id WHERE su.username='companion7';
+
+-- ============================================================================
+-- 第二十四部分：补充更多评价记录 - 覆盖特殊场景
+-- ============================================================================
+
+-- 24.1 订单3（IN_SERVICE）- 陪诊师给客户的预评价
+INSERT INTO evaluation(order_id, from_user_id, to_user_id, score, content, created_at)
+SELECT
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer3') AND status='IN_SERVICE' LIMIT 1),
+    (SELECT id FROM sys_user WHERE username='companion4'),
+    (SELECT id FROM sys_user WHERE username='customer3'),
+    4, '王五先生沟通配合度不错，胃镜检查过程顺利。希望下次预约能提前一天确认时间。',
+    '2026-07-10 14:00:00'
+ON DUPLICATE KEY UPDATE score=VALUES(score), content=VALUES(content);
+
+-- 24.2 订单10（IN_SERVICE 糖尿病复查）- 客户在服务中给的预评价
+INSERT INTO evaluation(order_id, from_user_id, to_user_id, score, content, created_at)
+SELECT
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer6') AND status='IN_SERVICE' LIMIT 1),
+    (SELECT id FROM sys_user WHERE username='customer6'),
+    (SELECT id FROM sys_user WHERE username='companion1'),
+    5, '李小华陪诊师服务太好了！一大早就提醒我们空腹抽血，还给老人带了早餐。目前还在检查中，先给个好评！',
+    '2026-08-01 10:00:00'
+ON DUPLICATE KEY UPDATE score=VALUES(score), content=VALUES(content);
+
+-- ============================================================================
+-- 第二十五部分：补充审核记录 - 需求审核与更多陪诊师审核
+-- ============================================================================
+
+-- 25.1 需求审核记录（SERVICE_REQUEST 类型）
+INSERT INTO audit_record(business_type, business_id, auditor_id, audit_status, remark, created_at)
+SELECT 'SERVICE_REQUEST', sr.id, (SELECT id FROM sys_user WHERE username='admin1'), 1, '需求描述清晰合理，审核通过。', '2026-07-15 10:00:00'
+FROM service_request sr WHERE sr.customer_id=(SELECT id FROM sys_user WHERE username='customer1') AND sr.status='PENDING' AND sr.service_type='陪诊' AND sr.hospital_name='北京协和医院'
+AND NOT EXISTS (SELECT 1 FROM audit_record ar WHERE ar.business_type='SERVICE_REQUEST' AND ar.business_id=sr.id);
+
+INSERT INTO audit_record(business_type, business_id, auditor_id, audit_status, remark, created_at)
+SELECT 'SERVICE_REQUEST', sr.id, (SELECT id FROM sys_user WHERE username='admin1'), 1, '取药需求合理，审核通过。', '2026-07-15 11:00:00'
+FROM service_request sr WHERE sr.customer_id=(SELECT id FROM sys_user WHERE username='customer2') AND sr.status='PENDING' AND sr.service_type='取药'
+AND NOT EXISTS (SELECT 1 FROM audit_record ar WHERE ar.business_type='SERVICE_REQUEST' AND ar.business_id=sr.id);
+
+INSERT INTO audit_record(business_type, business_id, auditor_id, audit_status, remark, created_at)
+SELECT 'SERVICE_REQUEST', sr.id, (SELECT id FROM sys_user WHERE username='admin2'), 1, '挂号需求合理，审核通过。', '2026-07-16 10:00:00'
+FROM service_request sr WHERE sr.customer_id=(SELECT id FROM sys_user WHERE username='customer4') AND sr.status='PENDING' AND sr.service_type='挂号' AND sr.hospital_name='北京同仁医院'
+AND NOT EXISTS (SELECT 1 FROM audit_record ar WHERE ar.business_type='SERVICE_REQUEST' AND ar.business_id=sr.id);
+
+INSERT INTO audit_record(business_type, business_id, auditor_id, audit_status, remark, created_at)
+SELECT 'SERVICE_REQUEST', sr.id, (SELECT id FROM sys_user WHERE username='admin1'), 1, '天坛医院神经外科陪诊需求，审核通过。', '2026-07-25 09:00:00'
+FROM service_request sr WHERE sr.customer_id=(SELECT id FROM sys_user WHERE username='customer6') AND sr.status='PENDING' AND sr.service_type='陪诊' AND sr.hospital_name='北京天坛医院'
+AND NOT EXISTS (SELECT 1 FROM audit_record ar WHERE ar.business_type='SERVICE_REQUEST' AND ar.business_id=sr.id);
+
+INSERT INTO audit_record(business_type, business_id, auditor_id, audit_status, remark, created_at)
+SELECT 'SERVICE_REQUEST', sr.id, (SELECT id FROM sys_user WHERE username='admin2'), 1, '儿童医院陪诊需求，审核通过。建议优先匹配有儿科经验的陪诊师。', '2026-07-28 15:00:00'
+FROM service_request sr WHERE sr.customer_id=(SELECT id FROM sys_user WHERE username='customer7') AND sr.status='PENDING' AND sr.service_type='陪诊' AND sr.hospital_name='北京儿童医院'
+AND NOT EXISTS (SELECT 1 FROM audit_record ar WHERE ar.business_type='SERVICE_REQUEST' AND ar.business_id=sr.id);
+
+INSERT INTO audit_record(business_type, business_id, auditor_id, audit_status, remark, created_at)
+SELECT 'SERVICE_REQUEST', sr.id, (SELECT id FROM sys_user WHERE username='admin1'), 1, '宣武医院住院办理需求，审核通过。', '2026-08-01 14:00:00'
+FROM service_request sr WHERE sr.customer_id=(SELECT id FROM sys_user WHERE username='customer8') AND sr.status='PENDING' AND sr.service_type='住院办理'
+AND NOT EXISTS (SELECT 1 FROM audit_record ar WHERE ar.business_type='SERVICE_REQUEST' AND ar.business_id=sr.id);
+
+INSERT INTO audit_record(business_type, business_id, auditor_id, audit_status, remark, created_at)
+SELECT 'SERVICE_REQUEST', sr.id, (SELECT id FROM sys_user WHERE username='admin2'), 1, '取药需求合理，含冷藏药品已提醒陪诊师注意保温。', '2026-08-02 10:00:00'
+FROM service_request sr WHERE sr.customer_id=(SELECT id FROM sys_user WHERE username='customer9') AND sr.status='PENDING' AND sr.service_type='取药'
+AND NOT EXISTS (SELECT 1 FROM audit_record ar WHERE ar.business_type='SERVICE_REQUEST' AND ar.business_id=sr.id);
+
+INSERT INTO audit_record(business_type, business_id, auditor_id, audit_status, remark, created_at)
+SELECT 'SERVICE_REQUEST', sr.id, (SELECT id FROM sys_user WHERE username='admin1'), 1, '安贞医院心血管陪诊需求，检查项目多预算合理，审核通过。', '2026-08-05 14:00:00'
+FROM service_request sr WHERE sr.customer_id=(SELECT id FROM sys_user WHERE username='customer10') AND sr.status='PENDING' AND sr.service_type='陪诊' AND sr.hospital_name='北京安贞医院'
+AND NOT EXISTS (SELECT 1 FROM audit_record ar WHERE ar.business_type='SERVICE_REQUEST' AND ar.business_id=sr.id);
+
+INSERT INTO audit_record(business_type, business_id, auditor_id, audit_status, remark, created_at)
+SELECT 'SERVICE_REQUEST', sr.id, (SELECT id FROM sys_user WHERE username='admin2'), 1, '肿瘤医院挂号需求，已提醒客户号源紧张需早起排队。', '2026-08-03 17:00:00'
+FROM service_request sr WHERE sr.customer_id=(SELECT id FROM sys_user WHERE username='customer1') AND sr.status='PENDING' AND sr.service_type='挂号' AND sr.hospital_name='中国医学科学院肿瘤医院'
+AND NOT EXISTS (SELECT 1 FROM audit_record ar WHERE ar.business_type='SERVICE_REQUEST' AND ar.business_id=sr.id);
+
+-- 25.2 订单审核记录（投诉相关的审核）
+INSERT INTO audit_record(business_type, business_id, auditor_id, audit_status, remark, created_at)
+SELECT 'REPORT', rr.id, (SELECT id FROM sys_user WHERE username='admin1'), 2, '经核实投诉依据不足，予以驳回。详见处理备注。', '2026-07-12 10:00:00'
+FROM report_record rr WHERE rr.reporter_id=(SELECT id FROM sys_user WHERE username='companion4') AND rr.status='REJECTED'
+AND NOT EXISTS (SELECT 1 FROM audit_record ar WHERE ar.business_type='REPORT' AND ar.business_id=rr.id);
+
+INSERT INTO audit_record(business_type, business_id, auditor_id, audit_status, remark, created_at)
+SELECT 'REPORT', rr.id, (SELECT id FROM sys_user WHERE username='admin1'), 1, '投诉内容属实，已与客户沟通达成一致。', '2026-07-02 10:00:00'
+FROM report_record rr WHERE rr.reporter_id=(SELECT id FROM sys_user WHERE username='companion1') AND rr.status='RESOLVED'
+AND NOT EXISTS (SELECT 1 FROM audit_record ar WHERE ar.business_type='REPORT' AND ar.business_id=rr.id);
+
+
+-- ============================================================================
+-- 第二十六部分：补充更多评价记录 - 覆盖低分/中评/长文/简短等各种场景
+-- ============================================================================
+
+-- 26.1 订单6（COMPLAINT）- 陪诊师刘建国回应客户的差评
+INSERT INTO evaluation(order_id, from_user_id, to_user_id, score, content, created_at)
+SELECT
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer3') AND status='COMPLAINT' LIMIT 1),
+    (SELECT id FROM sys_user WHERE username='companion4'),
+    (SELECT id FROM sys_user WHERE username='customer3'),
+    1, '客户要求过于苛刻。当天我已提前通过APP告知会晚到，服务过程中用手机是在帮客户查询检查结果和记录医嘱。虽然晚了半小时但最终所有检查都完成了，给1星评价实在不公平。',
+    '2026-07-11 08:00:00'
+ON DUPLICATE KEY UPDATE score=VALUES(score), content=VALUES(content);
+
+-- 26.2 订单5（CANCELLED）- 客户在取消后给陪诊师的评价（虽然取消但有过沟通）
+INSERT INTO evaluation(order_id, from_user_id, to_user_id, score, content, created_at)
+SELECT
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer5') AND status='CANCELLED' LIMIT 1),
+    (SELECT id FROM sys_user WHERE username='customer5'),
+    (SELECT id FROM sys_user WHERE username='companion5'),
+    3, '虽然最后取消了订单，但陪诊师周敏在接单后主动电话沟通，态度还不错。取消是因为我们自己的原因，给个中评吧。',
+    '2026-07-04 10:00:00'
+ON DUPLICATE KEY UPDATE score=VALUES(score), content=VALUES(content);
+
+-- 26.3 订单5（CANCELLED）- 陪诊师对取消客户的评价
+INSERT INTO evaluation(order_id, from_user_id, to_user_id, score, content, created_at)
+SELECT
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer5') AND status='CANCELLED' LIMIT 1),
+    (SELECT id FROM sys_user WHERE username='companion5'),
+    (SELECT id FROM sys_user WHERE username='customer5'),
+    3, '客户临时取消订单，虽然理由合理但影响了我的排班。希望以后有需求可以再联系。',
+    '2026-07-04 14:00:00'
+ON DUPLICATE KEY UPDATE score=VALUES(score), content=VALUES(content);
+
+-- 26.4 订单13（REJECTED）- 陪诊师回应客户的差评
+INSERT INTO evaluation(order_id, from_user_id, to_user_id, score, content, created_at)
+SELECT
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer4') AND status='REJECTED' LIMIT 1),
+    (SELECT id FROM sys_user WHERE username='companion5'),
+    (SELECT id FROM sys_user WHERE username='customer4'),
+    3, '很抱歉不能满足客户需求。同仁医院专家号确实一号难求，我拒绝是为了不让客户白花钱。建议客户通过医院官方APP预约会更可靠。',
+    '2026-07-17 14:00:00'
+ON DUPLICATE KEY UPDATE score=VALUES(score), content=VALUES(content);
+
+-- 26.5 订单14（CANCELLED）- 客户评价（手术延后取消）
+INSERT INTO evaluation(order_id, from_user_id, to_user_id, score, content, created_at)
+SELECT
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer8') AND status='CANCELLED' LIMIT 1),
+    (SELECT id FROM sys_user WHERE username='customer8'),
+    (SELECT id FROM sys_user WHERE username='companion2'),
+    4, '陪诊师王小明很负责，虽然因为手术延后取消了订单，但他主动建议等手术时间确定后可以再约。服务态度值得肯定。',
+    '2026-08-06 09:00:00'
+ON DUPLICATE KEY UPDATE score=VALUES(score), content=VALUES(content);
+
+-- 26.6 订单14（CANCELLED）- 陪诊师回应
+INSERT INTO evaluation(order_id, from_user_id, to_user_id, score, content, created_at)
+SELECT
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer8') AND status='CANCELLED' LIMIT 1),
+    (SELECT id FROM sys_user WHERE username='companion2'),
+    (SELECT id FROM sys_user WHERE username='customer8'),
+    5, '冯奶奶非常通情达理，手术延后是客观原因。祝手术顺利，有需要随时联系我！',
+    '2026-08-06 14:00:00'
+ON DUPLICATE KEY UPDATE score=VALUES(score), content=VALUES(content);
+
+-- 26.7 订单1（COMPLETED）- 补充一条客户追加评价（模拟追加评价场景，用不同from_user体现家属代评）
+-- 注意：uk_evaluation_order_from_user 限制同人同单只能评一次，这里用 customer3(王五) 没有订单1的评价记录所以可以插入
+-- 实际改为 elder02 家属的另一个角度：用 family01(周先生) 作为家属代为评价（实际业务中可能支持代评）
+-- 这里改为：用同一个客户 elder02 无法重复，所以跳过。改用不同的表达方式在其他订单体现。
+
+-- 26.8 订单8（COMPLETED 取药）- 补充一条3星中性评价（模拟药品虽然正确但服务体验一般的场景）
+-- 韩爷爷已有评价(4星)，改为陪诊师周敏收到平台反馈后的反思评价场景
+-- 实际上这个场景不需要，改为添加一条：客户对订单没有完成确认但评价了的边界场景
+
+-- 26.9 订单2（COMPLETED）- 家属周先生的详细长文评价（已有一条4星，这里是家属事后追加的感谢）
+-- 由于 uk_evaluation_order_from_user 限制，无法同人重复。改为给订单2陪诊师一个更详细的追评。
+-- 这里我们换一种方式：在已有评价基础上，补充一个"平台代发"的场景不适用。
+
+-- 实际新增：不同用户对同一订单的评价（模拟多人评价场景）
+-- 订单1 elder02 已完成双向评价，改为用 family01 作为 elder02 家属给 companion1 追加感谢
+INSERT INTO evaluation(order_id, from_user_id, to_user_id, score, content, created_at)
+SELECT
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='elder02') AND status='COMPLETED' LIMIT 1),
+    (SELECT id FROM sys_user WHERE username='family01'),
+    (SELECT id FROM sys_user WHERE username='companion1'),
+    5, '我是陈爷爷的邻居周先生，当天陪陈爷爷一起去办理住院。李小华陪诊师真的非常专业负责，从填表到入住全程井井有条，还主动帮忙买住院用品。这样的陪诊师让人放心！',
+    '2026-07-03 10:00:00'
+ON DUPLICATE KEY UPDATE score=VALUES(score), content=VALUES(content);
+
+-- 26.10 订单2（COMPLETED）- customer6(吴奶奶)作为旁观的客户给 companion2 评价
+INSERT INTO evaluation(order_id, from_user_id, to_user_id, score, content, created_at)
+SELECT
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='family01') AND status='COMPLETED' LIMIT 1),
+    (SELECT id FROM sys_user WHERE username='customer6'),
+    (SELECT id FROM sys_user WHERE username='companion2'),
+    4, '看到周先生对王小明陪诊师的评价不错，我们之前也考虑过约他。服务看起来挺靠谱的，下次有机会试试。',
+    '2026-07-15 09:00:00'
+ON DUPLICATE KEY UPDATE score=VALUES(score), content=VALUES(content);
+
+-- 26.11 订单8（COMPLETED 取药）- customer1(张三)作为社区熟人给 companion5 评价
+INSERT INTO evaluation(order_id, from_user_id, to_user_id, score, content, created_at)
+SELECT
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer10') AND status='COMPLETED' AND service_price=100.00 LIMIT 1),
+    (SELECT id FROM sys_user WHERE username='customer1'),
+    (SELECT id FROM sys_user WHERE username='companion5'),
+    4, '帮韩爷爷取药这单做得不错。我父亲也经常需要去同仁医院取药，以后可以找周敏试试。听说她对取药流程很熟悉。',
+    '2026-07-28 08:00:00'
+ON DUPLICATE KEY UPDATE score=VALUES(score), content=VALUES(content);
+
+-- 26.12 订单9（COMPLETED 神经内科）- customer7(郑先生)作为医院偶遇的客户给 companion6 评价
+INSERT INTO evaluation(order_id, from_user_id, to_user_id, score, content, created_at)
+SELECT
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer9') AND status='COMPLETED' AND service_price=400.00 LIMIT 1),
+    (SELECT id FROM sys_user WHERE username='customer7'),
+    (SELECT id FROM sys_user WHERE username='companion6'),
+    5, '在301医院偶遇赵护师带蒋女士父亲做检查，专业程度让人印象深刻。后来我专门找平台搜到她，果然评价很好。下次我们家有需要也找她。',
+    '2026-07-20 10:00:00'
+ON DUPLICATE KEY UPDATE score=VALUES(score), content=VALUES(content);
+
+-- 26.13 订单3（IN_SERVICE）- 客户王五给陪诊师刘建国的低分预警（1星）
+INSERT INTO evaluation(order_id, from_user_id, to_user_id, score, content, created_at)
+SELECT
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer3') AND status='IN_SERVICE' LIMIT 1),
+    (SELECT id FROM sys_user WHERE username='customer3'),
+    (SELECT id FROM sys_user WHERE username='companion4'),
+    1, '之前一次服务体验就不好（评了2星），这次胃镜陪诊又是迟到。虽然这次态度比上次好一些，但连续两次迟到实在让人无法接受。不会再找这位陪诊师了。',
+    '2026-07-10 15:00:00'
+ON DUPLICATE KEY UPDATE score=VALUES(score), content=VALUES(content);
+
+-- 26.14 订单10（IN_SERVICE 糖尿病复查）- 陪诊师李小华给客户吴奶奶的评价
+INSERT INTO evaluation(order_id, from_user_id, to_user_id, score, content, created_at)
+SELECT
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer6') AND status='IN_SERVICE' LIMIT 1),
+    (SELECT id FROM sys_user WHERE username='companion1'),
+    (SELECT id FROM sys_user WHERE username='customer6'),
+    5, '吴奶奶是一位非常慈祥的老人，很配合检查，空腹抽血也没有抱怨。跟吴奶奶聊天很愉快，祝奶奶身体健康，糖尿病控制得越来越好！',
+    '2026-08-01 10:30:00'
+ON DUPLICATE KEY UPDATE score=VALUES(score), content=VALUES(content);
+
+-- 26.15 订单7（COMPLETED 眼科陪诊）- customer10(韩爷爷)作为老年病友给 companion3 评价
+INSERT INTO evaluation(order_id, from_user_id, to_user_id, score, content, created_at)
+SELECT
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer6') AND status='COMPLETED' AND service_price=250.00 LIMIT 1),
+    (SELECT id FROM sys_user WHERE username='customer10'),
+    (SELECT id FROM sys_user WHERE username='companion3'),
+    5, '我和吴奶奶是老年活动中心的朋友，她推荐陈丽丽陪诊师给我。说陈陪诊师特别细心，散瞳后还专门打车送回家。我们老年人就需要这样贴心的服务！',
+    '2026-07-25 09:00:00'
+ON DUPLICATE KEY UPDATE score=VALUES(score), content=VALUES(content);
+
+-- 26.16 订单4（ACCEPTED 待服务）- 客户刘奶奶提前给陪诊师好评（预评价场景，虽然服务还没开始但沟通体验好）
+INSERT INTO evaluation(order_id, from_user_id, to_user_id, score, content, created_at)
+SELECT
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='elder01') AND status='ACCEPTED' LIMIT 1),
+    (SELECT id FROM sys_user WHERE username='elder01'),
+    (SELECT id FROM sys_user WHERE username='companion3'),
+    5, '虽然服务还没开始，但陈丽丽陪诊师提前两天就主动联系我确认检查项目和注意事项，还提醒不要戴首饰做核磁。感觉特别靠谱，先给个好评！',
+    '2026-07-12 08:00:00'
+ON DUPLICATE KEY UPDATE score=VALUES(score), content=VALUES(content);
+
+-- 26.17 订单11（ACCEPTED 肠镜检查）- 客户郑先生预评价
+INSERT INTO evaluation(order_id, from_user_id, to_user_id, score, content, created_at)
+SELECT
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer7') AND status='ACCEPTED' AND service_price=450.00 LIMIT 1),
+    (SELECT id FROM sys_user WHERE username='customer7'),
+    (SELECT id FROM sys_user WHERE username='companion4'),
+    3, '预约阶段沟通还行，但回复消息有点慢，隔了几个小时才回。希望服务当天能更及时一些。暂给3星，服务完成后视情况修改。',
+    '2026-07-30 08:00:00'
+ON DUPLICATE KEY UPDATE score=VALUES(score), content=VALUES(content);
+
+-- 26.18 订单12（ACCEPTED 风湿免疫科）- 客户冯奶奶预评价
+INSERT INTO evaluation(order_id, from_user_id, to_user_id, score, content, created_at)
+SELECT
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer8') AND status='ACCEPTED' AND service_price=300.00 LIMIT 1),
+    (SELECT id FROM sys_user WHERE username='customer8'),
+    (SELECT id FROM sys_user WHERE username='companion7'),
+    5, '孙晓萌陪诊师提前好几天就开始关心我的情况了，问了我关节疼的具体位置和用药情况。感觉特别暖心！期待8月6号的服务。',
+    '2026-08-02 09:00:00'
+ON DUPLICATE KEY UPDATE score=VALUES(score), content=VALUES(content);
+
+-- 26.19 订单12（ACCEPTED）- 陪诊师孙晓萌给客户冯奶奶的预评价
+INSERT INTO evaluation(order_id, from_user_id, to_user_id, score, content, created_at)
+SELECT
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer8') AND status='ACCEPTED' AND service_price=300.00 LIMIT 1),
+    (SELECT id FROM sys_user WHERE username='companion7'),
+    (SELECT id FROM sys_user WHERE username='customer8'),
+    5, '冯奶奶沟通很顺畅，虽然手指关节不方便但打字很认真。我已经提前了解了她之前的检查报告，做好了充分准备。',
+    '2026-08-02 14:00:00'
+ON DUPLICATE KEY UPDATE score=VALUES(score), content=VALUES(content);
+
+-- 26.20 订单4（ACCEPTED）- 陪诊师陈丽丽给客户刘奶奶的预评价
+INSERT INTO evaluation(order_id, from_user_id, to_user_id, score, content, created_at)
+SELECT
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='elder01') AND status='ACCEPTED' LIMIT 1),
+    (SELECT id FROM sys_user WHERE username='companion3'),
+    (SELECT id FROM sys_user WHERE username='elder01'),
+    5, '刘奶奶特别可爱，电话里一直说"麻烦你了姑娘"。核磁和CT的检查我都安排好了，会全程照顾好奶奶的。',
+    '2026-07-12 09:00:00'
+ON DUPLICATE KEY UPDATE score=VALUES(score), content=VALUES(content);
+
+-- 26.21 综合场景：admin1 以平台身份给优质陪诊师的系统好评（模拟平台年度评优）
+INSERT INTO evaluation(order_id, from_user_id, to_user_id, score, content, created_at)
+SELECT
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer9') AND status='COMPLETED' AND service_price=400.00 LIMIT 1),
+    (SELECT id FROM sys_user WHERE username='admin1'),
+    (SELECT id FROM sys_user WHERE username='companion6'),
+    5, '【平台官方评价】赵丽华陪诊师在2026年7月服务表现优异，客户满意度100%。特此表彰其专业细致的服务精神，并推荐为平台星级陪诊师。',
+    '2026-07-25 10:00:00'
+ON DUPLICATE KEY UPDATE score=VALUES(score), content=VALUES(content);
+
+-- 26.22 平台对优秀陪诊师的表彰评价
+INSERT INTO evaluation(order_id, from_user_id, to_user_id, score, content, created_at)
+SELECT
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='elder02') AND status='COMPLETED' LIMIT 1),
+    (SELECT id FROM sys_user WHERE username='admin2'),
+    (SELECT id FROM sys_user WHERE username='companion1'),
+    5, '【平台官方评价】李小华陪诊师服务认真负责，多次获得客户5星好评。尤其在老年患者住院办理方面经验丰富，是平台资深陪诊师的典范。',
+    '2026-07-20 10:00:00'
+ON DUPLICATE KEY UPDATE score=VALUES(score), content=VALUES(content);
+
+-- 26.23 一条极简短评价 - 测试短内容展示
+INSERT INTO evaluation(order_id, from_user_id, to_user_id, score, content, created_at)
+SELECT
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer10') AND status='COMPLETED' AND service_price=100.00 LIMIT 1),
+    (SELECT id FROM sys_user WHERE username='customer8'),
+    (SELECT id FROM sys_user WHERE username='companion5'),
+    3, '还行。',
+    '2026-08-01 08:00:00'
+ON DUPLICATE KEY UPDATE score=VALUES(score), content=VALUES(content);
+
+-- 26.24 一条超长详细评价 - 测试长文本展示和截断
+INSERT INTO evaluation(order_id, from_user_id, to_user_id, score, content, created_at)
+SELECT
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer9') AND status='COMPLETED' AND service_price=400.00 LIMIT 1),
+    (SELECT id FROM sys_user WHERE username='customer10'),
+    (SELECT id FROM sys_user WHERE username='companion6'),
+    5, '我是通过蒋女士推荐了解到赵丽华陪诊师的。我父亲今年78岁，有高血压和轻度脑萎缩，最近经常头晕。赵护师不仅帮我们安排了全面的检查（脑CT、颈动脉超声、TCD），还在检查过程中发现了一些我们自己没注意到的细节。比如她注意到我父亲的血压在检查过程中波动较大，建议我们买一个家用血压计每天监测。她还详细解释了每种检查的必要性和结果含义，让我们心里有底。检查结束后，她把所有报告整理成PDF发给了我和姐姐，还标注了异常项和建议复查时间。这种专业和用心程度远超我们的预期。我后来才知道赵护师原来是三甲医院的外科护士，难怪对各种检查流程这么熟悉。强烈推荐给家里有老人的家庭！',
+    '2026-07-30 09:00:00'
+ON DUPLICATE KEY UPDATE score=VALUES(score), content=VALUES(content);
+
+-- 26.25 订单11（ACCEPTED）- 陪诊师刘建国给客户郑先生的预评价
+INSERT INTO evaluation(order_id, from_user_id, to_user_id, score, content, created_at)
+SELECT
+    (SELECT id FROM service_order WHERE customer_id=(SELECT id FROM sys_user WHERE username='customer7') AND status='ACCEPTED' AND service_price=450.00 LIMIT 1),
+    (SELECT id FROM sys_user WHERE username='companion4'),
+    (SELECT id FROM sys_user WHERE username='customer7'),
+    4, '郑先生作为家属很关心父亲的情况，准备工作做得很充分。肠镜检查前的注意事项我都已告知，期待服务当天顺利。',
+    '2026-07-30 10:00:00'
+ON DUPLICATE KEY UPDATE score=VALUES(score), content=VALUES(content);
