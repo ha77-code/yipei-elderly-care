@@ -297,7 +297,7 @@ export default {
 <style scoped>
 .page-wrap { padding: 24px 32px; max-width: 1100px; }
 .page-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
-.page-title { font-size: 20px; font-weight: 700; color: var(--brand-cream-100); margin: 0; }
+.page-title { font-size: 20px; font-weight: 700; color: var(--text-heading); margin: 0; }
 .page-subtitle { margin: 6px 0 0; font-size: 13px; color: #999; display: flex; align-items: center; gap: 10px; }
 .muted { color: #999; font-size: 12px; }
 
@@ -314,7 +314,7 @@ export default {
 .info-card .el-card__body { padding: 0 16px 16px; }
 
 /* 服务记录 */
-.record-content { font-size: 14px; color: var(--brand-cream-100); line-height: 1.8; white-space: pre-wrap; }
+.record-content { font-size: 14px; color: var(--text-primary); line-height: 1.8; white-space: pre-wrap; }
 .ai-summary { font-size: 14px; color: #4A5E4D; line-height: 1.8; white-space: pre-wrap; padding: 10px 12px; background: #F3F7F1; border-left: 3px solid #7A9A7E; border-radius: 4px; }
 .record-notes { margin-top: 12px; padding: 10px 12px; background: #FFF8E1; border-radius: 6px; font-size: 13px; color: #8B7355; }
 .notes-label { font-weight: 600; }
@@ -332,7 +332,7 @@ export default {
 /* 时间线 */
 .timeline-card .el-card__body { padding: 8px 16px 16px; }
 .tl-content p { margin: 0; }
-.tl-status { font-size: 13px; font-weight: 600; color: var(--brand-cream-100); }
+.tl-status { font-size: 13px; font-weight: 600; color: var(--text-heading); }
 .tl-remark { font-size: 12px; color: #666; margin-top: 2px; }
 .tl-operator { font-size: 11px; color: #aaa; margin-top: 2px; }
 

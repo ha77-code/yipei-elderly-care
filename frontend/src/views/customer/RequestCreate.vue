@@ -110,7 +110,6 @@
         <el-form-item label="AI需求摘要">
           <div class="ai-summary-tools">
             <el-button icon="el-icon-magic-stick" :loading="summaryGenerating" @click="handleGenerateSummary">生成摘要</el-button>
-            <el-button v-if="!isOrderMode" icon="el-icon-star-off" :loading="recommending" @click="handleRecommend">智能推荐陪诊师</el-button>
             <span class="form-hint">生成后可修改，提交时将展示给陪诊师。</span>
           </div>
           <el-input v-if="form.aiSummary" v-model="form.aiSummary" type="textarea" :rows="3" maxlength="800" show-word-limit class="ai-summary-input" />
@@ -133,22 +132,56 @@
       </el-form>
     </div>
 
-    <!-- 智能推荐陪诊师 -->
-    <el-dialog title="智能推荐陪诊师" :visible.sync="recommendVisible" width="640px">
-      <p class="rec-tip">根据你填写的需求内容，为你推荐以下比较适配的陪诊师。可点「指定TA」直接前往创建指定订单。</p>
-      <div v-if="!recommendList.length" class="rec-empty">暂时没有与当前需求高度匹配的陪诊师，可直接发布需求进入需求广场，由陪诊师主动申请。</div>
-      <div v-for="c in recommendList" :key="c.id" class="rec-card">
-        <div class="rec-head">
-          <span class="rec-name">{{ c.nickname || c.realName || '陪诊师' }}</span>
-          <el-tag size="small" type="warning" effect="plain">匹配 {{ c.matchScore || 0 }}</el-tag>
+    <!-- 推荐陪诊师弹窗 -->
+    <el-dialog
+      title="AI 已生成需求摘要 — 为您推荐以下陪诊师"
+      :visible.sync="recommendVisible"
+      width="720px"
+      :close-on-click-modal="false"
+      class="recommend-dialog"
+    >
+      <div class="recommend-summary" v-if="form.aiSummary">
+        <span class="recommend-summary-label">需求摘要</span>
+        <p>{{ form.aiSummary }}</p>
+      </div>
+
+      <div class="recommend-grid" v-loading="recommendLoading">
+        <div v-if="!recommendLoading && !companions.length" class="recommend-empty">
+          暂未匹配到合适的陪诊师，您可以直接发布需求，陪诊师稍后申请
         </div>
-        <div class="rec-meta">{{ c.serviceTypes || '陪诊服务' }} · {{ c.serviceArea || '服务区域待补充' }} · {{ c.experienceYears || 0 }}年 · ★{{ Number(c.rating || 0).toFixed(1) }}</div>
-        <div class="rec-reason">推荐理由：{{ c.matchReason || '综合资历匹配' }}</div>
-        <div class="rec-actions">
-          <el-button size="mini" type="primary" round @click="pickCompanion(c)">指定TA</el-button>
+        <div
+          v-for="c in companions"
+          :key="c.id"
+          :class="['recommend-card', { selected: selectedCompanion === c.id }]"
+          @click="selectedCompanion = c.id"
+        >
+          <div class="rc-header">
+            <el-avatar :size="44" :src="c.avatar || undefined" icon="el-icon-user-solid" />
+            <div class="rc-info">
+              <span class="rc-name">{{ c.realName || c.nickname || '陪诊师' }}</span>
+              <span class="rc-rating">⭐ {{ c.rating || '4.5' }} · {{ c.completedCount || 0 }}单</span>
+            </div>
+            <el-tag size="mini" :type="selectedCompanion === c.id ? 'success' : 'info'" effect="plain">
+              {{ selectedCompanion === c.id ? '已选择' : '可选' }}
+            </el-tag>
+          </div>
+          <div class="rc-body">
+            <div class="rc-row" v-if="c.serviceTypes"><i class="el-icon-s-marketing"></i> {{ c.serviceTypes }}</div>
+            <div class="rc-row" v-if="c.serviceArea"><i class="el-icon-location-outline"></i> {{ c.serviceArea }}</div>
+            <div class="rc-row" v-if="c.experienceYears"><i class="el-icon-medal"></i> {{ c.experienceYears }}年经验</div>
+            <div class="rc-traits" v-if="c.traits">
+              <span v-for="t in String(c.traits).split(',')" :key="t" class="trait-tag">{{ t.trim() }}</span>
+            </div>
+          </div>
         </div>
       </div>
-      <span slot="footer"><el-button @click="recommendVisible = false">关闭</el-button></span>
+
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="recommendVisible = false">暂不选择，直接发布</el-button>
+        <el-button type="primary" :disabled="!selectedCompanion" @click="selectAndCreate">
+          选择该陪诊师并创建订单
+        </el-button>
+      </span>
     </el-dialog>
   </div>
 </template>
@@ -157,7 +190,7 @@
 import { createRequest } from '@/api/serviceRequest'
 import { createOrder } from '@/api/order'
 import { generateServiceSummary } from '@/api/ai'
-import { recommendCompanions } from '@/api/serviceRequest'
+import { getCompanionList } from '@/api/companion'
 
 export default {
   name: 'RequestCreate',
@@ -203,9 +236,10 @@ export default {
       },
       submitting: false,
       summaryGenerating: false,
-      recommending: false,
       recommendVisible: false,
-      recommendList: []
+      recommendLoading: false,
+      companions: [],
+      selectedCompanion: null
     }
   },
   computed: {
@@ -231,39 +265,46 @@ export default {
         })
         const data = res.data || res
         this.form.aiSummary = data.summary || ''
-        this.$message.success('摘要已生成')
+        this.$message.success('摘要已生成，正在匹配陪诊师...')
+        await this.fetchCompanions()
       } catch {
         // Error feedback is handled by the shared request interceptor.
       } finally {
         this.summaryGenerating = false
       }
     },
-    async handleRecommend() {
-      if (!this.form.requirement.trim()) {
-        this.$message.warning('请先填写需求内容，再看智能推荐')
-        return
-      }
-      this.recommending = true
+    async fetchCompanions() {
+      this.recommendLoading = true
+      this.recommendVisible = true
+      this.selectedCompanion = null
       try {
-        const res = await recommendCompanions({
-          serviceType: this.form.serviceType,
-          hospitalName: this.form.hospitalName,
-          department: this.form.department,
-          requirement: this.form.requirement,
-          specialNotes: this.form.specialNotes,
-          preferredTraits: this.form.preferredTraits
+        const res = await getCompanionList({
+          serviceType: this.form.serviceType || undefined,
+          traits: this.form.specialNotes || undefined
         })
-        this.recommendList = res.data || res || []
-        this.recommendVisible = true
+        this.companions = (res.data || res || []).filter(c => c.auditStatus === 1).slice(0, 6)
       } catch {
-        // 错误由统一拦截器提示
+        this.companions = []
       } finally {
-        this.recommending = false
+        this.recommendLoading = false
       }
     },
-    pickCompanion(c) {
+    selectAndCreate() {
+      const cid = this.selectedCompanion
+      if (!cid) return
       this.recommendVisible = false
-      this.$router.push({ path: '/customer/request/create', query: { companionId: c.id } })
+      // Navigate to create order with selected companion
+      this.$router.push({
+        path: '/customer/request/create',
+        query: { companionId: cid, ...this.$route.query }
+      })
+      // Need to also create the request first
+      this.handleSubmit().then(() => {
+        if (cid) {
+          // After creating request, navigate to order creation
+          this.$message.success('需求已创建，请填写订单信息')
+        }
+      }).catch(() => {})
     },
     async handleSubmit() {
       try {
@@ -362,14 +403,37 @@ export default {
   font-size: 13px;
   color: var(--color-text-placeholder);
 }
-.ai-summary-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.ai-summary-tools { display: flex; align-items: center; }
 .ai-summary-input { margin-top: 10px; }
-.rec-tip { font-size: 13px; color: rgba(96,110,82,0.85); line-height: 1.7; margin: 0 0 12px; }
-.rec-empty { font-size: 13px; color: rgba(130,140,116,0.8); padding: 20px; text-align: center; background: rgba(248,250,240,0.5); border-radius: 8px; }
-.rec-card { border: 1px solid rgba(150,140,110,0.16); border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; background: rgba(255,255,255,0.6); }
-.rec-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-.rec-name { font-size: 15px; font-weight: 700; color: rgba(78,106,56,0.92); }
-.rec-meta { font-size: 12.5px; color: rgba(96,110,82,0.8); margin-bottom: 4px; }
-.rec-reason { font-size: 12.5px; color: rgba(170,130,60,0.9); line-height: 1.6; margin-bottom: 10px; }
-.rec-actions { text-align: right; }
+
+/* ═══ 推荐陪诊师弹窗 ═══ */
+.recommend-summary {
+  background: rgba(108,140,80,0.06); border-left: 3px solid rgba(108,140,80,0.5);
+  border-radius: 8px; padding: 12px 16px; margin-bottom: 20px;
+}
+.recommend-summary-label { font-size: 12px; font-weight: 700; color: rgba(78,106,56,0.8); }
+.recommend-summary p { margin: 6px 0 0; font-size: 13px; color: rgba(46,60,38,0.8); line-height: 1.6; }
+.recommend-empty { text-align: center; color: rgba(130,140,116,0.7); padding: 40px 16px; font-size: 14px; }
+.recommend-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; min-height: 200px; }
+.recommend-card {
+  border: 2px solid rgba(150,140,110,0.12); background: rgba(255,255,255,0.4);
+  border-radius: 12px; padding: 16px; cursor: pointer;
+  transition: all 0.25s ease;
+}
+.recommend-card:hover { border-color: rgba(180,215,115,0.35); box-shadow: 0 4px 16px -6px rgba(60,70,40,0.15); }
+.recommend-card.selected { border-color: rgba(108,140,80,0.55); background: rgba(108,140,80,0.06); box-shadow: 0 0 0 3px rgba(108,140,80,0.1); }
+.rc-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.rc-info { flex: 1; min-width: 0; }
+.rc-name { display: block; font-size: 15px; font-weight: 700; color: rgba(46,60,38,0.9); }
+.rc-rating { font-size: 12px; color: rgba(170,130,60,0.8); margin-top: 2px; display: block; }
+.rc-body { display: flex; flex-direction: column; gap: 6px; }
+.rc-row { font-size: 13px; color: rgba(96,110,82,0.75); display: flex; align-items: center; gap: 6px; }
+.rc-row i { color: rgba(108,140,80,0.55); font-size: 14px; flex-shrink: 0; }
+.rc-traits { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.trait-tag {
+  display: inline-block; padding: 2px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 500;
+  background: rgba(108,140,80,0.08); color: rgba(78,106,56,0.8);
+  border: 1px solid rgba(108,140,80,0.15);
+}
 </style>
