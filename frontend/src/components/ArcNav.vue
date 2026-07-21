@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <nav class="arc-nav">
     <div class="arc-nav-brand">益陪</div>
     <svg class="arc-svg" viewBox="-60 200 170 320" preserveAspectRatio="xMidYMid meet">

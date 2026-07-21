@@ -6,9 +6,14 @@
       <template v-if="!editing">
         <div class="profile-avatar-area">
           <div class="avatar-ring">
-            <el-avatar :size="88" icon="el-icon-user-solid" class="profile-avatar" />
+            <el-avatar :size="88" :src="user.avatar || undefined" icon="el-icon-user-solid" class="profile-avatar" />
           </div>
-          <span :class="['role-badge', `role-badge--${(user.role || '').toLowerCase()}`]">{{ roleLabel }}</span>
+          <label class="avatar-upload-btn">
+            <i class="el-icon-camera"></i> 更换头像
+            <input type="file" accept="image/*" hidden @change="handleAvatarUpload" />
+          </label>
+          <p class="avatar-hint" v-if="user.avatarAuditStatus === 0" style="color:rgba(200,150,70,0.85)">头像审核中，通过后生效</p>
+          <span :class="['role-badge', `role-badge--${(user.role || '').toLowerCase()}`]" style="margin-top:16px">{{ roleLabel }}</span>
         </div>
 
         <div class="info-grid">
@@ -57,7 +62,7 @@
 
 <script>
 import { getUser, setUser, ROLE_LABELS } from '@/utils/auth'
-import { getUserInfo, updateUserInfo } from '@/api/user'
+import { getUserInfo, updateUserInfo, uploadAvatar } from '@/api/user'
 import request from '@/api/request'
 
 export default {
@@ -100,6 +105,18 @@ export default {
     async fetchUserInfo() {
       try { const res = await getUserInfo(); const d = res.data || res; this.user = { ...d }; setUser(d) } catch {}
     },
+    async handleAvatarUpload(e) {
+      const file = e.target.files[0]
+      if (!file) return
+      if (file.size > 2 * 1024 * 1024) { this.$message.warning('头像图片不能超过2MB'); return }
+      try {
+        await uploadAvatar(file)
+        this.$message.success('头像已提交，等待审核通过后生效')
+        const info = await getUserInfo()
+        const newUser = info.data || info
+        if (newUser) { setUser(newUser); this.user = { ...newUser } }
+      } catch { this.$message.error('上传失败，请重试') }
+    },
     startEdit() { this.editForm.nickname = this.user.nickname || ''; this.editForm.phone = this.user.phone || ''; this.editing = true },
     cancelEdit() { this.editing = false },
     async handleSave() {
@@ -134,6 +151,9 @@ export default {
 
 /* Avatar */
 .profile-avatar-area { display: flex; flex-direction: column; align-items: center; margin-bottom: 40px; }
+.avatar-upload-btn { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; padding: 6px 16px; border: 1px solid rgba(150,140,110,0.3); border-radius: 999px; font-size: 13px; color: rgba(78,106,56,0.8); cursor: pointer; background: rgba(255,255,255,0.5); transition: all 0.2s; }
+.avatar-upload-btn:hover { background: rgba(255,255,255,0.8); border-color: rgba(108,140,80,0.5); box-shadow: 0 0 12px -4px rgba(108,140,80,0.2); }
+.avatar-hint { margin-top: 8px; font-size: 12px; }
 .avatar-ring { padding: 4px; border-radius: 50%; background: linear-gradient(135deg, rgba(108,140,80,0.7), rgba(78,106,56,0.7)); margin-bottom: 16px; }
 .profile-avatar { background: rgba(255,255,255,0.8); color: rgba(78,106,56,0.8); }
 .role-badge { padding: 5px 18px; border-radius: 20px; font-size: 13px; font-weight: 600; }

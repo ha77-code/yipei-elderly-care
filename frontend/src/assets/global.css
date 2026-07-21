@@ -1,26 +1,26 @@
 ﻿/* ═══ 白瓷磨砂工具类（概念页统一风格）═══ */
 
 /* 页面容器 */
-.frosted-page { padding: 24px 32px; font-family: 'PingFang SC','Microsoft YaHei',-apple-system,sans-serif; color: rgba(46,60,38,0.88); }
+.frosted-page { padding: 24px 32px; font-family: 'PingFang SC','Microsoft YaHei',-apple-system,sans-serif; color: var(--text-primary); }
 /* 卡片：白瓷磨砂 */
-.frosted-card { background: rgba(255,255,255,0.58); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,0.7); border-radius: 14px; box-shadow: 0 12px 36px -16px rgba(50,60,30,0.2),inset 0 1px 0 rgba(255,255,255,0.6); }
+.frosted-card { background: var(--bg-card); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid var(--border-card); border-radius: 14px; box-shadow: var(--shadow-card); }
 /* 筛选栏 */
-.frosted-filter { background: rgba(255,255,255,0.62); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,0.7); border-radius: 12px; padding: 12px 18px; box-shadow: 0 8px 22px -12px rgba(60,70,40,0.28),inset 0 1px 0 rgba(255,255,255,0.6); }
+.frosted-filter { background: var(--bg-card); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid var(--border-card); border-radius: 12px; padding: 12px 18px; box-shadow: var(--shadow-sm); }
 /* 页面标题 */
-.frosted-title { font-family: 'Noto Serif SC',serif; font-size: 20px; font-weight: 700; color: rgba(78,106,56,0.92); margin: 0 0 4px; }
-.frosted-subtitle { font-size: 13px; color: rgba(130,140,116,0.75); margin: 0 0 18px; }
+.frosted-title { font-family: 'Noto Serif SC',serif; font-size: 20px; font-weight: 700; color: var(--text-heading); margin: 0 0 4px; }
+.frosted-subtitle { font-size: 13px; color: var(--text-muted); margin: 0 0 18px; }
 /* 统计卡片 */
 .stat-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(140px,1fr)); gap: 14px; margin-bottom: 24px; }
-.stat-item { background: rgba(255,255,255,0.55); backdrop-filter: blur(10px); border-radius: 12px; padding: 16px 18px; display: flex; align-items: center; gap: 14px; border: 1px solid rgba(255,255,255,0.6); box-shadow: 0 4px 12px -6px rgba(60,70,40,0.12); transition: all 0.2s; }
+.stat-item { background: var(--bg-card); backdrop-filter: blur(10px); border-radius: 12px; padding: 16px 18px; display: flex; align-items: center; gap: 14px; border: 1px solid var(--border-card); box-shadow: 0 4px 12px -6px rgba(60,70,40,0.12); transition: all 0.2s; }
 .stat-item:hover { transform: translateY(-2px); box-shadow: 0 8px 20px -8px rgba(60,70,40,0.18); }
-.stat-value { font-size: 18px; font-weight: 800; color: rgba(78,106,56,0.88); white-space: nowrap; }
-.stat-label { font-size: 11px; color: rgba(130,140,116,0.78); margin-top: 4px; }
+.stat-value { font-size: 18px; font-weight: 800; color: var(--text-heading); white-space: nowrap; }
+.stat-label { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
 /* 快捷入口 */
 .entry-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(220px,1fr)); gap: 14px; }
-.entry-card { background: rgba(255,255,255,0.55); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.6); border-radius: 10px; padding: 16px 18px; cursor: pointer; text-decoration: none; color: inherit; transition: all 0.25s ease; display: block; }
+.entry-card { background: var(--bg-card); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid var(--border-card); border-radius: 10px; padding: 16px 18px; cursor: pointer; text-decoration: none; color: inherit; transition: all 0.25s ease; display: block; }
 .entry-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px -8px rgba(60,70,40,0.22),0 0 20px -4px rgba(240,215,130,0.25); border-color: rgba(200,225,140,0.4); }
-.entry-card h3 { font-size: 14px; font-weight: 700; color: rgba(78,106,56,0.9); margin: 0 0 4px; }
-.entry-card p { font-size: 12px; color: rgba(130,140,116,0.72); margin: 0; }
+.entry-card h3 { font-size: 14px; font-weight: 700; color: var(--text-heading); margin: 0 0 4px; }
+.entry-card p { font-size: 12px; color: var(--text-muted); margin: 0; }
 .page-container {
   min-height: 100%;
   padding: 28px;
@@ -143,3 +143,4 @@
   .title-hero { font-size: 34px; }
   .title-section { font-size: 24px; }
 }
+
