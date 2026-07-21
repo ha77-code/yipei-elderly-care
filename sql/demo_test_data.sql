@@ -468,7 +468,7 @@ INSERT INTO companion_profile(user_id, real_name, avatar, introduction, service_
 SELECT su.id, '吴建国', '/uploads/avatars/companion8.jpg',
        '退休内科副主任医师，15年临床经验。精通各类疾病就诊流程，能为患者提供专业的就医建议和流程规划。对医保政策、慢性病管理有深入研究。',
        '北京市朝阳区', '陪诊,就医规划,慢性病管理,医保咨询,住院办理',
-       15, 4.98, 420, 0, '2025-10-01 08:00:00', '2025-10-01 08:00:00'
+       15, 4.98, 420, 2, '2025-10-01 08:00:00', '2025-10-01 08:00:00'
 FROM sys_user su WHERE su.username = 'companion8'
 ON DUPLICATE KEY UPDATE real_name=VALUES(real_name), introduction=VALUES(introduction), service_area=VALUES(service_area), service_types=VALUES(service_types), experience_years=VALUES(experience_years), rating=VALUES(rating), completed_count=VALUES(completed_count), audit_status=VALUES(audit_status), updated_at=VALUES(updated_at);
 

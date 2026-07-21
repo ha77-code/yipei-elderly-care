@@ -148,7 +148,6 @@ CREATE TABLE IF NOT EXISTS evaluation (
     score TINYINT NOT NULL,
     content VARCHAR(1000),
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT ck_evaluation_score CHECK (score BETWEEN 1 AND 5),
     CONSTRAINT fk_evaluation_order
         FOREIGN KEY (order_id) REFERENCES service_order (id),
     CONSTRAINT fk_evaluation_from_user
