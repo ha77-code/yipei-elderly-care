@@ -12,13 +12,19 @@
     </div>
 
     <!-- 操作按钮 -->
-    <div class="action-bar" v-if="actions.length">
+    <div class="action-bar" v-if="actions.length || canChat">
       <el-button
         v-for="act in actions" :key="act.key"
         :type="act.type" :class="act.class" size="small" round
         :loading="acting === act.key"
         @click="doAction(act)"
       >{{ act.label }}</el-button>
+      <el-button
+        v-if="canChat"
+        type="primary" class="plain" size="small" round
+        icon="el-icon-chat-dot-round"
+        @click="openChat"
+      >{{ isChatOpen ? '私信沟通' : '查看聊天记录' }}</el-button>
     </div>
 
     <div class="detail-grid">
@@ -141,6 +147,9 @@
         <el-button type="danger" :loading="acting === 'report'" @click="submitReport">提交投诉</el-button>
       </span>
     </el-dialog>
+
+    <!-- 私信聊天 -->
+    <chat-dialog ref="chat" :order-id="order.id" :chat-open="isChatOpen" />
   </div>
 </template>
 
@@ -151,6 +160,7 @@ import { getEvaluationByOrder, submitEvaluation } from '@/api/evaluation'
 import { submitReport } from '@/api/report'
 import { getUserRole, getUser } from '@/utils/auth'
 import TtsPlayer from '@/components/TtsPlayer.vue'
+import ChatDialog from '@/components/ChatDialog.vue'
 
 const STATUS_MAP = {
   PENDING_ACCEPT: '待接单', ACCEPTED: '已接单', IN_SERVICE: '服务中',
@@ -160,7 +170,7 @@ const STATUS_MAP = {
 
 export default {
   name: 'OrderDetail',
-  components: { TtsPlayer },
+  components: { TtsPlayer, ChatDialog },
   data() {
     return {
       loading: false, acting: null, order: {}, serviceRecord: null,
@@ -201,6 +211,14 @@ export default {
         acts.push({ key: 'report', label: '投诉', type: 'danger', action: 'report', class: 'plain' })
       return acts
     },
+    // 撮合达成后即可聊天；完成/投诉后仍可查看历史（与后端 ChatService 一致）
+    isChatOpen() {
+      return ['ACCEPTED', 'IN_SERVICE', 'PENDING_CONFIRM'].includes(this.order.status)
+    },
+    canChat() {
+      return (this.isCustomerOrder || this.isCompanionOrder) &&
+        ['ACCEPTED', 'IN_SERVICE', 'PENDING_CONFIRM', 'COMPLETED', 'COMPLAINT'].includes(this.order.status)
+    },
     ttsText() {
       const o = this.order
       if (!o.id) return ''
@@ -236,6 +254,9 @@ export default {
         this.evaluations = e.data || e || []
       } catch { this.evaluations = [] }
       this.loading = false
+    },
+    openChat() {
+      this.$refs.chat.show()
     },
     async doAction(act) {
       const orderId = this.order.id
@@ -297,7 +318,7 @@ export default {
 <style scoped>
 .page-wrap { padding: 24px 32px; max-width: 1100px; }
 .page-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
-.page-title { font-size: 20px; font-weight: 700; color: var(--brand-cream-100); margin: 0; }
+.page-title { font-size: 20px; font-weight: 700; color: var(--text-heading); margin: 0; }
 .page-subtitle { margin: 6px 0 0; font-size: 13px; color: #999; display: flex; align-items: center; gap: 10px; }
 .muted { color: #999; font-size: 12px; }
 
@@ -314,7 +335,7 @@ export default {
 .info-card .el-card__body { padding: 0 16px 16px; }
 
 /* 服务记录 */
-.record-content { font-size: 14px; color: var(--brand-cream-100); line-height: 1.8; white-space: pre-wrap; }
+.record-content { font-size: 14px; color: var(--text-primary); line-height: 1.8; white-space: pre-wrap; }
 .ai-summary { font-size: 14px; color: #4A5E4D; line-height: 1.8; white-space: pre-wrap; padding: 10px 12px; background: #F3F7F1; border-left: 3px solid #7A9A7E; border-radius: 4px; }
 .record-notes { margin-top: 12px; padding: 10px 12px; background: #FFF8E1; border-radius: 6px; font-size: 13px; color: #8B7355; }
 .notes-label { font-weight: 600; }
@@ -332,7 +353,7 @@ export default {
 /* 时间线 */
 .timeline-card .el-card__body { padding: 8px 16px 16px; }
 .tl-content p { margin: 0; }
-.tl-status { font-size: 13px; font-weight: 600; color: var(--brand-cream-100); }
+.tl-status { font-size: 13px; font-weight: 600; color: var(--text-heading); }
 .tl-remark { font-size: 12px; color: #666; margin-top: 2px; }
 .tl-operator { font-size: 11px; color: #aaa; margin-top: 2px; }
 

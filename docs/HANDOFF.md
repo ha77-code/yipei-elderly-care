@@ -6,9 +6,55 @@
 
 ## 当前状态
 
-后端已完成普通需求申请撮合、指定陪诊师订单、订单完整状态流转、私信聊天、用户通知及管理员审核。当前正式前端不是普通 Vue 侧边栏工作台，而是 `frontend/public/*-concept-light.html` 三个原版轮盘页面；所有新增功能必须继续在原轮盘滑动面板内部扩展。
+后端已完成普通需求申请撮合、指定陪诊师订单、订单完整状态流转、私信聊天、用户通知及管理员审核。
 
-## 2026-07-21 本次会话更新（最高优先级）
+**⚠️ 前端有两套并存，务必先确认在改哪一套：**
+- `frontend/public/*-concept-light.html` + `frontend/public/*.js`：原版轮盘滑动面板（静态页）。
+- `frontend/src/**` 的 **Vue SPA**（vue-cli，`npm run serve` 默认端口 3001，`/api` 代理到 8080；`npm run build` 产出到 `frontend/dist`）。
+2026-07-21 实测**用户实际运行的是 Vue SPA**（`RequestPool.vue`/`RequestCreate.vue` 等），此前 HANDOFF 记的"正式前端是 concept-light 轮盘页"已与现状不符。新增前端功能前先问清楚跑的是哪一套，避免改错目标（我就踩过：把智能推荐先加到了 public 静态页，用户在 Vue SPA 里看不到）。
+
+## 2026-07-21 精读修复：两条撮合通道在 Vue SPA 里断链（最高优先级）
+
+精读代码+文档后发现：后端与 concept-light 静态页都正常，但**用户实际运行的 Vue SPA（`frontend/src/**`）里两条核心撮合通道都跑不通**。本次已修复，并补了后端护栏与测试。
+
+### 修复 1 — 通道B「指定下单」在 SPA 里必然失败（严重）
+- **根因**：`views/customer/RequestCreate.vue` 指定模式（`isOrderMode`，即带 `?companionId=`）先发布需求（`audit_status=0`），紧接着直接调 `POST /api/order/create`。后端 `OrderService.doCreate` 校验 `audit_status==1`，未过审直接抛「该需求尚未通过审核」；而且请求体里从未带 `preferredCompanionId`。这与现行后端设计（指定订单在管理员审核通过时由 `ServiceRequestService.audit → OrderService.createDirectedOrder` 自动生成）完全脱节。
+- **改法**：指定模式改为提交带 `preferredCompanionId` 的需求（`Number(companionId)`），**不再**调 `createOrder`；要求预算 > 0；提交后跳「我的需求」并提示「待管理员审核通过后自动发送订单」。移除对 `@/api/order` 的无用引用；预算字段在指定模式下标注必填并改文案；顶部横幅改为「指定下单模式」说明。
+
+### 修复 2 — 通道A「需求广场申请」在客户侧断头（严重）
+- **根因**：`views/customer/RequestApplications.vue`（客户查看/接受申请页）与路由 `/customer/request/:requestId/applications` 都存在，但**全站没有任何入口链接到它**——`MyRequests.vue` 没有「查看申请」按钮。于是陪诊师能申请，客户永远看不到、无法接受，通道A 走不到生成订单那步。
+- **改法**：`MyRequests.vue` 操作列新增「查看申请」按钮（仅 `status=PENDING && auditStatus=1 && 非指定` 显示）跳转该页；新增「审核」状态列（待审核/已通过/未通过）；把 `MATCHED` 那颗会误导去陪诊师列表的「创建订单」按钮改为「查看订单」跳 `/customer/orders`；详情弹窗补充审核状态、指定陪诊师、未通过时的审核意见。
+
+### 修复 3 — 指定需求预算为空会把需求永久卡死（后端护栏）
+- **根因**：`budget` 可空，指定需求带空预算也能创建；但审核通过时 `createDirectedOrder → buildPendingOrder` 对 `price<=0` 抛异常，导致**整个审核事务回滚**，需求永远停在 `audit_status=0`，管理员反复点通过都失败。
+- **改法**：`ServiceRequestService.create` 里当 `preferredCompanionId != null` 时，前置校验预算 > 0 且指定陪诊师存在且已过审（否则 4xx 业务错误）。新增两条单测覆盖（`ServiceRequestServiceTest`，共 4 条）。
+
+### 修复 4 — 订单详情页没有私信入口（用户反馈）
+- **现象**：客户与陪诊师达成订单后，在「订单详情」页找不到聊天入口。此前私信入口只在 `OrderList.vue`（我的订单列表）和 `Messages.vue`（聊天中心）里有，`OrderDetail.vue` 完全没有。
+- **改法**：`OrderDetail.vue` 操作栏新增「私信沟通 / 查看聊天记录」按钮 + 引入 `ChatDialog` 组件。仅订单参与方、且状态可聊天时显示：`ACCEPTED/IN_SERVICE/PENDING_CONFIRM` 可发消息，`COMPLETED/COMPLAINT` 只读历史（与后端 `ChatService.OPEN_STATUSES` 一致）。
+
+### 修复 5 — 点击通知无跳转（用户反馈）
+- **现象**：陪诊师/客户收到「订单已接单/审核通过/收到新私信」等通知后点击，只标记已读、不跳转，看不到对应聊天或订单。
+- **改法**：`Messages.vue` 的 `readNotification` 新增 `routeNotification`，按 `type + relatedId` 分发：
+  - 私信/接单/完成类（`CHAT_MESSAGE/ORDER_ACCEPTED/ORDER_COMPLETED/APPLICATION_ACCEPTED`）→ 在本页直接打开对应订单会话（`openConversationByOrderId`，会话列表没有则刷新一次，再兜底跳订单详情）；
+  - 其他订单/投诉类 → 订单详情 `/order/{id}`；
+  - 申请类（`APPLICATION`）→ `/customer/request/{requestId}/applications`；未选中 → 需求广场；
+  - 需求审核结果 → `/customer/requests`；管理员待办 → 对应审核页；资料/头像审核结果 → `/companion/profile`、`/profile`。
+- 说明：通知面板在 `Messages.vue` 内（`/customer/messages`、`/companion/messages`，侧栏「聊天」入口），点通知即在同页打开会话，符合「点通知→看到聊天界面」的诉求。
+
+### 仍未处理（记录待办，未改动）
+- **`COMPLAINT` 订单状态是死代码**：schema/seed/前端标签都有，但没有任何 Java 会设置它——`ReportService.create` 只写投诉记录、不改 `order.status`。要接通有风险：`COMPLAINT` 不在 `ChatService.OPEN_STATUSES` 内、且每个订单流转都精确校验前置状态，贸然置为 COMPLAINT 会让订单卡死（没有 resolve→恢复原状态的路径）。需先定方案再接。
+- **SPA 无全局通知铃铛**：通知已可在「聊天」页查看并点击跳转，但 `MainLayout.vue` 顶栏仍只有聊天未读红点，没有独立的通知铃铛下拉。若想在任意页面第一时间看到「收到新申请/审核通过」等非私信通知，建议后续加顶栏铃铛（复用 `api/notification.js` + 上面的 `routeNotification` 逻辑）。
+
+### 验证
+- `mvnw compile` 通过；`mvnw test` 11 条全绿（原 9 + 新 2）；`npm run build` 生产构建成功。
+
+### 附：`application.yaml`（工作区改动，非本次逻辑修复）
+- DB/Redis 连接与 AI/TTS 配置改为 `${ENV:default}` 形式，去掉硬编码密码。这是工作区已有改动，本次一并保留。
+
+---
+
+## 2026-07-21 本次会话更新（历史）
 
 ### A. 页面切换叠加 Bug 修复
 
@@ -27,6 +73,28 @@
 - 客户"陪诊师"页每张陪诊师卡片有"🔊 朗读信息"按钮 → `GET /api/tts/companion/{id}`，朗读姓名、区域、经验、擅长、介绍。
 - 客户"发布需求"表单有"🔊 朗读已填内容"按钮 → `POST /api/tts/speak`，把当前已填的服务类型/时间/医院/科室/联系人/预算/需求/特殊说明拼成文本朗读，方便核对后再提交。
 - TTS 已在 `application.yaml` 配好火山引擎（`yipei.tts`，含 17 个音色）。后端未配置时接口返回 503，前端提示"语音功能未接入"。
+- `about.html` 右侧悬浮朗读按钮 → `POST /api/tts/speak`，`voiceType: BV001_streaming`（通用女声），朗读整页介绍文案。
+- 火山 HTTP 非流式接口单次文本上限约 1024 字节，`TtsService.callVolcengineTts` 会按句末标点把长文本切成 ≤900 字节的块逐段合成，再拼接 MP3 字节返回（MP3 为帧序列可直接拼接连续播放）。about 页整段 1107 字节超限就是靠这个修复的。
+
+### E. AI 摘要修复 + 发布需求后推荐适配陪诊师
+
+- **修复**：`application.yaml` 的 `yipei.ai.api-key` 默认值结尾多了 `np`（`...638np`），导致 DeepSeek 返回 401，AI 摘要全部失败。已删掉 `np`。
+- **新增匹配推荐**：客户发布普通需求（非指定陪诊师）成功后，前端 `customer-requests.js` 的 `showMatches()` 调 `GET /api/service-request/{id}/matches`，弹出「为你推荐的陪诊师」面板，展示最多 3 个适配陪诊师及推荐理由；无合适（后端返回空数组）则不弹。
+- 匹配为规则打分（`ServiceRequestService.matchCompanions/scoreCompanion`）：服务类型 50（用 2 字子串重叠判定，兼容"门诊陪诊"↔"陪诊"用词差异）、**需求描述契合最高 40**、区域覆盖 20（区域拆市/区词根与医院名比对）、性格每个 10（上限 20）、评分最高 10、经验最高 8；总分 ≥45 才算"比较适配"。指定陪诊师的需求直接返回空。
+- **需求描述契合维度**（`textFitScore`）：把需求正文+特殊说明的中文二元词集合，与陪诊师"简介+服务类型+性格"文本比对，按落入比例 ×40 给分；命中 &lt;3 个词视为偶然重叠不计分，避免泛泛需求把所有人推过阈值。这样即使服务类型/区域都不匹配，只要需求描述与某陪诊师资历高度吻合（如客户直接照抄了简介）也能把 TA 顶到最前。
+- `CompanionVO` 加了非持久字段 `matchScore`/`matchReason`，仅推荐接口填充。
+
+### F. 发布表单“智能推荐”按钮 + 申请接单 500 加固
+
+- **智能推荐**：发布需求表单（未指定陪诊师时）操作区新增「✨ 智能推荐陪诊师」按钮。点击后 `customer-requests.js` 的 `recommend()` 收集当前表单内容 POST `/api/service-request/recommend`（不落库、复用同一套打分），弹窗展示最多 3 个推荐，每张卡片带「指定TA」可直接选中该陪诊师回填到表单（之后填预算按指定需求提交）。无匹配则提示可直接提交进需求广场。
+- 后端 `ServiceRequestController.recommend` 用表单字段构造临时 `ServiceRequest`（不含 serviceDate，避免日期解析），调 `ServiceRequestService.previewMatches`；匹配打分逻辑抽成 `rankCompanions` 供 `matchCompanions`（提交后）和 `previewMatches`（预览）共用。
+- **申请接单 500 加固**：`ApplicationController.apply` 原来 `Long.valueOf(String.valueOf(body.get("requestId")))` 在 requestId 缺失/非数字时抛 `NumberFormatException`→500。已改为显式判空+`try/catch`，返回 403 业务提示而非 500。
+
+### G. Vue SPA 需求广场 requestId 字段错位（"缺少需求ID"根因）+ Vue SPA 智能推荐
+
+- **根因**：`RequestPool.vue`（Vue SPA 需求广场）读取 `row.requestId` 和 `row.myStatus`，但后端 `RequestPoolVO` 返回的字段是 **`id`** 和 **`myApplicationStatus`**。导致 `row.requestId` 为 `undefined`，申请时发送 `{requestId:null}` → 后端报"缺少需求ID"（加固前是 500）。已把 `RequestPool.vue` 三处（`:key`、`:loading`、`doApply`）改用 `row.id`，状态标签改用 `row.myApplicationStatus`。
+- **Vue SPA 智能推荐**：在 `RequestCreate.vue` 的「AI需求摘要」区、"生成摘要"按钮旁新增「智能推荐陪诊师」按钮（仅普通发布模式显示）。点击 `handleRecommend` 用当前表单内容调 `POST /api/service-request/recommend`（`api/serviceRequest.js` 新增 `recommendCompanions`），弹 `el-dialog` 展示最多 3 个推荐，每张卡片「指定TA」跳转到 `/customer/request/create?companionId={profileId}` 走指定下单。无匹配则提示可直接发布进需求广场。
+- 之前 E/F 节把智能推荐加到了 `frontend/public/customer-requests.js`（静态轮盘页），用户跑的是 Vue SPA 所以看不到——本节是补到 Vue SPA。两套都保留。
 
 ### D. 约定
 

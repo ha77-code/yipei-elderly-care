@@ -39,6 +39,15 @@ class ServiceRequestServiceTest {
     @Mock
     private UserNotificationService notificationService;
 
+    @Mock
+    private com.yipei.mapper.CompanionProfileMapper companionProfileMapper;
+
+    @Mock
+    private com.yipei.mapper.AuditRecordMapper auditRecordMapper;
+
+    @Mock
+    private OrderService orderService;
+
     @InjectMocks
     private ServiceRequestService serviceRequestService;
 
@@ -86,6 +95,38 @@ class ServiceRequestServiceTest {
         verify(aiSummaryService, never()).generate(any(ServiceRequest.class));
         verify(serviceRequestMapper, never()).updateAiSummary(any(), any());
     }
+    @Test
+    void createRejectsDirectedRequestWithoutBudget() {
+        SysUser customer = new SysUser();
+        customer.setId(2L);
+        customer.setRole(RoleConstants.CUSTOMER);
+        when(sysUserMapper.selectById(2L)).thenReturn(customer);
+        ServiceRequestCreateRequest request = createRequest();
+        request.setPreferredCompanionId(9L); // 指定下单但预算为空
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                com.yipei.exception.ForbiddenException.class,
+                () -> serviceRequestService.create(2L, request));
+        verify(serviceRequestMapper, never()).insert(any(ServiceRequest.class));
+    }
+
+    @Test
+    void createRejectsDirectedRequestWhenPreferredCompanionNotApproved() {
+        SysUser customer = new SysUser();
+        customer.setId(2L);
+        customer.setRole(RoleConstants.CUSTOMER);
+        when(sysUserMapper.selectById(2L)).thenReturn(customer);
+        when(companionProfileMapper.selectById(9L)).thenReturn(null); // 陪诊师不存在/未审核
+        ServiceRequestCreateRequest request = createRequest();
+        request.setPreferredCompanionId(9L);
+        request.setBudget(new java.math.BigDecimal("200.00"));
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                com.yipei.exception.NotFoundException.class,
+                () -> serviceRequestService.create(2L, request));
+        verify(serviceRequestMapper, never()).insert(any(ServiceRequest.class));
+    }
+
     private ServiceRequestCreateRequest createRequest() {
         ServiceRequestCreateRequest request = new ServiceRequestCreateRequest();
         request.setServiceType("门诊陪诊");

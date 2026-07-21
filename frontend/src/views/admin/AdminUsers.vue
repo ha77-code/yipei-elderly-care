@@ -1,8 +1,8 @@
 <template>
-  <div class="page-wrap">
-    <h2 class="page-title">用户管理</h2>
-    <div class="filter-bar">
-      <div class="filter-left">
+  <div class="frosted-page">
+    <h2 class="frosted-title">用户管理</h2>
+    <div class="frosted-filter" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="display:flex;gap:12px">
         <el-select v-model="filterRole" placeholder="全部角色" clearable size="medium" @change="handleFilter">
           <el-option label="客户" value="CUSTOMER" />
           <el-option label="陪诊师" value="COMPANION" />
@@ -15,7 +15,7 @@
       </div>
       <el-button icon="el-icon-refresh" size="medium" round @click="resetFilter">重置</el-button>
     </div>
-    <div class="content-card">
+    <div class="frosted-card" style="padding:4px">
       <el-table :data="list" v-loading="loading" stripe class="warm-table" empty-text="暂无用户">
         <el-table-column prop="id" label="ID" width="80" align="center" />
         <el-table-column label="头像" width="70" align="center">
@@ -85,14 +85,7 @@ export default {
 </script>
 
 <style scoped>
-.page-wrap { padding: 28px 36px; }
-.page-title { font-size: 20px; font-weight: 700; margin: 0 0 20px; }
-.filter-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding: 16px 20px; background: #fff; border: 1px solid rgba(0,0,0,0.04); border-radius: var(--radius-md); box-shadow: var(--shadow-xs); }
-.filter-left { display: flex; gap: 12px; }
-.content-card { background: #fff; border: 1px solid rgba(0,0,0,0.04); border-radius: var(--radius-md); padding: 4px; box-shadow: var(--shadow-xs); }
 .warm-table { width: 100%; }
-.warm-table ::v-deep tr { transition: background 0.15s ease; }
-.warm-table::v-deep td { font-size: 14px; }
 .table-footer { display: flex; justify-content: flex-end; padding: 16px 0 8px; }
 .role-tag { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
 .r--customer { background: rgba(122,154,126,.1); color: #5C7A60; }

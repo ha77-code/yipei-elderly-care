@@ -1,8 +1,8 @@
 <template>
-  <div class="companion-review-page">
-    <h2 class="page-title">陪诊师审核</h2>
+  <div class="frosted-page">
+    <h2 class="frosted-title">陪诊师审核</h2>
 
-    <div class="content-card">
+    <div class="frosted-card" style="padding:8px">
       <el-table
         :data="list"
         v-loading="loading"
@@ -163,64 +163,9 @@ export default {
 </script>
 
 <style scoped>
-.companion-review-page {
-  padding: 24px 32px;
-}
-
-.page-title {
-  font-family: var(--font-family);
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  margin: 0 0 20px;
-}
-
-.content-card {
-  background: #FFFFFF;
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-md);
-  padding: 8px;
-  box-shadow: var(--shadow-sm);
-}
-
-.warm-table {
-  width: 100%;
-}
-
-.warm-table::v-deep th {
-  background: var(--color-bg-page);
-  color: var(--color-text-regular);
-  font-weight: 600;
-  font-size: 13px;
-}
-
-.warm-table::v-deep td {
-  font-size: 14px;
-  color: var(--color-text-regular);
-}
-
-.mini-tag {
-  margin-right: 4px;
-  margin-bottom: 2px;
-  background: rgba(122, 154, 126, 0.08);
-  border-color: rgba(122, 154, 126, 0.15);
-  color: var(--color-primary-dark);
-}
-
-.table-footer {
-  display: flex;
-  justify-content: flex-end;
-  padding: 16px 0 8px;
-}
-
-/* 审核弹窗 */
-.audit-info {
-  margin-bottom: 16px;
-}
-
-.audit-info p {
-  margin: 0 0 6px;
-  font-size: 14px;
-  color: var(--color-text-regular);
-}
+.warm-table { width: 100%; }
+.mini-tag { margin-right: 4px; margin-bottom: 2px; background: rgba(122,154,126,0.08); border-color: rgba(122,154,126,0.15); color: rgba(78,106,56,0.85); }
+.table-footer { display: flex; justify-content: flex-end; padding: 16px 0 8px; }
+.audit-info { margin-bottom: 16px; }
+.audit-info p { margin: 0 0 6px; font-size: 14px; color: rgba(46,60,38,0.85); }
 </style>

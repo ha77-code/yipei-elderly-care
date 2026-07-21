@@ -130,6 +130,75 @@ export default {
       if (!n.isRead) {
         try { await markNotificationRead(n.id); n.isRead = 1; this.notificationUnread = Math.max(0, this.notificationUnread - 1) } catch {}
       }
+      this.routeNotification(n)
+    },
+    // 依据通知 type + relatedId 跳到对应界面
+    routeNotification(n) {
+      if (!n || !n.relatedId) return
+      const role = (getUser() || {}).role
+      // 私信 / 订单相关：relatedId 是订单号，聊天类直接在本页打开会话，其余去订单详情
+      const chatTypes = ['CHAT_MESSAGE', 'ORDER_ACCEPTED', 'ORDER_COMPLETED']
+      const orderTypes = ['NEW_DIRECTED_ORDER', 'ORDER_REJECTED', 'ORDER_STARTED',
+        'ORDER_PENDING_CONFIRM', 'ORDER_CANCELLED', 'REPORT_STATUS', 'REPORT_CREATED']
+      if (chatTypes.includes(n.type)) {
+        this.openConversationByOrderId(n.relatedId)
+        return
+      }
+      if (orderTypes.includes(n.type)) {
+        this.$router.push(`/order/${n.relatedId}`)
+        return
+      }
+      // 申请类：relatedId 是需求号
+      if (n.type === 'APPLICATION' || n.type === 'APPLICATION_WITHDRAWN') {
+        this.$router.push(`/customer/request/${n.relatedId}/applications`)
+        return
+      }
+      if (n.type === 'APPLICATION_ACCEPTED') {
+        // 申请被接受，relatedId 是订单号，打开与客户的会话
+        this.openConversationByOrderId(n.relatedId)
+        return
+      }
+      if (n.type === 'APPLICATION_REJECTED' || n.type === 'APPLICATION_AUTO_REJECTED') {
+        this.$router.push('/companion/pool')
+        return
+      }
+      // 需求审核结果：relatedId 是需求号
+      if (n.type === 'REQUEST_AUDIT_APPROVED' || n.type === 'REQUEST_AUDIT_REJECTED') {
+        this.$router.push('/customer/requests')
+        return
+      }
+      // 管理员待办
+      if (n.type === 'REQUEST_AUDIT_PENDING') { this.$router.push('/admin/request-review'); return }
+      if (n.type === 'COMPANION_AUDIT_PENDING') { this.$router.push('/admin/companion-review'); return }
+      if (n.type === 'AVATAR_AUDIT_PENDING') { this.$router.push('/admin/avatar-review'); return }
+      // 陪诊师资料/头像审核结果
+      if (n.type === 'COMPANION_AUDIT_APPROVED' || n.type === 'COMPANION_AUDIT_REJECTED') {
+        this.$router.push('/companion/profile'); return
+      }
+      if (n.type === 'AVATAR_AUDIT_APPROVED' || n.type === 'AVATAR_AUDIT_REJECTED') {
+        this.$router.push('/profile'); return
+      }
+      // 其他未知类型：如是管理员点投诉待办
+      if (role === 'ADMIN' && n.type === 'REPORT_CREATED') this.$router.push('/admin/reports')
+    },
+    async openConversationByOrderId(orderId) {
+      const oid = Number(orderId)
+      let hit = this.conversations.find(c => c.orderId === oid)
+      if (!hit) {
+        // 会话列表可能还没这条（刚达成），刷新一次再找
+        await this.fetchConversations()
+        hit = this.conversations.find(c => c.orderId === oid)
+      }
+      if (hit) {
+        this.selectConversation(hit)
+        this.$nextTick(() => {
+          const el = this.$el.querySelector('.chat-center')
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+        })
+      } else {
+        // 兜底：会话不可用（如订单已取消无聊天入口），跳订单详情
+        this.$router.push(`/order/${oid}`)
+      }
     },
     async markAllRead() {
       try { await markAllNotificationsRead(); this.notifications.forEach(n => { n.isRead = 1 }); this.notificationUnread = 0 } catch {}
@@ -188,58 +257,58 @@ export default {
 </script>
 
 <style scoped>
-.page-wrap { padding: 28px 36px; }
-.page-title { font-size: 20px; font-weight: 700; color: var(--brand-cream-100); margin: 0 0 16px; }
+.page-wrap { padding: 24px 32px; height: calc(100vh - 66px); display: flex; flex-direction: column; }
+.page-title { font-size: 20px; font-weight: 700; color: rgba(78,106,56,0.92); margin: 0 0 14px; font-family: 'Noto Serif SC', serif; }
 
-.notification-panel { margin-bottom: 18px; padding: 18px 22px; background: #fff; border: 1px solid var(--color-border-light); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
+.notification-panel { margin-bottom: 18px; padding: 18px 22px; background: rgba(255,255,255,0.58); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,0.7); border-radius: 12px; box-shadow: 0 8px 22px -12px rgba(50,60,30,0.15); }
 .notification-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.notification-head h3 { margin: 0; color: var(--color-text-primary); font-size: 18px; }
-.notification-head span { color: var(--color-text-secondary); font-size: 14px; }
-.notification-item { width: 100%; display: flex; align-items: flex-start; gap: 12px; padding: 13px 4px; border: 0; border-top: 1px solid var(--color-border-light); background: transparent; color: var(--color-text-primary); text-align: left; cursor: pointer; font: inherit; }
-.notification-item:hover { background: #faf8f3; }
-.notification-item time { margin-left: auto; color: var(--color-text-placeholder); font-size: 13px; white-space: nowrap; }
+.notification-head h3 { margin: 0; color: rgba(46,60,38,0.88); font-size: 16px; font-weight: 700; }
+.notification-head span { color: rgba(130,140,116,0.7); font-size: 13px; }
+.notification-item { width: 100%; display: flex; align-items: flex-start; gap: 12px; padding: 13px 4px; border: 0; border-top: 1px solid rgba(150,140,110,0.1); background: transparent; color: rgba(46,60,38,0.85); text-align: left; cursor: pointer; font: inherit; }
+.notification-item:hover { background: rgba(108,140,80,0.05); }
+.notification-item time { margin-left: auto; color: rgba(130,140,116,0.65); font-size: 12px; white-space: nowrap; }
 .notification-dot { width: 9px; height: 9px; margin-top: 7px; border-radius: 50%; background: transparent; flex: 0 0 9px; }
-.notification-item.unread .notification-dot { background: #c68b45; }
+.notification-item.unread .notification-dot { background: rgba(200,150,70,0.85); }
 .notification-body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.notification-body strong { font-size: 15px; }
-.notification-body small { color: var(--color-text-secondary); font-size: 14px; line-height: 1.5; }
-.notification-empty { padding: 12px 0 4px; color: var(--color-text-placeholder); font-size: 14px; }
+.notification-body strong { font-size: 14px; }
+.notification-body small { color: rgba(96,110,82,0.75); font-size: 13px; line-height: 1.5; }
+.notification-empty { padding: 12px 0 4px; color: rgba(130,140,116,0.6); font-size: 14px; }
 
-.chat-center { display: flex; height: calc(100vh - 180px); min-height: 420px; background: #fff; border: 1px solid rgba(0,0,0,0.05); border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-sm); }
+.chat-center { display: flex; flex: 1; min-height: 420px; background: rgba(255,255,255,0.58); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,0.7); border-radius: 14px; overflow: hidden; box-shadow: 0 12px 36px -16px rgba(50,60,30,0.2), inset 0 1px 0 rgba(255,255,255,0.6); }
 /* 左侧列表 */
-.conv-list { width: 300px; flex-shrink: 0; border-right: 1px solid var(--color-border-light); overflow-y: auto; background: var(--color-bg-page); }
-.conv-empty { text-align: center; color: var(--color-text-placeholder); padding: 60px 16px; font-size: 14px; line-height: 2; }
-.conv-empty span { font-size: 12px; }
-.conv-item { display: flex; gap: 12px; padding: 14px 16px; cursor: pointer; border-bottom: 1px solid rgba(0,0,0,0.03); transition: background .2s; }
-.conv-item:hover { background: rgba(122,154,126,0.06); }
-.conv-item.active { background: rgba(122,154,126,0.12); }
+.conv-list { width: 300px; flex-shrink: 0; border-right: 1px solid rgba(150,140,110,0.14); overflow-y: auto; background: rgba(248,250,240,0.3); }
+.conv-empty { text-align: center; color: rgba(130,140,116,0.8); padding: 60px 16px; font-size: 14px; line-height: 2; }
+.conv-empty span { font-size: 12px; color: rgba(130,140,116,0.6); }
+.conv-item { display: flex; gap: 12px; padding: 14px 16px; cursor: pointer; border-bottom: 1px solid rgba(150,140,110,0.08); transition: all .2s; }
+.conv-item:hover { background: rgba(108,140,80,0.07); }
+.conv-item.active { background: rgba(108,140,80,0.12); box-shadow: inset 3px 0 0 rgba(108,140,80,0.5); }
 .conv-badge { flex-shrink: 0; }
 .conv-main { flex: 1; min-width: 0; }
 .conv-top { display: flex; justify-content: space-between; align-items: center; }
-.conv-name { font-size: 14px; font-weight: 600; color: var(--color-text-primary); }
-.conv-time { font-size: 11px; color: var(--color-text-placeholder); }
+.conv-name { font-size: 14px; font-weight: 700; color: rgba(46,60,38,0.88); }
+.conv-time { font-size: 11px; color: rgba(130,140,116,0.7); }
 .conv-sub { margin: 2px 0 4px; }
-.conv-last { font-size: 13px; color: var(--color-text-secondary); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.conv-meta { font-size: 12px; }
+.conv-last { font-size: 13px; color: rgba(96,110,82,0.75); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.conv-meta { font-size: 11px; }
 /* 右侧会话 */
-.conv-thread { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-.thread-head { padding: 14px 20px; border-bottom: 1px solid var(--color-border-light); }
-.thread-title { font-size: 15px; font-weight: 600; color: var(--color-text-primary); }
-.thread-sub { font-size: 12px; color: var(--color-text-placeholder); margin-left: 10px; }
-.thread-body { flex: 1; overflow-y: auto; padding: 16px 20px; background: var(--color-bg-page); }
-.thread-empty { text-align: center; color: var(--color-text-placeholder); padding: 50px 0; font-size: 13px; }
+.conv-thread { flex: 1; display: flex; flex-direction: column; min-width: 0; background: rgba(255,255,255,0.3); }
+.thread-head { padding: 14px 20px; border-bottom: 1px solid rgba(150,140,110,0.14); background: rgba(255,255,255,0.4); }
+.thread-title { font-size: 16px; font-weight: 700; color: rgba(78,106,56,0.9); font-family: 'Noto Serif SC', serif; }
+.thread-sub { font-size: 12px; color: rgba(130,140,116,0.7); margin-left: 10px; }
+.thread-body { flex: 1; overflow-y: auto; padding: 16px 20px; background: rgba(248,250,240,0.25); }
+.thread-empty { text-align: center; color: rgba(130,140,116,0.7); padding: 50px 0; font-size: 13px; }
 .msg-row { display: flex; gap: 10px; margin-bottom: 16px; }
 .msg-row .msg-content { max-width: 65%; display: flex; flex-direction: column; }
-.msg-bubble { padding: 9px 13px; border-radius: 12px; font-size: 14px; line-height: 1.5; word-break: break-word; white-space: pre-wrap; }
-.msg-time { font-size: 11px; color: var(--color-text-placeholder); margin-top: 4px; }
+.msg-bubble { padding: 10px 14px; border-radius: 14px; font-size: 14px; line-height: 1.55; word-break: break-word; white-space: pre-wrap; }
+.msg-time { font-size: 11px; color: rgba(130,140,116,0.65); margin-top: 4px; }
 .msg-other { flex-direction: row; }
-.msg-other .msg-bubble { background: #fff; border: 1px solid rgba(0,0,0,0.05); color: var(--color-text-primary); border-top-left-radius: 3px; }
+.msg-other .msg-bubble { background: rgba(255,255,255,0.8); border: 1px solid rgba(150,140,110,0.12); color: rgba(46,60,38,0.85); border-top-left-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); }
 .msg-mine { flex-direction: row-reverse; }
 .msg-mine .msg-content { align-items: flex-end; }
-.msg-mine .msg-bubble { background: var(--color-primary); color: #fff; border-top-right-radius: 3px; }
-.thread-input { display: flex; gap: 12px; align-items: flex-end; padding: 14px 20px; border-top: 1px solid var(--color-border-light); }
+.msg-mine .msg-bubble { background: linear-gradient(135deg, rgba(108,140,80,0.85), rgba(78,106,56,0.85)); color: #fff; border-top-right-radius: 4px; }
+.thread-input { display: flex; gap: 12px; align-items: flex-end; padding: 14px 20px; border-top: 1px solid rgba(150,140,110,0.14); background: rgba(255,255,255,0.4); }
 .thread-input .el-button { flex-shrink: 0; }
-.thread-closed { padding: 16px 20px; text-align: center; font-size: 13px; color: var(--color-text-placeholder); border-top: 1px solid var(--color-border-light); background: var(--color-bg-page); }
-.thread-placeholder { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--color-text-placeholder); }
-.thread-placeholder i { font-size: 56px; opacity: .25; margin-bottom: 14px; }
+.thread-closed { padding: 16px 20px; text-align: center; font-size: 13px; color: rgba(130,140,116,0.7); border-top: 1px solid rgba(150,140,110,0.14); background: rgba(248,250,240,0.4); }
+.thread-placeholder { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: rgba(130,140,116,0.55); }
+.thread-placeholder i { font-size: 56px; opacity: .2; margin-bottom: 14px; color: rgba(108,140,80,0.5); }
 </style>

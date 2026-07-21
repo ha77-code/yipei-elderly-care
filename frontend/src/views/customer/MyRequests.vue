@@ -35,6 +35,13 @@
             <span v-else class="text-muted">未设置</span>
           </template>
         </el-table-column>
+        <el-table-column label="审核" width="90" align="center">
+          <template slot-scope="{ row }">
+            <span :class="['status-tag', auditClass(row.auditStatus)]">
+              {{ auditMap[row.auditStatus] || '待审核' }}
+            </span>
+          </template>
+        </el-table-column>
         <el-table-column prop="status" label="状态" width="100" align="center">
           <template slot-scope="{ row }">
             <span :class="['status-tag', `status--${row.status?.toLowerCase()}`]">
@@ -42,10 +49,18 @@
             </span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" align="center" fixed="right">
+        <el-table-column label="操作" width="230" align="center" fixed="right">
           <template slot-scope="{ row }">
             <el-button type="text" size="small" @click="showDetail(row)">
               详情
+            </el-button>
+            <el-button
+              v-if="row.status === 'PENDING' && row.auditStatus === 1 && !row.preferredCompanionId"
+              type="text"
+              size="small"
+              @click="goApplications(row)"
+            >
+              查看申请
             </el-button>
             <el-button
               v-if="row.status === 'PENDING'"
@@ -60,9 +75,9 @@
               v-if="row.status === 'MATCHED'"
               type="text"
               size="small"
-              @click="goCreateOrder(row)"
+              @click="goOrders()"
             >
-              创建订单
+              查看订单
             </el-button>
           </template>
         </el-table-column>
@@ -123,6 +138,20 @@
             {{ statusMap[current.status] || current.status }}
           </span>
         </div>
+        <div class="detail-item">
+          <span class="detail-label">审核状态</span>
+          <span :class="['status-tag', auditClass(current.auditStatus)]">
+            {{ auditMap[current.auditStatus] || '待审核' }}
+          </span>
+        </div>
+        <div class="detail-item" v-if="current.preferredCompanionId">
+          <span class="detail-label">指定陪诊师</span>
+          <span class="detail-value">{{ current.preferredCompanionName || ('#' + current.preferredCompanionId) }}</span>
+        </div>
+        <div class="detail-item detail-full" v-if="current.auditStatus === 2 && current.auditRemark">
+          <span class="detail-label">审核意见</span>
+          <span class="detail-value">{{ current.auditRemark }}</span>
+        </div>
         <div class="detail-item detail-full">
           <span class="detail-label">需求内容</span>
           <span class="detail-value">{{ current.requirement }}</span>
@@ -146,6 +175,12 @@ const STATUS_MAP = {
   CLOSED: '已关闭'
 }
 
+const AUDIT_MAP = {
+  0: '待审核',
+  1: '已通过',
+  2: '未通过'
+}
+
 export default {
   name: 'MyRequests',
   data() {
@@ -156,6 +191,7 @@ export default {
       pageSize: 10,
       total: 0,
       statusMap: STATUS_MAP,
+      auditMap: AUDIT_MAP,
       detailVisible: false,
       current: null
     }
@@ -194,9 +230,14 @@ export default {
         } catch { /* 错误已统一处理 */ }
       }).catch(() => {})
     },
-    goCreateOrder(row) {
-      this.$router.push('/customer/companions')
-      this.$message.info('请选择一位陪诊师为您服务')
+    goApplications(row) {
+      this.$router.push(`/customer/request/${row.id}/applications`)
+    },
+    goOrders() {
+      this.$router.push('/customer/orders')
+    },
+    auditClass(auditStatus) {
+      return { 0: 'status--pending', 1: 'status--matched', 2: 'status--closed' }[auditStatus] || 'status--pending'
     },
     formatDate(dateStr) {
       if (!dateStr) return '-'

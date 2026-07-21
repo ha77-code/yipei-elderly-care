@@ -1,41 +1,30 @@
 <template>
-  <div class="page-wrap">
-    <div class="page-head">
+  <div class="frosted-page">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
       <div>
-        <h2 class="page-title">平台统计</h2>
-        <p class="page-subtitle">查看平台用户、订单、投诉和收入概况</p>
+        <h2 class="frosted-title">平台统计</h2>
+        <p class="frosted-subtitle">查看平台用户、订单、投诉和收入概况</p>
       </div>
       <el-button icon="el-icon-refresh" size="medium" round :loading="loading" @click="fetchStats">刷新</el-button>
     </div>
 
-    <div class="stat-cards" v-loading="loading">
-      <div v-for="item in cards" :key="item.key" class="stat-card">
+    <div class="stat-grid" v-loading="loading">
+      <div v-for="item in cards" :key="item.key" class="stat-item">
         <div :class="['sc-icon', item.iconClass]"><i :class="item.icon"></i></div>
         <div class="sc-body">
-          <span class="sc-value">{{ item.value }}</span>
-          <span class="sc-label">{{ item.label }}</span>
+          <span class="stat-value">{{ item.value }}</span>
+          <span class="stat-label">{{ item.label }}</span>
         </div>
       </div>
     </div>
 
-    <div class="section">
-      <h3 class="section-title">快捷操作</h3>
-      <div class="quick-links">
-        <div class="ql-card" @click="$router.push('/admin/dashboard')">
-          <i class="el-icon-s-home"></i><span>后台首页</span>
-        </div>
-        <div class="ql-card" @click="$router.push('/admin/users')">
-          <i class="el-icon-user"></i><span>用户管理</span>
-        </div>
-        <div class="ql-card" @click="$router.push('/admin/companion-review')">
-          <i class="el-icon-finished"></i><span>陪诊师审核</span>
-        </div>
-        <div class="ql-card" @click="$router.push('/admin/orders')">
-          <i class="el-icon-s-order"></i><span>订单管理</span>
-        </div>
-        <div class="ql-card" @click="$router.push('/admin/reports')">
-          <i class="el-icon-warning-outline"></i><span>投诉处理</span>
-        </div>
+    <div class="frosted-card" style="padding:20px 24px;margin-top:14px">
+      <h3 style="font-size:16px;font-weight:700;color:rgba(78,106,56,0.9);margin:0 0 14px">快捷操作</h3>
+      <div class="entry-grid">
+        <div class="entry-card" @click="$router.push('/admin/users')"><h3>用户管理</h3><p>管理平台用户账号</p></div>
+        <div class="entry-card" @click="$router.push('/admin/companion-review')"><h3>陪诊师审核</h3><p>审核陪诊师入驻申请</p></div>
+        <div class="entry-card" @click="$router.push('/admin/orders')"><h3>订单管理</h3><p>查看所有订单进度</p></div>
+        <div class="entry-card" @click="$router.push('/admin/reports')"><h3>投诉处理</h3><p>处理用户投诉举报</p></div>
       </div>
     </div>
   </div>
@@ -104,30 +93,10 @@ export default {
 </script>
 
 <style scoped>
-.page-wrap { padding: 24px 32px; }
-.page-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
-.page-title { font-family: var(--font-family); font-size: 20px; font-weight: 700; color: var(--brand-cream-100); margin: 0; }
-.page-subtitle { margin: 6px 0 0; font-size: 13px; color: var(--color-text-secondary); }
-.stat-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(185px, 1fr)); gap: 12px; margin-bottom: 32px; }
-.stat-card {
-  display: flex; align-items: center; gap: 14px;
-  background: #fff; border: 1px solid rgba(0,0,0,0.04); border-radius: var(--radius-md);
-  padding: 18px 20px; box-shadow: var(--shadow-xs);
-  transition: all 0.25s cubic-bezier(0.4,0,0.2,1); cursor: default;
-}
-.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: rgba(122,154,126,0.1); }
 .sc-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0; }
-.sc-icon--green { background: rgba(122,154,126,.1); color: #5C7A60; }
-.sc-icon--coffee { background: rgba(196,168,130,.1); color: #8B7355; }
-.sc-icon--blue { background: rgba(100,130,180,.08); color: #5577AA; }
-.sc-icon--red { background: rgba(212,120,110,.08); color: #C05050; }
-.sc-body { display: flex; flex-direction: column; min-width: 0; }
-.sc-value { font-size: 20px; font-weight: 700; color: var(--brand-cream-100); letter-spacing: -0.02em; }
-.sc-label { font-size: 12px; color: var(--color-text-placeholder); margin-top: 2px; font-weight: 500; }
-.section { margin-top: 8px; }
-.section-title { font-family: var(--font-family); font-size: 16px; font-weight: 600; color: var(--brand-cream-100); margin: 0 0 14px; }
-.quick-links { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
-.ql-card { display: flex; align-items: center; gap: 10px; padding: 14px 18px; background: #FFF; border: 1px solid var(--color-border-light); border-radius: var(--radius-md); cursor: pointer; transition: all .2s; font-size: 14px; font-weight: 500; color: var(--brand-cream-100); box-shadow: var(--shadow-sm); }
-.ql-card:hover { border-color: var(--color-primary-light); transform: translateY(-2px); box-shadow: var(--shadow-md); }
-.ql-card i { font-size: 18px; color: var(--color-primary); }
+.sc-icon--green { background: rgba(122,154,126,.12); color: #5C7A60; }
+.sc-icon--coffee { background: rgba(196,168,130,.12); color: #8B7355; }
+.sc-icon--blue { background: rgba(100,130,180,.1); color: #5577AA; }
+.sc-icon--red { background: rgba(212,120,110,.1); color: #C05050; }
+.sc-body { display: flex; flex-direction: column; min-width: 0; align-items: center; }
 </style>

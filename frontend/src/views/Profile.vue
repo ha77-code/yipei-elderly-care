@@ -6,9 +6,14 @@
       <template v-if="!editing">
         <div class="profile-avatar-area">
           <div class="avatar-ring">
-            <el-avatar :size="88" icon="el-icon-user-solid" class="profile-avatar" />
+            <el-avatar :size="88" :src="user.avatar || undefined" icon="el-icon-user-solid" class="profile-avatar" />
           </div>
-          <span :class="['role-badge', `role-badge--${(user.role || '').toLowerCase()}`]">{{ roleLabel }}</span>
+          <label class="avatar-upload-btn">
+            <i class="el-icon-camera"></i> 更换头像
+            <input type="file" accept="image/*" hidden @change="handleAvatarUpload" />
+          </label>
+          <p class="avatar-hint" v-if="user.avatarAuditStatus === 0" style="color:rgba(200,150,70,0.85)">头像审核中，通过后生效</p>
+          <span :class="['role-badge', `role-badge--${(user.role || '').toLowerCase()}`]" style="margin-top:16px">{{ roleLabel }}</span>
         </div>
 
         <div class="info-grid">
@@ -57,7 +62,7 @@
 
 <script>
 import { getUser, setUser, ROLE_LABELS } from '@/utils/auth'
-import { getUserInfo, updateUserInfo } from '@/api/user'
+import { getUserInfo, updateUserInfo, uploadAvatar } from '@/api/user'
 import request from '@/api/request'
 
 export default {
@@ -100,6 +105,18 @@ export default {
     async fetchUserInfo() {
       try { const res = await getUserInfo(); const d = res.data || res; this.user = { ...d }; setUser(d) } catch {}
     },
+    async handleAvatarUpload(e) {
+      const file = e.target.files[0]
+      if (!file) return
+      if (file.size > 2 * 1024 * 1024) { this.$message.warning('头像图片不能超过2MB'); return }
+      try {
+        await uploadAvatar(file)
+        this.$message.success('头像已提交，等待审核通过后生效')
+        const info = await getUserInfo()
+        const newUser = info.data || info
+        if (newUser) { setUser(newUser); this.user = { ...newUser } }
+      } catch { this.$message.error('上传失败，请重试') }
+    },
     startEdit() { this.editForm.nickname = this.user.nickname || ''; this.editForm.phone = this.user.phone || ''; this.editing = true },
     cancelEdit() { this.editing = false },
     async handleSave() {
@@ -128,34 +145,37 @@ export default {
 
 <style scoped>
 .profile-page { padding: 36px 40px; max-width: 680px; }
-.page-title { font-size: 22px; font-weight: 700; color: var(--brand-cream-100); margin: 0 0 28px; }
+.page-title { font-size: 22px; font-weight: 700; color: rgba(78,106,56,0.92); margin: 0 0 28px; font-family: 'Noto Serif SC',serif; }
 
-.profile-card { background: #fff; border: 1px solid rgba(0,0,0,0.04); border-radius: var(--radius-lg); padding: 48px; box-shadow: var(--shadow-sm); }
+.profile-card { background: rgba(255,255,255,0.58); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,0.7); border-radius: 14px; padding: 48px; box-shadow: 0 12px 36px -16px rgba(50,60,30,0.2),inset 0 1px 0 rgba(255,255,255,0.6); }
 
 /* Avatar */
 .profile-avatar-area { display: flex; flex-direction: column; align-items: center; margin-bottom: 40px; }
-.avatar-ring { padding: 4px; border-radius: 50%; background: linear-gradient(135deg, var(--color-primary-light), var(--color-primary)); margin-bottom: 16px; }
-.profile-avatar { background: #fff; color: var(--color-primary-dark); }
-.role-badge { padding: 5px 18px; border-radius: 20px; font-size: 13px; font-weight: 550; }
-.role-badge--customer { background: var(--color-primary-dim); color: var(--color-primary-dark); }
-.role-badge--companion { background: var(--color-warm-dim); color: var(--color-warm-dark); }
-.role-badge--admin { background: rgba(0,0,0,0.05); color: var(--color-text-secondary); }
+.avatar-upload-btn { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; padding: 6px 16px; border: 1px solid rgba(150,140,110,0.3); border-radius: 999px; font-size: 13px; color: rgba(78,106,56,0.8); cursor: pointer; background: rgba(255,255,255,0.5); transition: all 0.2s; }
+.avatar-upload-btn:hover { background: rgba(255,255,255,0.8); border-color: rgba(108,140,80,0.5); box-shadow: 0 0 12px -4px rgba(108,140,80,0.2); }
+.avatar-hint { margin-top: 8px; font-size: 12px; }
+.avatar-ring { padding: 4px; border-radius: 50%; background: linear-gradient(135deg, rgba(108,140,80,0.7), rgba(78,106,56,0.7)); margin-bottom: 16px; }
+.profile-avatar { background: rgba(255,255,255,0.8); color: rgba(78,106,56,0.8); }
+.role-badge { padding: 5px 18px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+.role-badge--customer { background: rgba(108,140,80,0.14); color: rgba(78,106,56,0.85); }
+.role-badge--companion { background: rgba(245,215,140,0.2); color: rgba(170,130,60,0.9); }
+.role-badge--admin { background: rgba(150,145,130,0.12); color: rgba(110,110,95,0.85); }
 
 /* Info Grid */
-.info-grid { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid rgba(0,0,0,0.04); border-radius: var(--radius-md); overflow: hidden; margin-bottom: 36px; }
-.info-cell { padding: 18px 22px; border-bottom: 1px solid rgba(0,0,0,0.03); border-right: 1px solid rgba(0,0,0,0.03); transition: background 0.2s ease; cursor: default; }
-.info-cell:hover { background: #FAFAF8; }
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid rgba(150,140,110,0.14); border-radius: 10px; overflow: hidden; margin-bottom: 36px; }
+.info-cell { padding: 18px 22px; border-bottom: 1px solid rgba(150,140,110,0.08); border-right: 1px solid rgba(150,140,110,0.08); transition: background 0.2s ease; cursor: default; }
+.info-cell:hover { background: rgba(108,140,80,0.04); }
 .info-cell:nth-child(even) { border-right: none; }
 .info-cell:nth-last-child(-n+2) { border-bottom: none; }
-.info-label { font-size: 12px; color: var(--color-text-placeholder); font-weight: 550; text-transform: uppercase; letter-spacing: 0.04em; display: block; margin-bottom: 4px; }
-.info-value { font-size: 15px; color: var(--brand-cream-100); font-weight: 550; }
+.info-label { font-size: 12px; color: rgba(130,140,116,0.75); font-weight: 600; letter-spacing: 0.04em; display: block; margin-bottom: 4px; }
+.info-value { font-size: 15px; color: rgba(46,60,38,0.88); font-weight: 600; }
 
 .profile-actions { text-align: center; display: flex; gap: 12px; justify-content: center; }
 
 /* Edit Mode */
 .edit-header { margin-bottom: 28px; }
-.edit-title { font-size: 18px; font-weight: 650; color: var(--brand-cream-100); margin: 0 0 4px; }
-.edit-hint { font-size: 13px; color: var(--color-text-placeholder); }
+.edit-title { font-size: 18px; font-weight: 700; color: rgba(78,106,56,0.92); margin: 0 0 4px; }
+.edit-hint { font-size: 13px; color: rgba(130,140,116,0.7); }
 .profile-form { max-width: 440px; }
 
 @media (max-width: 768px) {

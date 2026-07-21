@@ -408,31 +408,41 @@ document.querySelectorAll('.sidebar-link').forEach(link=>{
   })
 })
 
-/* ── 朗读按钮 ── */
+/* ── 朗读按钮（火山引擎 TTS · 通用女声） ── */
 const speakerBtn=document.getElementById('speakerBtn')
-let speaking=false,tts=null
-speakerBtn.addEventListener('click',()=>{
-  if(speaking){stopSpeak();return}
-  const text='益陪养老是一个帮家里老人找陪诊师的小帮手。有老人的家庭，爸妈要去医院你没法每次都请假，用益陪找人替你陪着。老人自己去医院心里没底，叫个陪诊师全程有人陪。在异地的子女，老人一个人在老家看病没人管，打开益陪帮老人发个需求，陪诊师上门接老人去医院。想做陪诊师的人，你有时间有耐心熟悉医院流程，可以申请成为陪诊师接单获得收入。服务类型包括门诊陪诊、住院陪护、检查陪同、取药送药、夜间陪护。订单流程：发需求、选陪诊师、下订单、陪诊师接单、开始服务、完成服务、你确认、互相评价。每一步都能看到谁在什么时候做了什么。陪诊师需要提交真实身份资料，管理员审核通过才能接单。服务完成后双方互评，有好评有差的都看得到，有投诉入口管理员会处理。陪诊师不是医生，不看病不开药不做治疗，他们只做一件事：陪着老人让老人不孤单不慌张。益陪养老，用陪伴守护每一段金色年华。'
-  if(window.speechSynthesis){
-    tts=new SpeechSynthesisUtterance(text)
-    tts.lang='zh-CN';tts.rate=0.9;tts.pitch=1
-    tts.onend=stopSpeak;tts.onerror=stopSpeak
-    speaking=true;speakerBtn.classList.add('playing')
-    window.speechSynthesis.speak(tts)
-  }else{
-    fetch('/api/tts/speak',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})})
-    .then(r=>r.blob()).then(blob=>{
-      tts=new Audio(URL.createObjectURL(blob));tts.onended=stopSpeak;tts.play()
-      speaking=true;speakerBtn.classList.add('playing')
-    }).catch(stopSpeak)
-  }
-})
+let ttsAudio=null,ttsUrl=null
+
 function stopSpeak(){
-  speaking=false;speakerBtn.classList.remove('playing')
-  if(tts){try{if(tts.stop)tts.stop()}catch(e){}tts=null}
-  window.speechSynthesis&&window.speechSynthesis.cancel()
+  speakerBtn.classList.remove('playing')
+  if(ttsAudio){try{ttsAudio.pause()}catch(e){}ttsAudio=null}
+  if(ttsUrl){URL.revokeObjectURL(ttsUrl);ttsUrl=null}
 }
+
+speakerBtn.addEventListener('click',async()=>{
+  if(ttsAudio){stopSpeak();return}
+  const text='益陪养老是一个帮家里老人找陪诊师的小帮手。有老人的家庭，爸妈要去医院你没法每次都请假，用益陪找人替你陪着。老人自己去医院心里没底，叫个陪诊师全程有人陪。在异地的子女，老人一个人在老家看病没人管，打开益陪帮老人发个需求，陪诊师上门接老人去医院。想做陪诊师的人，你有时间有耐心熟悉医院流程，可以申请成为陪诊师接单获得收入。服务类型包括门诊陪诊、住院陪护、检查陪同、取药送药、夜间陪护。订单流程：发需求、选陪诊师、下订单、陪诊师接单、开始服务、完成服务、你确认、互相评价。每一步都能看到谁在什么时候做了什么。陪诊师需要提交真实身份资料，管理员审核通过才能接单。服务完成后双方互评，有好评有差的都看得到，有投诉入口管理员会处理。陪诊师不是医生，不看病不开药不做治疗，他们只做一件事：陪着老人让老人不孤单不慌张。益陪养老，用陪伴守护每一段金色年华。'
+  speakerBtn.classList.add('playing')
+  let res
+  try{
+    res=await fetch('/api/tts/speak',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text,voiceType:'BV001_streaming'})
+    })
+  }catch(e){stopSpeak();alert('无法连接语音服务，请确认后端已启动');return}
+  const ct=res.headers.get('content-type')||''
+  if(!res.ok||!ct.includes('audio')){
+    let msg='语音生成失败'
+    try{const j=await res.json();if(j&&j.message)msg=j.message}catch(e){}
+    stopSpeak();alert(msg);return
+  }
+  const blob=await res.blob()
+  ttsUrl=URL.createObjectURL(blob)
+  ttsAudio=new Audio(ttsUrl)
+  ttsAudio.addEventListener('ended',stopSpeak)
+  ttsAudio.addEventListener('error',()=>{alert('音频播放失败');stopSpeak()})
+  try{await ttsAudio.play()}catch(e){alert('浏览器阻止了自动播放，请再次点击');stopSpeak()}
+})
 </script>
 </body>
 </html>

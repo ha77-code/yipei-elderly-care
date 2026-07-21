@@ -1,6 +1,7 @@
 package com.yipei.controller;
 
 import com.yipei.entity.ApiResponse;
+import com.yipei.entity.CompanionVO;
 import com.yipei.entity.ServiceRequest;
 import com.yipei.entity.ServiceRequestCreateRequest;
 import com.yipei.security.SecurityUtils;
@@ -45,6 +46,30 @@ public class ServiceRequestController {
     public ApiResponse<ServiceRequest> detail(@PathVariable Long id) {
         SecurityUtils.requireLogin();
         return ApiResponse.success(serviceRequestService.getById(id));
+    }
+
+    /** 为需求推荐适配的陪诊师（最多 3 个，无合适则返回空数组） */
+    @GetMapping("/{id}/matches")
+    public ApiResponse<List<CompanionVO>> matches(
+            @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long userId) {
+        return ApiResponse.success(serviceRequestService.matchCompanions(id, userId, 3));
+    }
+
+    /** 发布表单“智能推荐”：按当前填写内容即时推荐陪诊师，不落库 */
+    @PostMapping("/recommend")
+    public ApiResponse<List<CompanionVO>> recommend(
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestBody ServiceRequestCreateRequest body) {
+        ServiceRequest draft = new ServiceRequest();
+        draft.setServiceType(body.getServiceType());
+        draft.setServiceDate(body.getServiceDate());
+        draft.setHospitalName(body.getHospitalName());
+        draft.setDepartment(body.getDepartment());
+        draft.setRequirement(body.getRequirement());
+        draft.setSpecialNotes(body.getSpecialNotes());
+        draft.setPreferredTraits(body.getPreferredTraits());
+        return ApiResponse.success(serviceRequestService.previewMatches(draft, 3));
     }
 
     /** 取消需求 */

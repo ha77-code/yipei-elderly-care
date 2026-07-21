@@ -35,7 +35,11 @@ public class CompanionService {
 
     /** 获取我的入驻资料 */
     public CompanionProfile getMyProfile(Long userId) {
-        return companionProfileMapper.selectByUserId(userId);
+        CompanionProfile profile = companionProfileMapper.selectByUserId(userId);
+        if (profile == null) {
+            throw new NotFoundException("您还未提交陪诊师入驻资料");
+        }
+        return profile;
     }
 
     /** 提交入驻申请 */

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -53,8 +53,10 @@ body{font-family:'PingFang SC','Microsoft YaHei',-apple-system,sans-serif;color:
 .back-link:hover{color:rgba(140,195,90,1);text-shadow:0 0 22px rgba(255,230,145,0.62),0 0 44px rgba(255,215,120,0.36)}
 .back-link svg{width:21px;height:21px}
 .role-badge{position:fixed;top:22px;right:24px;z-index:20;padding:6px 14px;background:rgba(255,255,255,0.6);border:1px solid rgba(200,185,145,0.33);border-radius:999px;font-size:11px;color:rgba(140,195,90,0.88);letter-spacing:0.06em;backdrop-filter:blur(10px)}
+.chat-entry{position:fixed;top:22px;right:130px;z-index:20;display:inline-flex;align-items:center;gap:6px;padding:6px 16px;background:rgba(255,255,255,0.6);border:1px solid rgba(200,185,145,0.33);border-radius:999px;font-size:11px;color:rgba(140,195,90,0.88);text-decoration:none;backdrop-filter:blur(10px);transition:all 0.3s}
+.chat-entry:hover{background:rgba(255,255,255,0.85);border-color:rgba(180,215,115,0.5);color:rgba(78,106,56,0.95);box-shadow:0 0 18px -4px rgba(200,225,140,0.35)}
 .c-card{background:rgba(255,255,255,0.62);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,0.7);border-radius:14px;padding:20px 24px;box-shadow:0 8px 22px -12px rgba(60,70,40,0.2),inset 0 1px 0 rgba(255,255,255,0.6);transition:all 0.3s ease;cursor:pointer}
-.c-card:hover{transform:translateY(-2px);box-shadow:0 12px 28px -12px rgba(60,70,40,0.3),0 0 24px -2px rgba(240,215,130,0.3)}
+.c-card:hover{transform:translateY(-2px);box-shadow:0 12px 28px -12px rgba(60,70,40,0.3),0 0 24px -2px rgba(240,215,130,0.3)}a.c-card{text-decoration:none;color:inherit}
 .c-card h3{font-size:17px;font-weight:700;color:rgba(var(--accent-deep),0.9);margin-bottom:4px}
 .c-card p{font-size:13px;color:rgba(var(--ink-faint),0.8)}
 .card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;flex:1;align-content:start}
@@ -71,6 +73,10 @@ body{font-family:'PingFang SC','Microsoft YaHei',-apple-system,sans-serif;color:
 <div class="cursor-dot" id="dot"></div><div class="cursor-ring" id="ring"></div>
 <div id="trails"></div>
 <div class="role-badge">客户中心</div>
+<a href="/customer/messages?app=1" class="chat-entry" title="我的消息">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <span>聊天</span>
+</a>
 
 <div class="app-wrap">
   <nav class="nav-zone" id="navZone">
@@ -96,9 +102,9 @@ body{font-family:'PingFang SC','Microsoft YaHei',-apple-system,sans-serif;color:
           <div class="mini-stat"><div class="val" style="color:rgba(170,130,60,0.9)">4.8</div><div class="lbl">平均评分</div></div>
         </div>
         <div class="card-grid">
-          <div class="c-card" onclick="goPage(1)"><h3>☺ 浏览陪诊师</h3><p>查看在册陪诊师，选择适合的服务人员</p></div>
-          <div class="c-card" onclick="goPage(2)"><h3>✎ 发布服务需求</h3><p>填写就诊信息，发布陪诊或陪伴需求</p></div>
-          <div class="c-card" onclick="goPage(3)"><h3>☰ 我的订单</h3><p>查看订单进度，确认服务完成</p></div>
+          <a class="c-card" href="/customer/companions?app=1"><h3>☺ 浏览陪诊师</h3><p>查看在册陪诊师，选择适合的服务人员</p></a>
+          <a class="c-card" href="/customer/request/create?app=1"><h3>✎ 发布服务需求</h3><p>填写就诊信息，发布陪诊或陪伴需求</p></a>
+          <a class="c-card" href="/customer/orders?app=1"><h3>☰ 我的订单</h3><p>查看订单进度，确认服务完成</p></a>
         </div>
       </div><div class="scroll-hint"><div class="scroll-hint-line"></div><span>继续滚动 · 陪诊师列表</span></div></div>
 
@@ -106,22 +112,22 @@ body{font-family:'PingFang SC','Microsoft YaHei',-apple-system,sans-serif;color:
       <div class="panel-page" id="page-companions" data-page="1"><div class="panel-inner">
         <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:14px;margin-bottom:24px;border-bottom:1px solid rgba(200,185,145,0.28)"><h2 style="font-family:'Noto Serif SC',serif;font-size:23px;font-weight:600;color:rgba(78,106,56,0.92)">陪诊师列表</h2><span style="font-size:12px;color:rgba(130,140,116,0.8)">共 86 人</span></div>
         <div class="card-grid">
-          <div class="c-card"><h3>Li Peizhen</h3><p>门诊陪诊 · 住院陪护 · 5年经验 · ⭐4.8</p><p style="margin-top:6px;font-size:12px;color:rgba(130,185,80,0.88)">耐心、善于沟通、经验丰富</p></div>
-          <div class="c-card"><h3>Wang Fang</h3><p>门诊陪诊 · 检查陪同 · 3年经验 · ⭐4.6</p><p style="margin-top:6px;font-size:12px;color:rgba(130,185,80,0.88)">细心、服务周到</p></div>
-          <div class="c-card"><h3>Zhao Min</h3><p>住院陪护 · 术后护理 · 8年经验 · ⭐4.9</p><p style="margin-top:6px;font-size:12px;color:rgba(130,185,80,0.88)">护理专业、经验丰富</p></div>
-          <div class="c-card"><h3>Chen Li</h3><p>检查陪同 · 门诊陪诊 · 2年经验 · ⭐4.5</p><p style="margin-top:6px;font-size:12px;color:rgba(130,185,80,0.88)">熟悉各大医院流程</p></div>
+          <a class="c-card" href="/customer/companions?app=1" style="text-decoration:none"><h3>Li Peizhen</h3><p>门诊陪诊 · 住院陪护 · 5年经验 · ⭐4.8</p><p style="margin-top:6px;font-size:12px;color:rgba(130,185,80,0.88)">耐心、善于沟通、经验丰富</p></a>
+          <a class="c-card" href="/customer/companions?app=1" style="text-decoration:none"><h3>Wang Fang</h3><p>门诊陪诊 · 检查陪同 · 3年经验 · ⭐4.6</p><p style="margin-top:6px;font-size:12px;color:rgba(130,185,80,0.88)">细心、服务周到</p></a>
+          <a class="c-card" href="/customer/companions?app=1" style="text-decoration:none"><h3>Zhao Min</h3><p>住院陪护 · 术后护理 · 8年经验 · ⭐4.9</p><p style="margin-top:6px;font-size:12px;color:rgba(130,185,80,0.88)">护理专业、经验丰富</p></a>
+          <a class="c-card" href="/customer/companions?app=1" style="text-decoration:none"><h3>Chen Li</h3><p>检查陪同 · 门诊陪诊 · 2年经验 · ⭐4.5</p><p style="margin-top:6px;font-size:12px;color:rgba(130,185,80,0.88)">熟悉各大医院流程</p></a>
         </div>
       </div><div class="scroll-hint"><div class="scroll-hint-line"></div><span>继续滚动 · 发布需求</span></div></div>
 
       <!-- 发布需求 -->
       <div class="panel-page" id="page-create" data-page="2"><div class="panel-inner">
         <div style="padding-bottom:14px;margin-bottom:24px;border-bottom:1px solid rgba(200,185,145,0.28)"><h2 style="font-family:'Noto Serif SC',serif;font-size:23px;font-weight:600;color:rgba(78,106,56,0.92)">发布服务需求</h2></div>
-        <div class="c-card" style="margin-bottom:14px">
+        <a class="c-card" href="/customer/request/create?app=1" style="margin-bottom:14px;text-decoration:none;display:block">
           <h3>✎ 快速发布需求</h3>
           <p>填写就诊时间、医院、科室和特殊需求，系统会匹配最适合的陪诊师为您服务。</p>
         </div>
         <div class="card-grid" style="grid-template-columns:1fr">
-          <div class="c-card" onclick="goPage(1)"><h3>✅ 已发布的需求</h3><p>查看和管理您发布的服务需求状态</p></div>
+          <a class="c-card" href="/customer/requests?app=1" style="text-decoration:none"><h3>✅ 已发布的需求</h3><p>查看和管理您发布的服务需求状态</p></a>
         </div>
       </div><div class="scroll-hint"><div class="scroll-hint-line"></div><span>继续滚动 · 我的订单</span></div></div>
 
@@ -129,7 +135,7 @@ body{font-family:'PingFang SC','Microsoft YaHei',-apple-system,sans-serif;color:
       <div class="panel-page" id="page-orders" data-page="3"><div class="panel-inner">
         <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:14px;margin-bottom:24px;border-bottom:1px solid rgba(200,185,145,0.28)"><h2 style="font-family:'Noto Serif SC',serif;font-size:23px;font-weight:600;color:rgba(78,106,56,0.92)">我的订单</h2><span style="font-size:12px;color:rgba(130,140,116,0.8)">共 0 笔</span></div>
         <div class="card-grid">
-          <div class="c-card"><h3>暂无订单</h3><p>发布需求并选择合适的陪诊师后，订单将显示在这里</p></div>
+          <a class="c-card" href="/customer/orders?app=1" style="text-decoration:none"><h3>暂无订单</h3><p>发布需求并选择合适的陪诊师后，订单将显示在这里</p></a>
         </div>
       </div><div class="scroll-hint last"><div class="scroll-hint-line"></div><span>已到底 · 益陪养老</span></div></div>
 

@@ -82,23 +82,23 @@ export default {
 </script>
 
 <style scoped>
-.page-wrap { padding: 28px 36px; }
-.page-title { font-size: 20px; font-weight: 700; margin: 0 0 20px; }
-.content-card { background: #fff; border: 1px solid rgba(0,0,0,0.04); border-radius: var(--radius-md); padding: 20px; box-shadow: var(--shadow-xs); min-height: 200px; }
-.empty-tip { text-align: center; color: var(--color-text-placeholder); padding: 60px 0; font-size: 14px; }
-.review-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
-.review-card { border: 1px solid rgba(0,0,0,0.06); border-radius: var(--radius-md); padding: 18px; transition: box-shadow .2s ease; }
-.review-card:hover { box-shadow: var(--shadow-sm); }
+.page-wrap { padding: 24px 32px; }
+.page-title { font-size: 20px; font-weight: 700; color: rgba(78,106,56,0.92); margin: 0 0 20px; font-family: 'Noto Serif SC', serif; }
+.content-card { background: rgba(255,255,255,0.58); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,0.7); border-radius: 14px; padding: 24px; box-shadow: 0 12px 36px -16px rgba(50,60,30,0.2), inset 0 1px 0 rgba(255,255,255,0.6); min-height: 200px; }
+.empty-tip { text-align: center; color: rgba(130,140,116,0.7); padding: 60px 0; font-size: 14px; }
+.review-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; }
+.review-card { border: 1px solid rgba(150,140,110,0.14); background: rgba(255,255,255,0.5); border-radius: 12px; padding: 20px; transition: all .25s ease; }
+.review-card:hover { box-shadow: 0 8px 24px -8px rgba(50,60,30,0.18); border-color: rgba(180,215,115,0.25); }
 .rc-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-.rc-budget { font-size: 20px; font-weight: 700; color: var(--color-primary-dark); }
-.rc-row { font-size: 14px; color: var(--color-text-secondary); display: flex; align-items: center; gap: 8px; margin-bottom: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.rc-row i { color: var(--color-primary); opacity: .7; flex-shrink: 0; }
-.ai-summary { padding: 10px 12px; border-left: 3px solid var(--color-primary); background: var(--color-bg-page); border-radius: var(--radius-sm); margin: 8px 0; }
-.ai-title { display: flex; align-items: center; gap: 6px; color: var(--color-primary-dark); font-size: 12px; font-weight: 600; }
-.ai-summary p { margin: 6px 0 0; line-height: 1.55; font-size: 13px; color: var(--color-text-secondary); }
-.rc-req { font-size: 13px; color: var(--color-text-secondary); line-height: 1.5; margin: 8px 0 14px; max-height: 60px; overflow: hidden; }
-.rc-actions { display: flex; gap: 10px; justify-content: center; padding-top: 12px; border-top: 1px solid rgba(0,0,0,0.03); }
+.rc-budget { font-size: 20px; font-weight: 700; color: rgba(170,130,60,0.9); }
+.rc-row { font-size: 14px; color: rgba(96,110,82,0.8); display: flex; align-items: center; gap: 8px; margin-bottom: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rc-row i { color: rgba(108,140,80,0.65); flex-shrink: 0; }
+.ai-summary { padding: 12px 14px; border-left: 3px solid rgba(108,140,80,0.6); background: rgba(248,250,240,0.5); border-radius: 8px; margin: 10px 0; }
+.ai-title { display: flex; align-items: center; gap: 6px; color: rgba(78,106,56,0.85); font-size: 12px; font-weight: 700; }
+.ai-summary p { margin: 6px 0 0; line-height: 1.6; font-size: 13px; color: rgba(46,60,38,0.72); }
+.rc-req { font-size: 13px; color: rgba(96,110,82,0.8); line-height: 1.5; margin: 8px 0 14px; max-height: 60px; overflow: hidden; }
+.rc-actions { display: flex; gap: 10px; justify-content: center; padding-top: 14px; border-top: 1px solid rgba(150,140,110,0.1); }
 .rc-directed { margin-left: 6px; }
-.rc-preferred { color: var(--color-primary-dark); font-weight: 600; white-space: normal; }
-.rc-preferred-note { color: var(--color-text-placeholder); font-weight: 400; font-size: 12px; }
+.rc-preferred { color: rgba(78,106,56,0.88); font-weight: 600; white-space: normal; }
+.rc-preferred-note { color: rgba(130,140,116,0.7); font-weight: 400; font-size: 12px; }
 </style>

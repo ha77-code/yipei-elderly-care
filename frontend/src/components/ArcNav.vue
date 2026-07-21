@@ -1,7 +1,7 @@
-<template>
+﻿<template>
   <nav class="arc-nav">
     <div class="arc-nav-brand">益陪</div>
-    <svg class="arc-svg" viewBox="-60 200 170 320" preserveAspectRatio="xMidYMid meet" @wheel="onWheel">
+    <svg class="arc-svg" viewBox="-60 200 170 320" preserveAspectRatio="xMidYMid meet">
       <path class="arc-track" :d="trackPath" />
       <g
         v-for="(item, i) in items"
@@ -79,7 +79,6 @@ export default {
       immediate: true,
       handler(idx) {
         this.previewIndex = idx
-        this.animateTo(idx)
       }
     }
   },

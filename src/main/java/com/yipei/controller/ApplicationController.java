@@ -67,7 +67,16 @@ public class ApplicationController {
     public ApiResponse<ServiceApplication> apply(
             @RequestHeader("X-User-Id") Long userId,
             @RequestBody Map<String, Object> body) {
-        Long requestId = Long.valueOf(String.valueOf(body.get("requestId")));
+        Object rawId = body == null ? null : body.get("requestId");
+        if (rawId == null || String.valueOf(rawId).isBlank()) {
+            throw new ForbiddenException("缺少需求 ID，无法申请");
+        }
+        long requestId;
+        try {
+            requestId = Long.parseLong(String.valueOf(rawId).trim());
+        } catch (NumberFormatException e) {
+            throw new ForbiddenException("需求 ID 格式不正确");
+        }
         String message = body.get("message") != null ? String.valueOf(body.get("message")) : null;
         return ApiResponse.success(applicationService.apply(userId, requestId, message));
     }
