@@ -36,10 +36,59 @@ mybatis:
 # 文件上传本地存储路径（相对于项目根目录）
 yipei:
   upload-dir: uploads
+
+  # ===== AI 需求摘要（DeepSeek，OpenAI 兼容接口）=====
+  # api-key 留空时 AI 功能自动降级：摘要生成跳过、不影响下单流程。
+  # 填 Key 方式二选一：① 直接写在下面 api-key 后；② 设置环境变量 YIPEI_AI_API_KEY。
   ai:
-    enabled: false
-    base-url: https://api.openai.com/v1
-    api-key: ${YIPEI_AI_API_KEY:}
-    model: gpt-4o-mini
-    timeout-seconds: 20
-    max-tokens: 180
+    enabled: ${YIPEI_AI_ENABLED:true}
+    base-url: ${YIPEI_AI_BASE_URL:https://api.deepseek.com/v1}
+    api-key: ${YIPEI_AI_API_KEY:}      # ← 在此填入你的 DeepSeek API Key（sk-... ）
+    model: ${YIPEI_AI_MODEL:deepseek-chat}
+    timeout-seconds: ${YIPEI_AI_TIMEOUT_SECONDS:30}
+    max-tokens: ${YIPEI_AI_MAX_TOKENS:200}
+
+  # ===== 语音朗读 TTS（火山引擎语音合成）=====
+  # app-id / access-token 留空时 TTS 自动降级：朗读接口返回 503「语音功能未接入」。
+  # 可直接填在下面，或用环境变量 YIPEI_TTS_APP_ID / YIPEI_TTS_ACCESS_TOKEN 覆盖。
+  tts:
+    enabled: ${YIPEI_TTS_ENABLED:true}
+    app-id: ${YIPEI_TTS_APP_ID:}            # ← 在此填入火山引擎 App ID
+    access-token: ${YIPEI_TTS_ACCESS_TOKEN:}  # ← 在此填入火山引擎 Access Token
+    voice-type: ${YIPEI_TTS_VOICE_TYPE:BV001_streaming}
+    timeout-seconds: ${YIPEI_TTS_TIMEOUT_SECONDS:15}
+    voices:
+      - name: 通用女声
+        voice-type: BV001_streaming
+      - name: 通用男声
+        voice-type: BV002_streaming
+      - name: 儒雅青年
+        voice-type: BV102_streaming
+      - name: 甜宠少御
+        voice-type: BV113_streaming
+      - name: 东北老铁
+        voice-type: BV021_streaming
+      - name: 擎苍
+        voice-type: BV701_streaming
+      - name: 奶气萌娃
+        voice-type: BV051_streaming
+      - name: 灿灿
+        voice-type: BV700_streaming
+      - name: 亲切女声
+        voice-type: BV007_streaming
+      - name: 温柔小哥
+        voice-type: BV033_streaming
+      - name: 知性姐姐-双语
+        voice-type: BV034_streaming
+      - name: 阳光男声
+        voice-type: BV056_streaming
+      - name: 古风少御
+        voice-type: BV115_streaming
+      - name: 通用赘婿
+        voice-type: BV119_streaming
+      - name: 重庆小伙
+        voice-type: BV019_streaming
+      - name: 广西表哥
+        voice-type: BV213_streaming
+      - name: 炀炀
+        voice-type: BV705_streaming
